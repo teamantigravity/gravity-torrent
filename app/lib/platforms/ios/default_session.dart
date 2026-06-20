@@ -11,7 +11,7 @@ initDefaultDownloadDir(Engine engine) async {
   final documentsDir = await getApplicationDocumentsDirectory();
   final downloadDir = join(documentsDir.path, 'Downloads');
 
-  debugPrint('Settings default directory ${downloadDir}');
+  debugPrint('Settings default directory $downloadDir');
 
   // Default download directory set by transmission is not correct.
   // See tr_getDefaultDownloadDir() in platform.cc

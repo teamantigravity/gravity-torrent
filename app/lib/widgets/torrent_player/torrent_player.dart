@@ -10,9 +10,7 @@ import 'package:gravity_torrent/utils/subtitles.dart';
 import 'package:gravity_torrent/utils/subtitles_server.dart';
 import 'package:gravity_torrent/utils/torrent_utils.dart';
 import 'package:gravity_torrent/widgets/torrent_player/dialogs/audio_track_selector.dart';
-import 'package:gravity_torrent/widgets/torrent_player/dialogs/subtitles_loading.dart';
 import 'package:gravity_torrent/widgets/torrent_player/dialogs/subtitles_selector.dart';
-import 'package:gravity_torrent/widgets/torrent_player/dialogs/video_loading.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
 
 const bufferSize = 2 * 1024 * 1024;
@@ -95,7 +93,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     await (player.platform as NativePlayer).setProperty('cache', 'no');
 
     player.stream.log.listen((log) {
-      debugPrint('mpv: ${log}');
+      debugPrint('mpv: $log');
     });
 
     widget.torrent.startStreaming(widget.file);

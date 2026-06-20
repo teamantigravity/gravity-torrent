@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -99,3 +100,4 @@ Future<int> getAndroidSdkVersion() async {
   AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
   return androidInfo.version.sdkInt;
 }
+

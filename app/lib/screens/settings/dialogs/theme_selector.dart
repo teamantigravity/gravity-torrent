@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/app.dart';
@@ -46,3 +47,4 @@ class _ThemeSelectorState extends State<ThemeSelector> {
     });
   }
 }
+

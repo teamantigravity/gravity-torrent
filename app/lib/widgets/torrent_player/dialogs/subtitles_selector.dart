@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 
@@ -54,3 +55,4 @@ class _SubtitlesSelectorDialogState extends State<SubtitlesSelectorDialog> {
     );
   }
 }
+
