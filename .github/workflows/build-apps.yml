@@ -26,7 +26,7 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
-      - run: flutter build linux --dart-define-from-file=${ENV_FILE}
+      - run: flutter build linux --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
       - name: Prepare artifacts
         run: |
           mkdir ~/artifacts
@@ -53,7 +53,7 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
-      - run: flutter build linux --dart-define-from-file=${ENV_FILE}
+      - run: flutter build linux --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
       - name: Prepare artifacts
         run: |
           mkdir ~/artifacts
@@ -87,7 +87,7 @@ jobs:
         with:
           channel: stable
           flutter-version-file: app/pubspec.yaml
-      - run: flutter build windows --dart-define-from-file=%ENV_FILE%
+      - run: flutter build windows --dart-define-from-file=%ENV_FILE% --obfuscate --split-debug-info=build/symbols
       - name: Build msix
         run: dart run msix:create --store --build-windows=false
       - name: Prepare artifacts
@@ -117,17 +117,6 @@ jobs:
       - name: install dependencies
         run: brew install create-dmg
 
-      - name: Install Apple Certificate
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_DEVELOPER_ID_APPLICATION_P12 }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-
-      - name: Install the provisioning profile
-        run: |
-          mkdir -p ~/Library/Developer/Xcode/Provisioning\ Profiles
-          echo "${{ secrets.APPLE_MACOS_PROVISION_PROFILE }}" | base64 --decode > ~/Library/Developer/Xcode/Provisioning\ Profiles/Github_Actions.provisionprofile
-
       - name: Set up vcpkg
         uses: lukka/run-vcpkg@v11
         with:
@@ -140,19 +129,12 @@ jobs:
           flutter-version-file: app/pubspec.yaml
 
       - name: Build
-        run: flutter build macos --dart-define-from-file=${ENV_FILE}
-
-      - name: Sign
-        run: ./scripts/macos/sign.sh "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}"
-
-      - name: Notarize & Staple
-        run: |
-          echo "${{ secrets.APPLE_KEY_P8 }}" | base64 --decode > ~/apple-key.p8
-          ./scripts/macos/notarize.sh --key-id ${{ secrets.APPLE_KEY_ID }} --key ~/apple-key.p8 --issuer ${{ secrets.APPLE_KEY_ISSUER }}
+        run: flutter build macos --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
 
       - name: Create .dmg
         run: |
           cd build/macos/Build/Products/Release/
+          mv *.app GravityTorrent.app
           create-dmg \
             --volname "Application Installer" \
             --window-pos 200 120 \
@@ -167,7 +149,9 @@ jobs:
         run: |
           mkdir ~/artifacts
           mv build/macos/Build/Products/Release/*.dmg ~/artifacts/
-          mv build/macos/Build/Products/Release/release.app.zip ~/artifacts/release.app.zip
+          mkdir -p build/macos/Build/Products/Release/release
+          cp -r build/macos/Build/Products/Release/GravityTorrent.app build/macos/Build/Products/Release/release/
+          ditto -c -k build/macos/Build/Products/Release/release ~/artifacts/release.app.zip
 
       - uses: actions/upload-artifact@v4
         with:
@@ -217,8 +201,8 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y ninja-build
 
-      - run: flutter build apk --dart-define-from-file=${ENV_FILE}
-      - run: flutter build appbundle --dart-define-from-file=${ENV_FILE}
+      - run: flutter build apk --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+      - run: flutter build appbundle --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
 
       - name: Prepare artifacts
         run: |
@@ -245,17 +229,6 @@ jobs:
         with:
           submodules: true
 
-      - name: Install Apple Certificate
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_DISTRIBUTION_P12 }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-
-      - name: Install the provisioning profile
-        run: |
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.APPLE_IOS_PROVISION_PROFILE }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Github_Actions.mobileprovision
-
       - name: Set up vcpkg
         uses: lukka/run-vcpkg@v11
         with:
@@ -265,11 +238,15 @@ jobs:
         with:
           channel: stable
           flutter-version-file: app/pubspec.yaml
-      - run: flutter build ipa --dart-define-from-file=${ENV_FILE} --export-options-plist="ios/ExportOptions.plist"
+      - run: flutter build ios --release --no-codesign --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
       - name: Prepare artifacts
         run: |
           mkdir ~/artifacts
-          mv build/ios/ipa/*.ipa ~/artifacts/GravityTorrent.ipa
+          mkdir -p build/ios/Payload
+          cp -r build/ios/iphoneos/*.app build/ios/Payload/
+          cd build/ios
+          zip -qr GravityTorrent.ipa Payload
+          mv GravityTorrent.ipa ~/artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: GravityTorrent-ios
