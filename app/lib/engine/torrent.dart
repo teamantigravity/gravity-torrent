@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart';
 import 'package:gravity_torrent/engine/file.dart';
-import 'package:gravity_torrent/main.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/utils/subtitles.dart';
 

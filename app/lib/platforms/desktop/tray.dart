@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 // import 'package:flutter/material.dart' hide MenuItem;
 import 'dart:io';
 
@@ -84,3 +85,4 @@ class AppTrayListener extends TrayListener {
     trayManager.popUpContextMenu(bringAppToFront: true);
   }
 }
+

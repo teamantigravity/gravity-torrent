@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -244,7 +245,7 @@ class TransmissionTorrent extends Torrent {
 
   @override
   Future setSequentialDownloadFromPiece(int piece) async {
-    print('setSequentialDownloadFromPiece ${piece}');
+    debugPrint('setSequentialDownloadFromPiece $piece');
     var request = TorrentSetRequest(
         arguments: TorrentSetRequestArguments(
             ids: [id], sequentialDownloadFromPiece: piece));
@@ -484,3 +485,4 @@ class TransmissionEngine extends Engine {
     await flutter_libtransmission.requestAsync(jsonEncode(request));
   }
 }
+
