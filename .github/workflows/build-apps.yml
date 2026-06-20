@@ -180,7 +180,7 @@ jobs:
       - name: Decode android-keystore.jks
         env:
           ENCODED_STRING: ${{ secrets.ANDROID_KEY_STORE }}
-        run: echo $ENCODED_STRING | base64 -di > android/android-keystore.jks
+        run: echo $ENCODED_STRING | base64 -di > android/app/android-keystore.jks
 
       - name: Decode key.properties
         env:
