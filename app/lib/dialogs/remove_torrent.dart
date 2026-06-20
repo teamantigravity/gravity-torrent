@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/main.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/main.dart';
 
 class RemoveTorrentDialog extends StatelessWidget {
   final Torrent torrent;

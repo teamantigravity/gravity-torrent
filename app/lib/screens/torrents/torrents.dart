@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:pikatorrent/dialogs/remove_torrent.dart';
-import 'package:pikatorrent/dialogs/remove_torrents.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/screens/torrents/filter_labels_button.dart';
-import 'package:pikatorrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
-import 'package:pikatorrent/screens/torrents/sort_button.dart';
-import 'package:pikatorrent/screens/torrents/text_search.dart';
-import 'package:pikatorrent/screens/torrents/torrent_list_tile/torrent_list_tile.dart';
-import 'package:pikatorrent/utils/app_links.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/dialogs/remove_torrent.dart';
+import 'package:gravity_torrent/dialogs/remove_torrents.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/screens/torrents/filter_labels_button.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
+import 'package:gravity_torrent/screens/torrents/sort_button.dart';
+import 'package:gravity_torrent/screens/torrents/text_search.dart';
+import 'package:gravity_torrent/screens/torrents/torrent_list_tile/torrent_list_tile.dart';
+import 'package:gravity_torrent/utils/app_links.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/widgets/ad_banner_slot.dart';
 import 'package:provider/provider.dart';
 
 const String assetName = 'assets/undraw_download.svg';
@@ -77,18 +78,25 @@ class _TorrentScreen extends State<TorrentsScreen>
     return Consumer<TorrentsModel>(
       builder: (context, torrentsModel, child) {
         if (torrentsModel.hasLoaded && torrentsModel.torrents.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                downloadSvg,
-                const SizedBox(height: 16),
-                Text(localizations.noDownloadsYet,
-                    style: Theme.of(context).textTheme.titleLarge),
-              ],
-            ),
+          return Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      downloadSvg,
+                      const SizedBox(height: 16),
+                      Text(localizations.noDownloadsYet,
+                          style: Theme.of(context).textTheme.titleLarge),
+                    ],
+                  ),
+                ),
+              ),
+              const AdBannerSlot(),
+            ],
           );
         }
 
@@ -246,6 +254,7 @@ class _TorrentScreen extends State<TorrentsScreen>
                 },
               ),
             ),
+            const AdBannerSlot(),
           ],
         );
       },

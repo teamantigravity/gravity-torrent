@@ -1,0 +1,258 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: "3.41.8"
+
+jobs:
+  format:
+    name: Format check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --set-exit-if-changed lib test
+
+  analyze:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter analyze
+
+  test:
+    name: Unit & widget tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter test
+
+  build-linux:
+    name: Build Linux x64
+    runs-on: ubuntu-24.04
+    needs: [format, analyze, test]
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build linux --dart-define-from-file=preview.env
+      - name: Package artifact
+        run: |
+          mkdir -p ../artifacts
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
+          7z a "../artifacts/GravityTorrent-${VERSION}-linux-x64-${GITHUB_SHA::7}.zip" ./build/linux/x64/release/bundle/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gravitytorrent-linux-x64
+          path: artifacts/GravityTorrent-*-linux-x64-*.zip
+
+  build-windows:
+    name: Build Windows x64
+    runs-on: windows-2022
+    needs: [format, analyze, test]
+    env:
+      TRANSMISSION_PREFIX: ${{ github.workspace }}/transmission-prefix
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build windows --dart-define-from-file=preview.env
+      - name: Package artifact
+        shell: bash
+        run: |
+          mkdir -p ../artifacts
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
+          7z a "../artifacts/GravityTorrent-${VERSION}-windows-x64-${GITHUB_SHA::7}.zip" ./build/windows/x64/runner/Release/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gravitytorrent-windows-x64
+          path: artifacts/GravityTorrent-*-windows-x64-*.zip
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-24.04
+    needs: [format, analyze, test]
+    env:
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build apk --dart-define-from-file=preview.env --dart-define=GRAVITY_TORRENT_AD_TEST_IDS=true
+      - name: Package artifact
+        run: |
+          mkdir -p ../artifacts
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
+          cp build/app/outputs/flutter-apk/app-release.apk "../artifacts/GravityTorrent-${VERSION}-android-${GITHUB_SHA::7}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gravitytorrent-android
+          path: artifacts/GravityTorrent-*-android-*.apk
+
+  build-ios:
+    name: Build iOS (unsigned fallback)
+    runs-on: macos-15
+    needs: [format, analyze, test]
+    continue-on-error: true
+    env:
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: app/pubspec.yaml
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - name: Build iOS (no codesign)
+        run: flutter build ios --dart-define-from-file=preview.env --no-codesign
+      - name: Package artifact
+        run: |
+          mkdir -p ../artifacts
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
+          cd build/ios/iphoneos
+          zip -r "../../../../artifacts/GravityTorrent-${VERSION}-ios-${GITHUB_SHA::7}.zip" Runner.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gravitytorrent-ios
+          path: artifacts/GravityTorrent-*-ios-*.zip
+
+  publish-manifest:
+    name: Publish release manifest
+    runs-on: ubuntu-24.04
+    needs: [build-linux, build-windows, build-android, build-ios]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Generate manifest
+        run: |
+          python3 <<'PY'
+          import json, glob, os, datetime
+          version = open('app/pubspec.yaml').read().split('version: ')[1].split('\n')[0].strip()
+          sha = os.environ['GITHUB_SHA']
+          run_url = f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+          ts = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+          def pick(pattern):
+              hits = glob.glob(pattern)
+              return hits[0] if hits else None
+          manifest = {
+            "version": version,
+            "commitSha": sha,
+            "workflowRunUrl": run_url,
+            "timestamp": ts,
+            "artifacts": {
+              "linux-x64": pick('artifacts/*linux-x64*.zip'),
+              "windows-x64": pick('artifacts/*windows-x64*.zip'),
+              "android": pick('artifacts/*android*.apk'),
+              "ios": pick('artifacts/*ios*.zip'),
+            }
+          }
+          os.makedirs('manifest-out', exist_ok=True)
+          with open('manifest-out/latest-build-manifest.json','w') as f:
+              json.dump(manifest, f, indent=2)
+          print(json.dumps(manifest, indent=2))
+          PY
+      - name: Upload manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-build-manifest
+          path: manifest-out/latest-build-manifest.json
+      - name: Update latest-successful-build release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(grep '^version:' app/pubspec.yaml | sed 's/version: //')
+          TAG=latest-successful-build
+          gh release view "$TAG" 2>/dev/null || gh release create "$TAG" --title "Latest successful CI build" --notes "Auto-updated manifest for website downloads." --prerelease
+          gh release upload "$TAG" manifest-out/latest-build-manifest.json --clobber
+          find artifacts -type f \( -name '*.zip' -o -name '*.apk' \) -exec gh release upload "$TAG" {} --clobber \;

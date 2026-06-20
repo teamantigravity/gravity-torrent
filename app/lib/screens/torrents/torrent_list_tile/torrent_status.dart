@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 const defaultTextStyle = TextStyle(
   fontWeight: FontWeight.bold,

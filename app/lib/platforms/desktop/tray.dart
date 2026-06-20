@@ -2,8 +2,8 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:pikatorrent/utils/device.dart';
-import 'package:pikatorrent/utils/lifecycle.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/lifecycle.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -24,7 +24,7 @@ initTray(BuildContext context) async {
     }
 
     if (Platform.isWindows || Platform.isMacOS) {
-      await trayManager.setToolTip('PikaTorrent');
+      await trayManager.setToolTip('Gravity Torrent');
     }
 
     Menu menu = Menu(

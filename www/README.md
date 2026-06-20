@@ -1,6 +1,6 @@
-# PikaTorrent website
+# Gravity Torrent website
 
-The PikaTorrent website, built with [Jaspr](https://jaspr.site).
+The Gravity Torrent website, built with [Jaspr](https://jaspr.site).
 
 ## Running locally
 

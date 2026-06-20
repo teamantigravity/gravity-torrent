@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class ResetTorrentsSettingsDialog extends StatelessWidget {
   final Function onOK;

@@ -1,30 +1,33 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/engine/engine.dart';
-import 'package:pikatorrent/engine/transmission/transmission.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/models/app.dart';
-import 'package:pikatorrent/models/session.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/navigation/router.dart';
-import 'package:pikatorrent/platforms/android/foreground_service.dart';
-import 'package:pikatorrent/platforms/windows/register_app.dart';
-import 'package:pikatorrent/utils/device.dart';
-import 'package:pikatorrent/utils/migrations.dart';
-import 'package:pikatorrent/utils/notifications.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/engine/transmission/transmission.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/app.dart';
+import 'package:gravity_torrent/models/session.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/navigation/router.dart';
+import 'package:gravity_torrent/platforms/android/foreground_service.dart';
+import 'package:gravity_torrent/platforms/windows/register_app.dart';
+import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
+import 'package:gravity_torrent/services/purchase/purchase_service_provider.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/migrations.dart';
+import 'package:gravity_torrent/utils/notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:yaru/yaru.dart';
 import 'package:media_kit/media_kit.dart';
 
 final lightColorScheme = ColorScheme.fromSeed(
-    seedColor: Colors.yellow,
+    seedColor: const Color(0xFF4285F4),
     brightness: Brightness.light,
     dynamicSchemeVariant: DynamicSchemeVariant.rainbow);
 
 final darkColorScheme = ColorScheme.fromSeed(
-    seedColor: Colors.yellow,
+    seedColor: const Color(0xFF4285F4),
     brightness: Brightness.dark,
     dynamicSchemeVariant: DynamicSchemeVariant.rainbow);
 
@@ -67,6 +70,9 @@ void main() async {
 
   initializeNotifications();
 
+  unawaited(AdServiceProvider.instance.init());
+  PurchaseServiceProvider.wirePurchaseStream();
+
   if (isDesktop()) {
     await YaruWindowTitleBar.ensureInitialized();
     // Must add this line.
@@ -99,11 +105,11 @@ void main() async {
     registerAppInRegistry();
   }
 
-  runApp(const PikaTorrent());
+  runApp(const GravityTorrent());
 }
 
-class PikaTorrent extends StatelessWidget {
-  const PikaTorrent({super.key});
+class GravityTorrent extends StatelessWidget {
+  const GravityTorrent({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -113,13 +119,13 @@ class PikaTorrent extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => TorrentsModel()),
         ChangeNotifierProvider(create: (context) => SessionModel())
       ],
-      child: const PikaTorrentApp(),
+      child: const GravityTorrentApp(),
     );
   }
 }
 
-class PikaTorrentApp extends StatelessWidget {
-  const PikaTorrentApp({super.key});
+class GravityTorrentApp extends StatelessWidget {
+  const GravityTorrentApp({super.key});
 
   // App root
   @override
@@ -132,7 +138,7 @@ class PikaTorrentApp extends StatelessWidget {
       };
 
       return MaterialApp.router(
-        title: 'PikaTorrent',
+        title: 'Gravity Torrent',
         theme: _lightTheme,
         darkTheme: _darkTheme,
         themeMode: app.theme,

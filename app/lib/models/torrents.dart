@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
-import 'package:pikatorrent/engine/engine.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/main.dart';
-import 'package:pikatorrent/storage/shared_preferences.dart';
-import 'package:pikatorrent/utils/notifications.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:gravity_torrent/utils/notifications.dart';
 
 const refreshIntervalSeconds = 5;
 

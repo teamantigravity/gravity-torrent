@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/screens/torrents/dialogs/filters.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/screens/torrents/dialogs/filters.dart';
 import 'package:provider/provider.dart';
 
 class FilterLabelsButton extends StatelessWidget {

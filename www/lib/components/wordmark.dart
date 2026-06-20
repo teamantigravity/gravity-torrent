@@ -11,8 +11,8 @@ class Wordmark extends StatelessComponent {
     return div(classes: large ? 'wordmark wordmark--lg' : 'wordmark', [
       img(
         classes: 'wordmark-mark',
-        src: '/images/logo.svg',
-        alt: 'PikaTorrent logo',
+        src: '/images/logo.png',
+        alt: 'Gravity Torrent logo',
       ),
       span(classes: 'wordmark-word', [
         span(classes: 'wordmark-pika', [Component.text('Pika')]),

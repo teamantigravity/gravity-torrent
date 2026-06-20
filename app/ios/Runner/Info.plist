@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>PikaTorrent</string>
+	<string>gravitytorrent</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -28,11 +28,11 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>com.pikatorrent.PikaTorrent</string>
+			<string>com.teamantigravity.gravitytorrent</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>magnet</string>
-				<string>pikatorrent</string>
+				<string>gravitytorrent</string>
 			</array>
 		</dict>
 	</array>

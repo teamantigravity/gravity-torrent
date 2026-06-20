@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/utils/device.dart';
 
 class TextSearch extends StatefulWidget {
   final Function(String) onChange;

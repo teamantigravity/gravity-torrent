@@ -1,5 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/utils/device.dart';
 
 enum NotificationsDetailsTypes { downloadsCompletedAndroidNotificationDetails }
 
@@ -39,7 +39,7 @@ Future<void> initializeNotifications() async {
     defaultActionName: 'Open notification',
     // TODO: Improve icon
     defaultIcon: isFlatpak()
-        ? ThemeLinuxIcon('com.pikatorrent.PikaTorrent')
+        ? ThemeLinuxIcon('com.teamantigravity.gravitytorrent')
         : AssetsLinuxIcon('assets/tray_icon.png'),
   );
 
@@ -49,8 +49,8 @@ Future<void> initializeNotifications() async {
       macOS: initializationSettingsDarwin,
       linux: initializationSettingsLinux,
       windows: const WindowsInitializationSettings(
-          appName: 'PikaTorrent',
-          appUserModelId: 'com.pikatorrent.PikaTorrentt',
+          appName: 'Gravity Torrent',
+          appUserModelId: 'com.teamantigravity.gravitytorrentt',
           // Todo: icon path, see https://github.com/MaikuB/flutter_local_notifications/issues/2605
           // iconPath: 'assets/tray_icon.ico',
           guid: '967649c9-c508-4d91-b3e4-5e65610b6cb7'));

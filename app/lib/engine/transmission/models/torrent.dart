@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/utils/bitfield.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/utils/bitfield.dart';
 
 enum TorrentField {
   id,
@@ -29,6 +29,10 @@ enum TorrentField {
   peersConnected,
   magnetLink,
   sequentialDownload,
+  speedLimitDownEnabled,
+  speedLimitUpEnabled,
+  speedLimitDown,
+  speedLimitUp,
   doneDate
 }
 
@@ -85,6 +89,10 @@ class TransmissionTorrentModel {
   final int peersConnected;
   final String magnetLink;
   final bool sequentialDownload;
+  final bool speedLimitDownEnabled;
+  final bool speedLimitUpEnabled;
+  final int speedLimitDown;
+  final int speedLimitUp;
   final DateTime doneDate;
 
   const TransmissionTorrentModel(
@@ -113,6 +121,10 @@ class TransmissionTorrentModel {
       this.fileStats,
       this.magnetLink,
       this.sequentialDownload,
+      this.speedLimitDownEnabled,
+      this.speedLimitUpEnabled,
+      this.speedLimitDown,
+      this.speedLimitUp,
       this.doneDate);
 
   TransmissionTorrentModel.fromJson(Map<String, dynamic> json)
@@ -150,5 +162,9 @@ class TransmissionTorrentModel {
         peersConnected = json['peersConnected'],
         magnetLink = json['magnetLink'],
         sequentialDownload = json['sequential_download'] as bool,
+        speedLimitDownEnabled = json['speedLimitDownEnabled'] as bool? ?? false,
+        speedLimitUpEnabled = json['speedLimitUpEnabled'] as bool? ?? false,
+        speedLimitDown = json['speedLimitDown'] as int? ?? 0,
+        speedLimitUp = json['speedLimitUp'] as int? ?? 0,
         doneDate = DateTime.fromMillisecondsSinceEpoch(json['doneDate'] * 1000);
 }

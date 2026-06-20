@@ -21,7 +21,7 @@ class StoragePermissionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       content:
-          const Text('PikaTorrent needs storage access to download files.'),
+          const Text('Gravity Torrent needs storage access to download files.'),
       actions: [
         TextButton(
           onPressed: () => _requestPermission(context),

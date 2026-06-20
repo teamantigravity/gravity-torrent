@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/constants/locales.dart';
-import 'package:pikatorrent/dialogs/reusable/number_input.dart';
-import 'package:pikatorrent/engine/session.dart';
-import 'package:pikatorrent/main.dart';
-import 'package:pikatorrent/models/app.dart';
-import 'package:pikatorrent/models/session.dart';
-import 'package:pikatorrent/screens/settings/dialogs/locale_selector.dart';
-import 'package:pikatorrent/screens/settings/dialogs/maximum_active_downloads_editor.dart';
-import 'package:pikatorrent/screens/settings/dialogs/peer_port.dart';
-import 'package:pikatorrent/screens/settings/dialogs/reset_torrent_settings.dart';
-import 'package:pikatorrent/screens/settings/dialogs/theme_selector.dart';
-import 'package:pikatorrent/utils/device.dart';
-import 'package:pikatorrent/utils/string_extensions.dart';
-import 'package:pikatorrent/utils/update.dart';
+import 'package:gravity_torrent/constants/locales.dart';
+import 'package:gravity_torrent/dialogs/reusable/number_input.dart';
+import 'package:gravity_torrent/engine/session.dart';
+import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/models/app.dart';
+import 'package:gravity_torrent/models/session.dart';
+import 'package:gravity_torrent/screens/settings/dialogs/locale_selector.dart';
+import 'package:gravity_torrent/screens/settings/dialogs/maximum_active_downloads_editor.dart';
+import 'package:gravity_torrent/screens/settings/dialogs/peer_port.dart';
+import 'package:gravity_torrent/screens/settings/dialogs/reset_torrent_settings.dart';
+import 'package:gravity_torrent/screens/settings/dialogs/theme_selector.dart';
+import 'package:gravity_torrent/screens/settings/upgrade_page.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/string_extensions.dart';
+import 'package:gravity_torrent/utils/update.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -345,11 +346,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text(localizations.version),
             subtitle: Text(app.version)),
         ListTile(
-          leading: const Icon(Icons.favorite),
-          title: Text(localizations.donate),
-          subtitle: Text(localizations.donateDescription),
-          onTap: () =>
-              launchUrl(Uri.parse('https://github.com/sponsors/G-Ray')),
+          leading: const Icon(Icons.workspace_premium_outlined),
+          title: Text(localizations.removeAds),
+          subtitle: Text(localizations.premiumSubtitle),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const UpgradePage()),
+          ),
         ),
         ListTile(
             leading: const Icon(Icons.discord),
@@ -359,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           leading: const Icon(Icons.bug_report),
           title: Text(localizations.reportBug),
           onTap: () => launchUrl(Uri.parse(
-              'https://github.com/G-Ray/pikatorrent/issues/new/choose')),
+              'https://github.com/teamantigravity/gravity-torrent/issues/new/choose')),
         ),
       ]);
     });

@@ -4,10 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart';
-import 'package:pikatorrent/engine/file.dart';
-import 'package:pikatorrent/main.dart';
-import 'package:pikatorrent/utils/device.dart';
-import 'package:pikatorrent/utils/subtitles.dart';
+import 'package:gravity_torrent/engine/file.dart';
+import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/subtitles.dart';
 
 // Torrent statuses
 enum TorrentStatus {
@@ -51,6 +51,10 @@ abstract class Torrent extends TorrentBase {
   final int peersConnected;
   final String magnetLink;
   final bool sequentialDownload;
+  final bool speedLimitDownEnabled;
+  final bool speedLimitUpEnabled;
+  final int speedLimitDown;
+  final int speedLimitUp;
   final DateTime doneDate;
 
   Torrent(
@@ -78,6 +82,10 @@ abstract class Torrent extends TorrentBase {
       required this.peersConnected,
       required this.magnetLink,
       required this.sequentialDownload,
+      required this.speedLimitDownEnabled,
+      required this.speedLimitUpEnabled,
+      required this.speedLimitDown,
+      required this.speedLimitUp,
       required this.doneDate});
 
   // Start the torrent
@@ -99,6 +107,13 @@ abstract class Torrent extends TorrentBase {
   Future setSequentialDownload(bool sequential);
 
   Future setSequentialDownloadFromPiece(int sequentialDownloadFromPiece);
+
+  Future setSpeedLimits({
+    required bool downloadEnabled,
+    required bool uploadEnabled,
+    int? downloadLimitKbps,
+    int? uploadLimitKbps,
+  });
 
   Future setFilesPriority(
       {List<int>? priorityHigh,

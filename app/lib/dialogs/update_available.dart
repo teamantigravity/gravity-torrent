@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-final Uri url = Uri.parse('https://github.com/G-Ray/pikatorrent/releases');
+final Uri url = Uri.parse('https://github.com/teamantigravity/gravity-torrent/releases');
 
 class UpdateAvailableDialog extends StatelessWidget {
   final String latestVersion;

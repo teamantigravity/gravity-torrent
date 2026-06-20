@@ -22,14 +22,14 @@ class _Platform {
 const _iconSize = 16;
 
 String _release(String version, String suffix) =>
-    'https://github.com/G-Ray/pikatorrent/releases/download/v$version/PikaTorrent-v$version$suffix';
+    'https://github.com/teamantigravity/gravity-torrent/releases/download/v$version/GravityTorrent-v$version$suffix';
 
 final _platforms = <_Platform>[
   _Platform(
     'linux-flathub',
     'Linux',
     'Flathub',
-    (_) => 'https://flathub.org/apps/com.pikatorrent.PikaTorrent',
+    (_) => 'https://flathub.org/apps/com.teamantigravity.gravitytorrent',
     LinuxIcon(size: _iconSize),
   ),
   _Platform(
@@ -78,7 +78,7 @@ final _platforms = <_Platform>[
     'android-play',
     'Android',
     'Play Store',
-    (_) => 'https://play.google.com/store/apps/details?id=com.pikatorrent.PikaTorrent',
+    (_) => 'https://play.google.com/store/apps/details?id=com.teamantigravity.gravitytorrent',
     AndroidIcon(size: _iconSize),
   ),
   _Platform(
@@ -220,7 +220,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       final res = await http.get(
         Uri.https(
           'api.github.com',
-          '/repos/G-Ray/pikatorrent/releases/latest',
+          '/repos/teamantigravity/gravity-torrent/releases/latest',
         ),
       );
       if (res.statusCode != 200) return;
@@ -255,7 +255,7 @@ class _DownloadButtonState extends State<DownloadButton> {
 
     return div(classes: _open ? 'dl-wrap open' : 'dl-wrap', [
       Button(
-        label: 'Download PikaTorrent',
+        label: 'Download Gravity Torrent',
         sub: 'Choose your platform',
         icon: lucide.Download(width: _iconSize.px, height: _iconSize.px),
         trailing: trailing,

@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pikatorrent/dialogs/add_torrent.dart';
-import 'package:pikatorrent/dialogs/android/storage_permissions.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/dialogs/add_torrent.dart';
+import 'package:gravity_torrent/dialogs/android/storage_permissions.dart';
+import 'package:gravity_torrent/utils/device.dart';
 
 class AddTorrentButton extends StatelessWidget {
   const AddTorrentButton({super.key});

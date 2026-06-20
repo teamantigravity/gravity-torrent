@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/screens/torrents/sheets/torrent_details/tabs/details.dart';
-import 'package:pikatorrent/screens/torrents/sheets/torrent_details/tabs/files.dart';
-import 'package:pikatorrent/screens/torrents/sheets/torrent_details/tabs/tags.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/tabs/controls.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/tabs/details.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/tabs/files.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/tabs/tags.dart';
 import 'package:provider/provider.dart';
 
 class TorrentDetailsModalSheet extends StatelessWidget {
@@ -50,7 +51,7 @@ class TorrentDetailsModalSheetContent extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
 
     return DefaultTabController(
-      length: 3, // Number of tabs
+      length: 4, // Number of tabs
       initialIndex: initialTab,
       child: Expanded(
         child: Material(
@@ -59,6 +60,7 @@ class TorrentDetailsModalSheetContent extends StatelessWidget {
               tabs: [
                 Tab(text: localizations.files),
                 Tab(text: localizations.tags),
+                Tab(text: localizations.controls),
                 Tab(text: localizations.details),
               ],
             ),
@@ -72,6 +74,7 @@ class TorrentDetailsModalSheetContent extends StatelessWidget {
                     showOnlyPlayable: showOnlyPlayableFiles,
                   ),
                   TagsTab(torrent: torrent),
+                  TorrentControlsTab(torrent: torrent),
                   DetailsTab(torrent: torrent)
                 ],
               ),

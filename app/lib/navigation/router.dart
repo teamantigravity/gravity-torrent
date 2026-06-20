@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pikatorrent/navigation/app_shell_route.dart';
-import 'package:pikatorrent/screens/settings/settings.dart';
-import 'package:pikatorrent/screens/torrents/torrents.dart';
+import 'package:gravity_torrent/navigation/app_shell_route.dart';
+import 'package:gravity_torrent/screens/settings/settings.dart';
+import 'package:gravity_torrent/screens/torrents/torrents.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 

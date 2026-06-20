@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart';
-import 'package:pikatorrent/engine/torrent.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:path/path.dart' as p;
 
 class SubtitlesServer {

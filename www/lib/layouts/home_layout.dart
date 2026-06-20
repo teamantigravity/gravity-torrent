@@ -19,12 +19,12 @@ class HomeLayout extends PageLayoutBase {
     final description = pageData['description']?.toString();
     final image = pageData['image']?.toString();
 
-    yield link(rel: 'icon', type: 'image/svg+xml', href: '/images/logo.svg');
+    yield link(rel: 'icon', type: 'image/svg+xml', href: '/images/logo.png');
     yield meta(name: 'theme-color', content: '#FFEB3B');
     yield meta(attributes: {'property': 'og:type'}, content: 'website');
     yield meta(
       attributes: {'property': 'og:site_name'},
-      content: 'PikaTorrent',
+      content: 'Gravity Torrent',
     );
     yield meta(name: 'twitter:card', content: 'summary_large_image');
     if (description != null) {

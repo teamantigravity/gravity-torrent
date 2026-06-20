@@ -4,11 +4,11 @@ import 'dart:io';
 import 'package:content_resolver/content_resolver.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/engine/engine.dart';
-import 'package:pikatorrent/models/session.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/utils/app_links.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/models/session.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/utils/app_links.dart';
+import 'package:gravity_torrent/utils/device.dart';
 import 'package:provider/provider.dart';
 
 class AddTorrentDialog extends StatefulWidget {

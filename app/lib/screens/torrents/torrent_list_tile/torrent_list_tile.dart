@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/dialogs/remove_torrent.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
-import 'package:pikatorrent/screens/torrents/torrent_list_tile/torrent_status.dart';
-import 'package:pikatorrent/utils/app_links.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/dialogs/remove_torrent.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
+import 'package:gravity_torrent/screens/torrents/torrent_list_tile/torrent_status.dart';
+import 'package:gravity_torrent/utils/app_links.dart';
+import 'package:gravity_torrent/utils/device.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:provider/provider.dart';
 

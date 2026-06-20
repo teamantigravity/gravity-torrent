@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <component type="desktop-application">
-  <id>com.pikatorrent.PikaTorrent</id>
+  <id>com.teamantigravity.gravitytorrent</id>
   <developer id="io.github.G-Ray">
     <name>Geoffrey Bonneville</name>
   </developer>
 
-  <name>PikaTorrent</name>
+  <name>Gravity Torrent</name>
   <summary>Just pick a Torrent, stream and download</summary>
 
-  <url type="homepage">https://www.pikatorrent.com</url>
-  <url type="bugtracker">https://github.com/G-Ray/pikatorrent/issues</url>
-  <url type="vcs-browser">https://github.com/G-Ray/pikatorrent</url>
-  <url type="help">https://github.com/G-Ray/pikatorrent</url>
+  <url type="homepage">https://teamantigravity.com</url>
+  <url type="bugtracker">https://github.com/teamantigravity/gravity-torrent/issues</url>
+  <url type="vcs-browser">https://github.com/teamantigravity/gravity-torrent</url>
+  <url type="help">https://github.com/teamantigravity/gravity-torrent</url>
 
   <metadata_license>CC-BY-SA-4.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
@@ -39,27 +39,27 @@
     </ul>
   </description>
 
-  <launchable type="desktop-id">com.pikatorrent.PikaTorrent.desktop</launchable>
+  <launchable type="desktop-id">com.teamantigravity.gravitytorrent.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <caption>Desktop light screenshot</caption>
-      <image>https://www.pikatorrent.com/desktop-light.png</image>
+      <image>https://teamantigravity.com/desktop-light.png</image>
     </screenshot>
     <screenshot>
       <caption>Desktop dark screenshot</caption>
-      <image>https://www.pikatorrent.com/desktop-dark.png</image>
+      <image>https://teamantigravity.com/desktop-dark.png</image>
     </screenshot>
     <screenshot>
       <caption>Mobile light screenshot</caption>
-      <image>https://www.pikatorrent.com/mobile-light.png</image>
+      <image>https://teamantigravity.com/mobile-light.png</image>
     </screenshot>
     <screenshot>
       <caption>Mobile dark screenshot</caption>
-      <image>https://www.pikatorrent.com/mobile-dark.png</image>
+      <image>https://teamantigravity.com/mobile-dark.png</image>
     </screenshot>
     <screenshot>
       <caption>Desktop player screenshot</caption>
-      <image>https://www.pikatorrent.com/desktop-player.png</image>
+      <image>https://teamantigravity.com/desktop-player.png</image>
     </screenshot>
 
   </screenshots>
@@ -87,7 +87,7 @@
     <release version="0.13.0" date="2025-05-13">
       <description>
         <ul>
-          <li>PikaTorrent now runs in the background, with tray icon support.</li>
+          <li>Gravity Torrent now runs in the background, with tray icon support.</li>
           <li>Display a notification when a download completes.</li>
           <li>Display a warning when network is detected as unavailable.</li>
           <li>Select wanted files with checkboxes</li>

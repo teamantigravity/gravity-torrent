@@ -12,31 +12,31 @@ class Showcase extends StatelessComponent {
           img(
             classes: 'shot-light',
             src: '/images/desktop-light.avif',
-            alt: 'PikaTorrent desktop',
+            alt: 'Gravity Torrent desktop',
           ),
           img(
             classes: 'shot-dark',
             src: '/images/desktop-dark.avif',
-            alt: 'PikaTorrent desktop',
+            alt: 'Gravity Torrent desktop',
           ),
         ]),
         div(classes: 'mobile-float', [
           img(
             classes: 'shot-light',
             src: '/images/mobile-light.avif',
-            alt: 'PikaTorrent mobile',
+            alt: 'Gravity Torrent mobile',
           ),
           img(
             classes: 'shot-dark',
             src: '/images/mobile-dark.avif',
-            alt: 'PikaTorrent mobile',
+            alt: 'Gravity Torrent mobile',
           ),
         ]),
       ]),
       div(classes: 'player-below', [
         img(
           src: '/images/desktop-player.avif',
-          alt: 'PikaTorrent built-in streaming player',
+          alt: 'Gravity Torrent built-in streaming player',
         ),
       ]),
       p(classes: 'player-caption', [

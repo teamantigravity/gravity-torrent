@@ -6,7 +6,7 @@
 	<string>app-store</string>
 	<key>provisioningProfiles</key>
 	<dict>
-		<key>com.pikatorrent.PikaTorrent</key>
+		<key>com.teamantigravity.gravitytorrent</key>
 		<string>github_actions_ios</string>
 	</dict>
 	<key>signingCertificate</key>

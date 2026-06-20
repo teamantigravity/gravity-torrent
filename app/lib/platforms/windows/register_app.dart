@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:win32_registry/win32_registry.dart';
 
-const String appName = 'PikaTorrent';
+const String appName = 'Gravity Torrent';
 const String appCapabilityPath = 'Software\\$appName\\Capabilities';
 
 Future<void> registerAppInRegistry() async {
@@ -72,7 +72,7 @@ Future<void> registerCapabilities() async {
     appName,
   ));
 
-  await registerScheme('pikatorrent');
+  await registerScheme('Gravity Torrent');
 }
 
 

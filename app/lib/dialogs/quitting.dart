@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/models/app.dart';
+import 'package:gravity_torrent/models/app.dart';
 import 'package:provider/provider.dart';
 
 class QuittingDialog extends StatelessWidget {
@@ -11,7 +11,7 @@ class QuittingDialog extends StatelessWidget {
       title: const Text('Quitting'),
       content:
           const Column(mainAxisSize: MainAxisSize.min, spacing: 16, children: [
-        Text('Please wait while PikaTorrent is stopping...'),
+        Text('Please wait while Gravity Torrent is stopping...'),
         CircularProgressIndicator()
       ]),
       actions: [

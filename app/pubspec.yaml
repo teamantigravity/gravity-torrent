@@ -1,5 +1,5 @@
-name: pikatorrent
-description: "Just pick a Torrent, stream and download on all your devices"
+name: gravity_torrent
+description: "Gravity Torrent — stream and download torrents on all your devices"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.15.0+7
+version: 1.0.0+1
 
 environment:
   sdk: ^3.5.3
@@ -71,7 +71,6 @@ dependencies:
   url_launcher: ^6.3.1
   window_manager: ^0.5.1
   pub_semver: ^2.1.5
-  http: ^1.2.2
   win32_registry: ^1.1.5
   store_checker: ^1.6.0
   media_kit: ^1.2.6
@@ -84,6 +83,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+  google_mobile_ads: ^5.3.0
+  in_app_purchase: ^3.2.0
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -97,6 +99,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   test: ^1.25.8
   msix: ^3.16.9
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -144,9 +147,9 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
 msix_config:
-  display_name: PikaTorrent
-  publisher_display_name: G_Ray
-  identity_name: 19653GRay.PikaTorrent
+  display_name: Gravity Torrent
+  publisher_display_name: Team Antigravity
+  identity_name: TeamAntigravity.GravityTorrent
   publisher: CN=9FB02A40-50B6-49F9-92D4-AA9DC9AC1AAB
   # protocol and file extensions handling are managed programmatically
   # This is not perfect as registry entries will not be clean once the

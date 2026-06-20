@@ -16,7 +16,7 @@ class Header extends StatelessComponent {
         div(classes: 'header-content', [
           div(classes: 'header-items', [
             ThemeToggle(),
-            GitHubButton(repo: 'G-Ray/pikatorrent'),
+            GitHubButton(repo: 'teamantigravity/gravity-torrent'),
           ]),
         ]),
       ]),

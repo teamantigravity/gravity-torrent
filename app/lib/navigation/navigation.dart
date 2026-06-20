@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pikatorrent/navigation/add_torrent_button.dart';
-import 'package:pikatorrent/utils/device.dart';
-import 'package:pikatorrent/widgets/window_title_bar.dart';
+import 'package:gravity_torrent/navigation/add_torrent_button.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/widgets/window_title_bar.dart';
 
 class Destination {
   const Destination(this.label, this.icon, this.selectedIcon);

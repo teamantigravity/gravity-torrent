@@ -2,18 +2,18 @@ import 'dart:io';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/dialogs/add_torrent.dart';
-import 'package:pikatorrent/dialogs/confirm_exit.dart';
-import 'package:pikatorrent/dialogs/quitting.dart';
-import 'package:pikatorrent/dialogs/terms_of_use.dart';
-import 'package:pikatorrent/dialogs/update_available.dart';
-import 'package:pikatorrent/models/app.dart';
-import 'package:pikatorrent/navigation/navigation.dart';
-import 'package:pikatorrent/platforms/desktop/tray.dart';
-import 'package:pikatorrent/utils/app_links.dart';
-import 'package:pikatorrent/utils/connectivity.dart';
-import 'package:pikatorrent/utils/device.dart';
-import 'package:pikatorrent/utils/update.dart';
+import 'package:gravity_torrent/dialogs/add_torrent.dart';
+import 'package:gravity_torrent/dialogs/confirm_exit.dart';
+import 'package:gravity_torrent/dialogs/quitting.dart';
+import 'package:gravity_torrent/dialogs/terms_of_use.dart';
+import 'package:gravity_torrent/dialogs/update_available.dart';
+import 'package:gravity_torrent/models/app.dart';
+import 'package:gravity_torrent/navigation/navigation.dart';
+import 'package:gravity_torrent/platforms/desktop/tray.dart';
+import 'package:gravity_torrent/utils/app_links.dart';
+import 'package:gravity_torrent/utils/connectivity.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/update.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -89,7 +89,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       } else if (uriString.startsWith(appUri)) {
         // App URI
         _openAddTorrentDialog(getTorrentLink(uriString), null);
-      } else if (uri.scheme == 'pikatorrent') {
+      } else if (uri.scheme == 'Gravity Torrent') {
         _openAddTorrentDialog(getTorrentLink(uriString), null);
       } else if (File(uriString).existsSync()) {
         // Filesystem path

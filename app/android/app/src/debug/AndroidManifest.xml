@@ -7,6 +7,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="PikaTorrent (Debug)"
+        android:label="Gravity Torrent (Debug)"
         tools:replace="label" />
 </manifest>

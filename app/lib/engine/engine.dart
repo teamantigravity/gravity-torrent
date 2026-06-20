@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:pikatorrent/engine/session.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_set_location.dart';
+import 'package:gravity_torrent/engine/session.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.dart';
 
 enum TorrentAddedResponse { added, duplicated }
 
@@ -36,4 +36,16 @@ abstract class Engine {
 
   // Remove multiple torrents
   Future removeTorrents(List<int> torrentIds, bool withData);
+
+  // Pause a torrent
+  Future pauseTorrent(int id);
+
+  // Resume a torrent
+  Future resumeTorrent(int id);
+
+  // Set per-torrent download/upload speed limits (kbps). 0 means unlimited.
+  Future setTorrentSpeedLimit(int id, {int? downloadLimit, int? uploadLimit});
+
+  // Set torrent sequential download mode
+  Future setTorrentSequentialDownload(int id, bool sequential);
 }

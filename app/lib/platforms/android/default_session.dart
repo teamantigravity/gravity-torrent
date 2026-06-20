@@ -1,7 +1,7 @@
 import 'package:external_path/external_path.dart';
 
-import 'package:pikatorrent/engine/engine.dart';
-import 'package:pikatorrent/engine/session.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/engine/session.dart';
 
 initDefaultDownloadDir(Engine engine) async {
   var session = await engine.fetchSession();

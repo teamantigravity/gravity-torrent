@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/utils/device.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:http/http.dart' as http;
 import 'package:store_checker/store_checker.dart';
 import 'package:windows_store/windows_store.dart';
 
 const String _githubApiUrl =
-    'https://api.github.com/repos/G-Ray/pikatorrent/releases/latest';
+    'https://api.github.com/repos/teamantigravity/gravity-torrent/releases/latest';
 
 // Returns the latest update version, or null
 Future<String?> checkForUpdate(String version) async {

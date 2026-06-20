@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/models/app.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/models/app.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/utils/device.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 

@@ -33,7 +33,7 @@ jobs:
           7z a ~/artifacts/release.zip ./build/linux/x64/release/bundle/*
       - uses: actions/upload-artifact@v4
         with:
-          name: pikatorrent-linux
+          name: GravityTorrent-linux
           path: ~/artifacts/
 
   linux-arm64:
@@ -60,7 +60,7 @@ jobs:
           7z a ~/artifacts/release.zip ./build/linux/arm64/release/bundle/*
       - uses: actions/upload-artifact@v4
         with:
-          name: pikatorrent-linux-arm64
+          name: GravityTorrent-linux-arm64
           path: ~/artifacts/
 
   windows:
@@ -97,7 +97,7 @@ jobs:
           mv build/windows/x64/runner/Release/*.msix ${{ github.workspace }}/artifacts/
       - uses: actions/upload-artifact@v4
         with:
-          name: pikatorrent-windows
+          name: GravityTorrent-windows
           path: ${{ github.workspace }}/artifacts
 
   macos:
@@ -158,10 +158,10 @@ jobs:
             --window-pos 200 120 \
             --window-size 800 400 \
             --icon-size 100 \
-            --icon "PikaTorrent.app" 200 190 \
-            --hide-extension "PikaTorrent.app" \
+            --icon "GravityTorrent.app" 200 190 \
+            --hide-extension "GravityTorrent.app" \
             --app-drop-link 600 185 \
-            PikaTorrent.dmg ./PikaTorrent.app
+            GravityTorrent.dmg ./GravityTorrent.app
 
       - name: Prepare artifacts
         run: |
@@ -171,7 +171,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pikatorrent-macos
+          name: GravityTorrent-macos
           path: ~/artifacts/
 
   android:
@@ -227,7 +227,7 @@ jobs:
           cp ./build/app/outputs/bundle/release/*.aab ~/artifacts/
       - uses: actions/upload-artifact@v4
         with:
-          name: pikatorrent-android
+          name: GravityTorrent-android
           path: ~/artifacts/
 
   ios:
@@ -269,10 +269,10 @@ jobs:
       - name: Prepare artifacts
         run: |
           mkdir ~/artifacts
-          mv build/ios/ipa/*.ipa ~/artifacts/pikatorrent.ipa
+          mv build/ios/ipa/*.ipa ~/artifacts/GravityTorrent.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: pikatorrent-ios
+          name: GravityTorrent-ios
           path: ~/artifacts/
 
   release:
@@ -287,18 +287,18 @@ jobs:
 
       - name: Desktop
         run: |
-          mv pikatorrent-linux/release.zip PikaTorrent-${{ github.ref_name }}-linux-x64.zip
-          mv pikatorrent-linux-arm64/release.zip PikaTorrent-${{ github.ref_name }}-linux-arm64.zip
-          mv pikatorrent-windows/release.zip PikaTorrent-${{ github.ref_name }}-windows-x64.zip
-          mv pikatorrent-macos/release.app.zip ${{ github.workspace }}/PikaTorrent-${{ github.ref_name }}-macos.app.zip
-          mv pikatorrent-macos/*.dmg ${{ github.workspace }}/PikaTorrent-${{ github.ref_name }}-macos.dmg
+          mv GravityTorrent-linux/release.zip GravityTorrent-${{ github.ref_name }}-linux-x64.zip
+          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-${{ github.ref_name }}-linux-arm64.zip
+          mv GravityTorrent-windows/release.zip GravityTorrent-${{ github.ref_name }}-windows-x64.zip
+          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.app.zip
+          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.dmg
       - name: Mobile
         run: |
-          mv pikatorrent-android/*.apk PikaTorrent-${{ github.ref_name }}-android.apk
-          mv pikatorrent-ios/*.ipa PikaTorrent-${{ github.ref_name }}-ios.ipa
+          mv GravityTorrent-android/*.apk GravityTorrent-${{ github.ref_name }}-android.apk
+          mv GravityTorrent-ios/*.ipa GravityTorrent-${{ github.ref_name }}-ios.ipa
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          files: PikaTorrent-*
+          files: GravityTorrent-*

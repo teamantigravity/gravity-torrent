@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/models/torrents.dart';
-import 'package:pikatorrent/screens/torrents/sheets/torrent_details/tabs/dialogs/add_label.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/tabs/dialogs/add_label.dart';
 import 'package:provider/provider.dart';
 
 class TagsTab extends StatelessWidget {

@@ -1,4 +1,4 @@
-import 'package:pikatorrent/engine/transmission/models/torrent.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent.dart';
 
 class TorrentGetRequest {
   final method = 'torrent-get';

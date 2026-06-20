@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pikatorrent/utils/device.dart';
+import 'package:gravity_torrent/utils/device.dart';
 import 'package:share_plus/share_plus.dart';
 
 enum Environment { production, preview, development }
@@ -21,7 +21,7 @@ createAppLink(String link) {
 }
 
 /// get torrent link from an link which contains a fragment (#)
-/// It does not matter if it's a https:// or pikatorrent:// link
+/// It does not matter if it's a https:// or Gravity Torrent:// link
 getTorrentLink(String appLink) {
   final hashIndex = appLink.indexOf('#');
   if (hashIndex == -1) {

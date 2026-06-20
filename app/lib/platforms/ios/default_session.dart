@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:pikatorrent/engine/engine.dart';
-import 'package:pikatorrent/engine/session.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_set_location.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/engine/session.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.dart';
 
 initDefaultDownloadDir(Engine engine) async {
   var session = await engine.fetchSession();

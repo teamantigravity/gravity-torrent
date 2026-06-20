@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/screens/torrents/dialogs/sort.dart';
+import 'package:gravity_torrent/screens/torrents/dialogs/sort.dart';
 
 class SortButton extends StatelessWidget {
   const SortButton({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pikatorrent/models/app.dart';
+import 'package:gravity_torrent/models/app.dart';
 import 'package:provider/provider.dart';
 
 class TermsOfUseDialog extends StatelessWidget {
@@ -20,7 +20,7 @@ class TermsOfUseDialog extends StatelessWidget {
     return AlertDialog(
       title: const Text('Terms of use'),
       content: const Text(
-          'By using PikaTorrent, you accept the content you download or share is your sole responsibility.'),
+          'By using Gravity Torrent, you accept the content you download or share is your sole responsibility.'),
       actions: [
         TextButton(
           onPressed: _handleRefuseClick,

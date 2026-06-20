@@ -1,5 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:pikatorrent/navigation/router.dart';
+import 'package:gravity_torrent/navigation/router.dart';
 
 const foregroundNotificationId = 1;
 
@@ -63,7 +63,7 @@ _startOrUpdateForegroundService(
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
-      ?.startForegroundService(foregroundNotificationId, 'PikaTorrent', body,
+      ?.startForegroundService(foregroundNotificationId, 'Gravity Torrent', body,
           notificationDetails: androidNotificationDetails,
           startType: AndroidServiceStartType.startRedeliverIntent);
 }

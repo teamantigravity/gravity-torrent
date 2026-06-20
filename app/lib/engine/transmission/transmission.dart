@@ -5,25 +5,25 @@ import 'dart:isolate';
 import 'package:flutter_libtransmission/flutter_libtransmission.dart'
     as flutter_libtransmission;
 import 'package:path_provider/path_provider.dart';
-import 'package:pikatorrent/engine/file.dart' as torrent_file;
-import 'package:pikatorrent/engine/engine.dart';
-import 'package:pikatorrent/engine/session.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/engine/transmission/models/session_get_request.dart';
-import 'package:pikatorrent/engine/transmission/models/session_get_response.dart';
-import 'package:pikatorrent/engine/transmission/models/session_set_request.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_action_request.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_add_request.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_add_response.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_get_request.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_get_response.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_remove_request.dart';
+import 'package:gravity_torrent/engine/file.dart' as torrent_file;
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/engine/session.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/engine/transmission/models/session_get_request.dart';
+import 'package:gravity_torrent/engine/transmission/models/session_get_response.dart';
+import 'package:gravity_torrent/engine/transmission/models/session_set_request.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_action_request.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_add_request.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_add_response.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_get_request.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_get_response.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_remove_request.dart';
 import 'package:path/path.dart' as path;
-import 'package:pikatorrent/engine/transmission/models/torrent_set_location.dart';
-import 'package:pikatorrent/engine/transmission/models/torrent_set_request.dart';
-import 'package:pikatorrent/platforms/android/default_session.dart' as android;
-import 'package:pikatorrent/platforms/ios/default_session.dart' as ios;
+import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.dart';
+import 'package:gravity_torrent/engine/transmission/models/torrent_set_request.dart';
+import 'package:gravity_torrent/platforms/android/default_session.dart' as android;
+import 'package:gravity_torrent/platforms/ios/default_session.dart' as ios;
 
 Future<Directory> getConfigDir() async {
   final configDir =
@@ -57,6 +57,10 @@ const torrentGetFields = [
   TorrentField.peersConnected,
   TorrentField.magnetLink,
   TorrentField.sequentialDownload,
+  TorrentField.speedLimitDownEnabled,
+  TorrentField.speedLimitUpEnabled,
+  TorrentField.speedLimitDown,
+  TorrentField.speedLimitUp,
   TorrentField.doneDate
 ];
 
@@ -97,6 +101,10 @@ TransmissionTorrent createTransmissionTorrentFromJson(
       creator: torrent.creator,
       peersConnected: torrent.peersConnected,
       sequentialDownload: torrent.sequentialDownload,
+      speedLimitDownEnabled: torrent.speedLimitDownEnabled,
+      speedLimitUpEnabled: torrent.speedLimitUpEnabled,
+      speedLimitDown: torrent.speedLimitDown,
+      speedLimitUp: torrent.speedLimitUp,
       doneDate: torrent.doneDate);
 }
 
@@ -127,6 +135,10 @@ final TorrentGetRequest torrentGetRequest = TorrentGetRequest(
   TorrentField.peersConnected,
   TorrentField.magnetLink,
   TorrentField.sequentialDownload,
+  TorrentField.speedLimitDownEnabled,
+  TorrentField.speedLimitUpEnabled,
+  TorrentField.speedLimitDown,
+  TorrentField.speedLimitUp,
   TorrentField.doneDate
 ]));
 
@@ -156,6 +168,10 @@ class TransmissionTorrent extends Torrent {
       required super.peersConnected,
       required super.magnetLink,
       required super.sequentialDownload,
+      required super.speedLimitDownEnabled,
+      required super.speedLimitUpEnabled,
+      required super.speedLimitDown,
+      required super.speedLimitUp,
       required super.doneDate});
 
   @override
@@ -233,6 +249,25 @@ class TransmissionTorrent extends Torrent {
         arguments: TorrentSetRequestArguments(
             ids: [id], sequentialDownloadFromPiece: piece));
 
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+  }
+
+  @override
+  Future setSpeedLimits({
+    required bool downloadEnabled,
+    required bool uploadEnabled,
+    int? downloadLimitKbps,
+    int? uploadLimitKbps,
+  }) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        speedLimitDownEnabled: downloadEnabled,
+        speedLimitUpEnabled: uploadEnabled,
+        speedLimitDown: downloadEnabled ? downloadLimitKbps : null,
+        speedLimitUp: uploadEnabled ? uploadLimitKbps : null,
+      ),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
   }
 
@@ -406,6 +441,46 @@ class TransmissionEngine extends Engine {
     var request = TorrentRemoveRequest(
         arguments: TorrentRemoveRequestArguments(
             ids: torrentIds, deleteLocalData: withData));
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+  }
+
+  @override
+  Future pauseTorrent(int id) async {
+    var request = TorrentActionRequest(
+        action: TorrentAction.stop,
+        arguments: TorrentActionRequestArguments(ids: [id]));
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+  }
+
+  @override
+  Future resumeTorrent(int id) async {
+    var request = TorrentActionRequest(
+        action: TorrentAction.start,
+        arguments: TorrentActionRequestArguments(ids: [id]));
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+  }
+
+  @override
+  Future setTorrentSpeedLimit(int id, {int? downloadLimit, int? uploadLimit}) async {
+    final downloadEnabled = downloadLimit != null && downloadLimit > 0;
+    final uploadEnabled = uploadLimit != null && uploadLimit > 0;
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        speedLimitDownEnabled: downloadEnabled,
+        speedLimitUpEnabled: uploadEnabled,
+        speedLimitDown: downloadEnabled ? downloadLimit : null,
+        speedLimitUp: uploadEnabled ? uploadLimit : null,
+      ),
+    );
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+  }
+
+  @override
+  Future setTorrentSequentialDownload(int id, bool sequential) async {
+    var request = TorrentSetRequest(
+        arguments: TorrentSetRequestArguments(
+            ids: [id], sequentialDownload: sequential));
     await flutter_libtransmission.requestAsync(jsonEncode(request));
   }
 }

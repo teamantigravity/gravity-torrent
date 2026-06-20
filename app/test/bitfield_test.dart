@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:pikatorrent/utils/bitfield.dart';
+import 'package:gravity_torrent/utils/bitfield.dart';
 import 'package:test/test.dart';
 
 void main() {

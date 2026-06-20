@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:pikatorrent/engine/file.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/main.dart';
-import 'package:pikatorrent/utils/torrent_utils.dart';
+import 'package:gravity_torrent/engine/file.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/utils/torrent_utils.dart';
 
 int countSlashesRegex(String text) {
   final regex = RegExp('/');

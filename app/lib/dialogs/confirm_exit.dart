@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/utils/lifecycle.dart';
+import 'package:gravity_torrent/utils/lifecycle.dart';
 
 class ConfirmExit extends StatelessWidget {
   const ConfirmExit({super.key});
@@ -7,7 +7,7 @@ class ConfirmExit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Are you sure to stop PikaTorrent?'),
+      title: const Text('Are you sure to stop Gravity Torrent?'),
       content: const Text('All downloads will be stopped.'),
       actions: <Widget>[
         TextButton(

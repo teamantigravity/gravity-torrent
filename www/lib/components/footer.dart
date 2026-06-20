@@ -24,7 +24,7 @@ class Footer extends StatelessComponent {
             a(href: '#features', [Component.text('Features')]),
             a(href: '#screenshots', [Component.text('Screenshots')]),
             a(
-              href: 'https://github.com/G-Ray/pikatorrent/releases',
+              href: 'https://github.com/teamantigravity/gravity-torrent/releases',
               target: Target.blank,
               [Component.text('Releases')],
             ),
@@ -37,12 +37,12 @@ class Footer extends StatelessComponent {
               [Component.text('Discord')],
             ),
             a(
-              href: 'https://github.com/G-Ray/pikatorrent/issues',
+              href: 'https://github.com/teamantigravity/gravity-torrent/issues',
               target: Target.blank,
               [Component.text('Report an issue')],
             ),
             a(
-              href: 'https://hosted.weblate.org/projects/pikatorrent',
+              href: 'https://hosted.weblate.org/projects/gravity-torrent',
               target: Target.blank,
               [Component.text('Translations')],
             ),
@@ -50,7 +50,7 @@ class Footer extends StatelessComponent {
           div(classes: 'site-footer-col', [
             h4([Component.text('Legal')]),
             a(
-              href: 'https://github.com/G-Ray/pikatorrent/blob/main/LICENSE',
+              href: 'https://github.com/teamantigravity/gravity-torrent/blob/main/LICENSE',
               target: Target.blank,
               [Component.text('License (GPL-3.0)')],
             ),
@@ -58,7 +58,7 @@ class Footer extends StatelessComponent {
         ]),
         div(classes: 'site-footer-legal', [
           div([
-            Component.text('© 2026 PikaTorrent · '),
+            Component.text('© 2026 Gravity Torrent · '),
             span(classes: 'site-footer-tag', [
               Component.text('GPL-3.0-or-later'),
             ]),

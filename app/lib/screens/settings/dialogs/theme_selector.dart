@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pikatorrent/l10n/app_localizations.dart';
-import 'package:pikatorrent/models/app.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/app.dart';
 import 'package:provider/provider.dart';
 
 class ThemeSelector extends StatefulWidget {

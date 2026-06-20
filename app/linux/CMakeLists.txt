@@ -4,10 +4,10 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "pikatorrent")
+set(BINARY_NAME "gravitytorrent")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.pikatorrent.PikaTorrent")
+set(APPLICATION_ID "com.teamantigravity.gravitytorrent")
 
 # See https://github.com/ubuntu/handy_window.dart/pull/28
 set(USE_LIBHANDY ON)

@@ -5,9 +5,9 @@ import 'package:async/async.dart';
 
 import 'package:mime/mime.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pikatorrent/engine/torrent.dart';
-import 'package:pikatorrent/engine/file.dart' as torrent_file;
-import 'package:pikatorrent/utils/torrent_utils.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/engine/file.dart' as torrent_file;
+import 'package:gravity_torrent/utils/torrent_utils.dart';
 
 /// Server to stream a file
 class StreamingServer {
