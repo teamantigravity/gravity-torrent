@@ -302,3 +302,32 @@ jobs:
         with:
           draft: true
           files: GravityTorrent-*
+
+  continuous-release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: [linux, linux-arm64, windows, macos, android]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Desktop
+        run: |
+          mv GravityTorrent-linux/release.zip GravityTorrent-latest-successful-build-linux-x64.zip
+          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-latest-successful-build-linux-arm64.zip
+          mv GravityTorrent-windows/release.zip GravityTorrent-latest-successful-build-windows-x64.zip
+          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.app.zip
+          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.dmg
+      - name: Mobile
+        run: |
+          mv GravityTorrent-android/*.apk GravityTorrent-latest-successful-build-android.apk
+          mv GravityTorrent-ios/*.ipa GravityTorrent-latest-successful-build-ios.ipa
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-successful-build
+          make_latest: true
+          files: GravityTorrent-*
