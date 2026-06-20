@@ -63,7 +63,8 @@ _startOrUpdateForegroundService(
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
-      ?.startForegroundService(foregroundNotificationId, 'Gravity Torrent', body,
+      ?.startForegroundService(
+          foregroundNotificationId, 'Gravity Torrent', body,
           notificationDetails: androidNotificationDetails,
           startType: AndroidServiceStartType.startRedeliverIntent);
 }

@@ -8,7 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PurchaseServiceMobile implements PurchaseService {
   PurchaseServiceMobile() {
-    _subscription = InAppPurchase.instance.purchaseStream.listen(_onRawPurchases);
+    _subscription =
+        InAppPurchase.instance.purchaseStream.listen(_onRawPurchases);
   }
 
   static const _adFreeKey = 'gravity_torrent_ad_free';

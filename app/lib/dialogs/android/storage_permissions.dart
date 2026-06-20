@@ -4,8 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 class StoragePermissionDialog extends StatelessWidget {
   final bool isPermanentlyDenied;
 
-  const StoragePermissionDialog(
-      {super.key, required this.isPermanentlyDenied});
+  const StoragePermissionDialog({super.key, required this.isPermanentlyDenied});
 
   _requestPermission(BuildContext context) {
     if (isPermanentlyDenied) {

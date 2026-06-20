@@ -47,4 +47,3 @@ class _ThemeSelectorState extends State<ThemeSelector> {
     });
   }
 }
-

@@ -100,4 +100,3 @@ Future<int> getAndroidSdkVersion() async {
   AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
   return androidInfo.version.sdkInt;
 }
-

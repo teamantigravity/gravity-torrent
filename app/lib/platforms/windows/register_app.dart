@@ -75,7 +75,6 @@ Future<void> registerCapabilities() async {
   await registerScheme('Gravity Torrent');
 }
 
-
 Future<void> registerScheme(String scheme) async {
   String appPath = Platform.resolvedExecutable;
 

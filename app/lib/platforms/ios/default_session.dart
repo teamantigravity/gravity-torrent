@@ -25,5 +25,6 @@ initDefaultDownloadDir(Engine engine) async {
   // torrent-set-location does not accept empty ids, so build a list of all ids
   final torrents = await engine.fetchTorrents();
   final torrentsIds = torrents.map((t) => t.id).toList();
-  await engine.setTorrentsLocation(TorrentSetLocationArguments(ids: torrentsIds, location: downloadDir, move: false));
+  await engine.setTorrentsLocation(TorrentSetLocationArguments(
+      ids: torrentsIds, location: downloadDir, move: false));
 }

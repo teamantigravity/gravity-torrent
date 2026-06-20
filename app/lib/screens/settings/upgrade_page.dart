@@ -77,7 +77,8 @@ class _UpgradePageState extends State<UpgradePage> {
     });
     if (_alreadyOwned) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.adsRemovedThankYou)),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.adsRemovedThankYou)),
       );
     }
   }
@@ -95,7 +96,8 @@ class _UpgradePageState extends State<UpgradePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.rocket_launch_outlined, size: 72, color: scheme.primary),
+              Icon(Icons.rocket_launch_outlined,
+                  size: 72, color: scheme.primary),
               const SizedBox(height: 16),
               Text(
                 l10n.premiumTitle,
@@ -117,9 +119,11 @@ class _UpgradePageState extends State<UpgradePage> {
                   ),
                 )
               else ...[
-                _featureRow(context, l10n.premiumNoBanner, Icons.hide_image_outlined),
+                _featureRow(
+                    context, l10n.premiumNoBanner, Icons.hide_image_outlined),
                 _featureRow(context, l10n.premiumNoInterstitial, Icons.block),
-                _featureRow(context, l10n.premiumSupportDev, Icons.favorite_outline),
+                _featureRow(
+                    context, l10n.premiumSupportDev, Icons.favorite_outline),
               ],
               const Spacer(),
               if (_loading)
@@ -130,7 +134,8 @@ class _UpgradePageState extends State<UpgradePage> {
                   child: Text(l10n.done),
                 )
               else if (!_purchase.isStoreSupported)
-                Text(l10n.storeNotSupportedOnPlatform, textAlign: TextAlign.center)
+                Text(l10n.storeNotSupportedOnPlatform,
+                    textAlign: TextAlign.center)
               else if (_error != null)
                 Text(l10n.storeUnavailable, textAlign: TextAlign.center)
               else
@@ -146,7 +151,8 @@ class _UpgradePageState extends State<UpgradePage> {
                 ),
               if (!_alreadyOwned && _purchase.isStoreSupported) ...[
                 const SizedBox(height: 12),
-                TextButton(onPressed: _restore, child: Text(l10n.restorePurchase)),
+                TextButton(
+                    onPressed: _restore, child: Text(l10n.restorePurchase)),
               ],
             ],
           ),

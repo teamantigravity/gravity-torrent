@@ -6,7 +6,8 @@ class RemoveTorrentDialog extends StatelessWidget {
   final Torrent torrent;
 
   const RemoveTorrentDialog({
-    super.key, required this.torrent,
+    super.key,
+    required this.torrent,
   });
 
   void removeTorrent(bool withData) async {

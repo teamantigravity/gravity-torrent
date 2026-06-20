@@ -117,7 +117,9 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              value ? l10n.sequentialDownloadEnabled : l10n.sequentialDownloadDisabled,
+              value
+                  ? l10n.sequentialDownloadEnabled
+                  : l10n.sequentialDownloadDisabled,
             ),
           ),
         );
@@ -163,7 +165,9 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
         SwitchListTile(
           title: Text(l10n.sequentialDownload),
           subtitle: Text(
-            _sequential ? l10n.sequentialDownloadActive : l10n.sequentialDownloadInactive,
+            _sequential
+                ? l10n.sequentialDownloadActive
+                : l10n.sequentialDownloadInactive,
           ),
           value: _sequential,
           onChanged: _saving ? null : _toggleSequential,

@@ -1,10 +1,4 @@
-enum TorrentAction {
-  start,
-  startNow,
-  stop,
-  verify,
-  reannounce
-}
+enum TorrentAction { start, startNow, stop, verify, reannounce }
 
 class TorrentActionRequest {
   final TorrentAction action;

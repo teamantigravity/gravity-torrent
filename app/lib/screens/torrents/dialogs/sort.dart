@@ -95,4 +95,3 @@ class _SortDialogState extends State<SortDialog> {
     });
   }
 }
-

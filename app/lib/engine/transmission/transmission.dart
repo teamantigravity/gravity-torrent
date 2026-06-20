@@ -23,7 +23,8 @@ import 'package:gravity_torrent/engine/transmission/models/torrent_remove_reques
 import 'package:path/path.dart' as path;
 import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.dart';
 import 'package:gravity_torrent/engine/transmission/models/torrent_set_request.dart';
-import 'package:gravity_torrent/platforms/android/default_session.dart' as android;
+import 'package:gravity_torrent/platforms/android/default_session.dart'
+    as android;
 import 'package:gravity_torrent/platforms/ios/default_session.dart' as ios;
 
 Future<Directory> getConfigDir() async {
@@ -462,7 +463,8 @@ class TransmissionEngine extends Engine {
   }
 
   @override
-  Future setTorrentSpeedLimit(int id, {int? downloadLimit, int? uploadLimit}) async {
+  Future setTorrentSpeedLimit(int id,
+      {int? downloadLimit, int? uploadLimit}) async {
     final downloadEnabled = downloadLimit != null && downloadLimit > 0;
     final uploadEnabled = uploadLimit != null && uploadLimit > 0;
     final request = TorrentSetRequest(
@@ -485,4 +487,3 @@ class TransmissionEngine extends Engine {
     await flutter_libtransmission.requestAsync(jsonEncode(request));
   }
 }
-

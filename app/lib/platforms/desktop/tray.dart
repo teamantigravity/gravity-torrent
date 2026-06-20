@@ -85,4 +85,3 @@ class AppTrayListener extends TrayListener {
     trayManager.popUpContextMenu(bringAppToFront: true);
   }
 }
-

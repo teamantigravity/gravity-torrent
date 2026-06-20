@@ -55,4 +55,3 @@ class _SubtitlesSelectorDialogState extends State<SubtitlesSelectorDialog> {
     );
   }
 }
-
