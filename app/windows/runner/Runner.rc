@@ -93,7 +93,7 @@ BEGIN
             VALUE "FileDescription", "Gravity Torrent" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "gravitytorrent" "\0"
-            VALUE "LegalCopyright", "GPL-3.0" "\0"
+            VALUE "LegalCopyright", "Proprietary" "\0"
             VALUE "OriginalFilename", "gravitytorrent.exe" "\0"
             VALUE "ProductName", "Gravity Torrent" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

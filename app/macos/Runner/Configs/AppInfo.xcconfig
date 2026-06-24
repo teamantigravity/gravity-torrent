@@ -11,4 +11,4 @@ PRODUCT_NAME = Gravity Torrent
 PRODUCT_BUNDLE_IDENTIFIER = com.teamantigravity.gravitytorrent
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = GPL-3.0
+PRODUCT_COPYRIGHT = Proprietary

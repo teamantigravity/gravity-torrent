@@ -60,4 +60,4 @@ Please visite [Weblate](https://hosted.weblate.org/projects/gravity-torrent).
 
 ## License
 
-GPL-3.0
+Proprietary
