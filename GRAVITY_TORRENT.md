@@ -1,10 +1,10 @@
 # Gravity Torrent
 
-Gravity Torrent is a cross-platform BitTorrent client forked from [PikaTorrent](https://github.com/G-Ray/pikatorrent), rebranded and extended for Team Antigravity.
+Gravity Torrent is a cross-platform BitTorrent client developed by Team Antigravity.
 
 ## Product highlights
 
-- **Full PikaTorrent feature parity** — magnets, `.torrent` files, streaming, tags, notifications, tray, deep links, localization, and Transmission backend.
+- **Full feature set** — magnets, `.torrent` files, streaming, tags, notifications, tray, deep links, localization, and Transmission backend.
 - **Premium monetization (mobile)** — AdMob banners with graceful failure; one-time non-consumable IAP (`gravitytorrent_remove_ads`) removes all ads permanently with restore support.
 - **Per-torrent controls** — pause/resume, sequential download toggle, per-torrent upload/download speed limits (persisted by Transmission).
 - **Cross-platform safety** — ads and IAP use abstract services with conditional imports (`ad_service_stub` / `ad_service_mobile`, `purchase_service_stub` / `purchase_service_mobile`). Desktop/web builds never require store SDK behavior at runtime.
@@ -35,7 +35,7 @@ The [Team Antigravity website](https://github.com/teamantigravity/teamantigravit
 
 ## Legacy migration
 
-On first launch, Gravity Torrent copies Transmission data from legacy PikaTorrent config folders when the new config directory is empty.
+
 
 ## Logo
 

@@ -9,66 +9,12 @@ import 'package:gravity_torrent/main.dart';
 /// Run all migrations for app updates.
 /// This should be called on app startup after engine initialization.
 Future<void> runMigrations() async {
-  await migrateLegacyPikatorrentConfig();
+
   await cleanupLegacyStreamingStateFile();
   await resetAllFilePriorities();
 }
 
-/// Copy Transmission config from legacy PikaTorrent install locations if needed.
-Future<void> migrateLegacyPikatorrentConfig() async {
-  try {
-    final targetDir = await getConfigDir();
-    if (await targetDir.exists()) {
-      final existing = await targetDir.list(followLinks: false).toList();
-      if (existing.isNotEmpty) return;
-    }
 
-    Directory? legacyDir;
-    if (Platform.isWindows) {
-      final appData = Platform.environment['APPDATA'];
-      if (appData != null) {
-        legacyDir =
-            Directory(path.join(appData, 'pikatorrent', 'transmission'));
-        if (!await legacyDir.exists()) {
-          legacyDir = Directory(path.join(
-              appData, 'com.pikatorrent.PikaTorrent', 'transmission'));
-        }
-      }
-    } else if (Platform.isLinux) {
-      final home = Platform.environment['HOME'];
-      if (home != null) {
-        legacyDir = Directory(
-            path.join(home, '.local', 'share', 'pikatorrent', 'transmission'));
-        if (!await legacyDir.exists()) {
-          legacyDir = Directory(
-              path.join(home, '.config', 'pikatorrent', 'transmission'));
-        }
-      }
-    } else if (Platform.isMacOS) {
-      final home = Platform.environment['HOME'];
-      if (home != null) {
-        legacyDir = Directory(path.join(home, 'Library', 'Application Support',
-            'pikatorrent', 'transmission'));
-      }
-    }
-
-    if (legacyDir == null || !await legacyDir.exists()) return;
-    debugPrint('Migrating legacy torrent config from ${legacyDir.path}');
-    await targetDir.create(recursive: true);
-    await for (final entity in legacyDir.list(recursive: true)) {
-      final relative = path.relative(entity.path, from: legacyDir.path);
-      final destPath = path.join(targetDir.path, relative);
-      if (entity is Directory) {
-        await Directory(destPath).create(recursive: true);
-      } else if (entity is File) {
-        await Directory(path.dirname(destPath)).create(recursive: true);
-        await entity.copy(destPath);
-      }
-    }
-  } catch (e) {
-    debugPrint('Legacy config migration skipped: $e');
-  }
-}
 
 /// Clean up legacy session state file from old streaming implementation.
 /// This can be removed in future versions after users have migrated.
