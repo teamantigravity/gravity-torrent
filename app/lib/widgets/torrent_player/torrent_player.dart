@@ -1,0 +1,346 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'package:gravity_torrent/engine/file.dart' as torrent_file;
+import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/utils/device.dart' as device;
+import 'package:gravity_torrent/utils/streaming_server.dart';
+import 'package:gravity_torrent/utils/subtitles.dart';
+import 'package:gravity_torrent/utils/subtitles_server.dart';
+import 'package:gravity_torrent/utils/torrent_utils.dart';
+import 'package:gravity_torrent/widgets/torrent_player/dialogs/audio_track_selector.dart';
+import 'package:gravity_torrent/widgets/torrent_player/dialogs/subtitles_selector.dart';
+import 'package:gravity_torrent/widgets/window_title_bar.dart';
+
+const bufferSize = 2 * 1024 * 1024;
+
+class TorrentPlayer extends StatefulWidget {
+  final torrent_file.File file;
+  final String filePath;
+  final Torrent torrent;
+
+  const TorrentPlayer({
+    super.key,
+    required this.filePath,
+    required this.torrent,
+    required this.file,
+  });
+
+  @override
+  State<TorrentPlayer> createState() => TorrentPlayerState();
+}
+
+class StreamingPlayer extends Player {
+  StreamingServer server;
+
+  StreamingPlayer({required super.configuration, required this.server});
+
+  @override
+  Future<void> seek(Duration duration) {
+    // Cancel previous request, which might block next seek command
+    server.cancelRequest();
+    return super.seek(duration);
+  }
+}
+
+class TorrentPlayerState extends State<TorrentPlayer> {
+  late final StreamingPlayer player;
+  late StreamingServer server;
+  late SubtitlesServer subsServer;
+  final GlobalKey _videoComponentKey = GlobalKey();
+
+  // Create a [VideoController] to handle video output from [Player].
+  late final controller = VideoController(
+    player,
+    configuration: const VideoControllerConfiguration(),
+  );
+
+  @override
+  void initState() {
+    // Enter immersive mode
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    super.initState();
+    initPlayer();
+  }
+
+  @override
+  void dispose() {
+    widget.torrent.stopStreaming();
+    player.stop();
+    player.dispose();
+    server.stop();
+    subsServer.stop();
+    // leave immersive mode
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  void initPlayer() async {
+    // Streaming server
+    server = StreamingServer(
+      filePath: widget.filePath,
+      bufferSize: bufferSize,
+      torrent: widget.torrent,
+      torrentFile: widget.file,
+    );
+
+    player = StreamingPlayer(
+        configuration: const PlayerConfiguration(bufferSize: bufferSize),
+        server: server);
+
+    await (player.platform as NativePlayer).setProperty('network-timeout', '0');
+    await (player.platform as NativePlayer).setProperty('cache', 'no');
+
+    player.stream.log.listen((log) {
+      debugPrint('mpv: $log');
+    });
+
+    widget.torrent.startStreaming(widget.file);
+
+    // Preload video file (wait for first piece)
+    if (widget.torrent.progress != 1) {
+      onVideoLoading();
+
+      await waitForPieces(
+        torrent: widget.torrent,
+        file: widget.file,
+        pieceCount: 1,
+      );
+
+      if (!mounted) return;
+
+      // Check if we're still showing a dialog before popping
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (!mounted) return;
+    }
+
+    // Start streaming server after video file is ready
+    server.start();
+    final serverAdress = await server.getAddress();
+
+    debugPrint('download subs');
+    // Download subtitles
+    if (widget.torrent.progress != 1) {
+      onSubtitlesLoading();
+
+      await downloadSubtitles(widget.file, widget.torrent);
+
+      if (!mounted) return;
+
+      // Check if we're still showing a dialog before popping
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (!mounted) return;
+    }
+
+    // Initialize subtitles server
+    subsServer = SubtitlesServer(torrent: widget.torrent);
+    subsServer.start();
+    final subtitlesServerAdress = await subsServer.getAddress();
+
+    debugPrint('open player');
+    await player.open(Media(serverAdress));
+    final externalSubtitlesFiles =
+        getExternalSubtitles(widget.file, widget.torrent);
+
+    final externalSubtitles =
+        externalSubtitlesFiles // TODO: support more formats
+            .map((f) => ExternalSubtitle(
+                name: truncateFromLastSlash(f.name),
+                url: Uri.encodeFull('$subtitlesServerAdress/${f.name}')))
+            .toList();
+
+    // Load external subtitles to be able to select them
+    for (final sub in externalSubtitles) {
+      // TODO: Detect language from file name
+      await player.setSubtitleTrack(
+          SubtitleTrack.uri(sub.url, title: sub.name, language: 'en'));
+    }
+
+    await player.setSubtitleTrack(SubtitleTrack.no());
+
+    await player.play();
+  }
+
+  void onVideoLoading() {
+    showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) => AlertDialog(
+              title: const Text('Loading Video...'),
+              content: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [Center(child: CircularProgressIndicator())]),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Exit player screen
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ));
+  }
+
+  void onSubtitlesLoading() {
+    showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) => AlertDialog(
+              title: const Text('Loading Subtitles...'),
+              content: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [Center(child: CircularProgressIndicator())]),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Exit player screen
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ));
+  }
+
+  onSubtitlesClick() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SubtitlesSelectorDialog(
+          subtitles: player.state.tracks.subtitle,
+          currentValue: player.state.track.subtitle.id,
+          onSubtitleSelected: (SubtitleTrack sub) async {
+            await player.setSubtitleTrack(sub);
+          },
+        );
+      },
+    );
+  }
+
+  onAudioTrackClick() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AudioTrackSelectorDialog(
+          tracks: player.state.tracks.audio,
+          currentValue: player.state.track.audio.id,
+          onTrackSelected: (AudioTrack track) async {
+            await player.setAudioTrack(track);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBackButton() {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget _buildSubtitlesButton() {
+    return MaterialDesktopCustomButton(
+      icon: const Icon(Icons.subtitles),
+      onPressed: onSubtitlesClick,
+    );
+  }
+
+  Widget _buildAudioTrackButton() {
+    return MaterialDesktopCustomButton(
+      icon: const Icon(Icons.multitrack_audio),
+      onPressed: onAudioTrackClick,
+    );
+  }
+
+  List<Widget> _buildMobileBottomButtonBar() {
+    return [
+      const MaterialPositionIndicator(),
+      const Spacer(),
+      _buildSubtitlesButton(),
+      _buildAudioTrackButton(),
+    ];
+  }
+
+  List<Widget> _buildDesktopBottomButtonBar() {
+    return [
+      const MaterialDesktopSkipPreviousButton(),
+      const MaterialDesktopPlayOrPauseButton(),
+      const MaterialDesktopSkipNextButton(),
+      const MaterialDesktopVolumeButton(),
+      const MaterialDesktopPositionIndicator(),
+      const Spacer(),
+      _buildSubtitlesButton(),
+      _buildAudioTrackButton(),
+      const MaterialDesktopFullscreenButton(),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: ThemeData.dark(),
+      child: SafeArea(
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: device.isDesktop()
+              ? const WindowTitleBar(backgroundColor: Colors.black)
+              : AppBar(toolbarHeight: 0),
+          body: Stack(
+            children: [
+              device.isMobile()
+                  ? MaterialVideoControlsTheme(
+                      normal: MaterialVideoControlsThemeData(
+                          seekBarThumbColor: Colors.cyanAccent,
+                          seekBarPositionColor: Colors.cyanAccent,
+                          padding: const EdgeInsets.only(bottom: 64),
+                          topButtonBar: [_buildBackButton()],
+                          bottomButtonBar: _buildMobileBottomButtonBar()),
+                      fullscreen: MaterialVideoControlsThemeData(
+                          seekBarThumbColor: Colors.cyanAccent,
+                          seekBarPositionColor: Colors.cyanAccent,
+                          padding: const EdgeInsets.only(bottom: 64),
+                          topButtonBar: [_buildBackButton()],
+                          bottomButtonBar: _buildMobileBottomButtonBar()),
+                      child: Video(
+                        key: _videoComponentKey,
+                        controller: controller,
+                        controls: MaterialVideoControls,
+                      ),
+                    )
+                  : MaterialDesktopVideoControlsTheme(
+                      normal: MaterialDesktopVideoControlsThemeData(
+                        seekBarThumbColor: Colors.cyanAccent,
+                        seekBarPositionColor: Colors.cyanAccent,
+                        topButtonBar: [_buildBackButton()],
+                        bottomButtonBar: _buildDesktopBottomButtonBar(),
+                      ),
+                      fullscreen: MaterialDesktopVideoControlsThemeData(
+                        seekBarThumbColor: Colors.cyanAccent,
+                        seekBarPositionColor: Colors.cyanAccent,
+                        topButtonBar: [_buildBackButton()],
+                        bottomButtonBar: _buildDesktopBottomButtonBar(),
+                      ),
+                      child: Video(
+                        key: _videoComponentKey,
+                        controller: controller,
+                        controls: MaterialDesktopVideoControls,
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

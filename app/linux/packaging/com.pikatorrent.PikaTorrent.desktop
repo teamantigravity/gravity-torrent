@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Gravity Torrent
+GenericName=BitTorrent Client
+Exec=gravitytorrent %u
+Icon=com.teamantigravity.gravitytorrent
+Type=Application
+StartupNotify=true
+MimeType=x-scheme-handler/gravitytorrent;x-scheme-handler/magnet;application/x-bittorrent;
+Categories=Network;FileTransfer
+Keywords=torrent;bittorrent

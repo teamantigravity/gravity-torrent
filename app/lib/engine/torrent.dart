@@ -1,0 +1,206 @@
+import 'dart:io';
+
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path/path.dart';
+import 'package:gravity_torrent/engine/file.dart';
+import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/subtitles.dart';
+
+// Torrent statuses
+enum TorrentStatus {
+  stopped,
+  queuedToCheck,
+  checking,
+  queuedToDownload,
+  downloading,
+  queuedToSeed,
+  seeding
+}
+
+class TorrentBase {
+  final int id;
+  final List<String>? labels;
+
+  TorrentBase({required this.id, required this.labels});
+}
+
+// Torrent abstraction
+abstract class Torrent extends TorrentBase {
+  final String name;
+  final double progress;
+  final TorrentStatus status;
+  final int size;
+  final int rateDownload;
+  final int rateUpload;
+  final int downloadedEver;
+  final int uploadedEver;
+  final int eta;
+  final int pieceCount;
+  final List<bool> pieces;
+  final int pieceSize;
+  final String errorString;
+  final String location;
+  final bool isPrivate;
+  final int addedDate;
+  final String creator;
+  final String comment;
+  final List<File> files;
+  final int peersConnected;
+  final String magnetLink;
+  final bool sequentialDownload;
+  final bool speedLimitDownEnabled;
+  final bool speedLimitUpEnabled;
+  final int speedLimitDown;
+  final int speedLimitUp;
+  final DateTime doneDate;
+
+  Torrent(
+      {required super.id,
+      required super.labels,
+      required this.name,
+      required this.progress,
+      required this.status,
+      required this.size,
+      required this.rateDownload,
+      required this.rateUpload,
+      required this.downloadedEver,
+      required this.uploadedEver,
+      required this.eta,
+      required this.pieces,
+      required this.pieceSize,
+      required this.errorString,
+      required this.pieceCount,
+      required this.location,
+      required this.isPrivate,
+      required this.addedDate,
+      required this.comment,
+      required this.creator,
+      required this.files,
+      required this.peersConnected,
+      required this.magnetLink,
+      required this.sequentialDownload,
+      required this.speedLimitDownEnabled,
+      required this.speedLimitUpEnabled,
+      required this.speedLimitDown,
+      required this.speedLimitUp,
+      required this.doneDate});
+
+  // Start the torrent
+  start();
+
+  // Pause the torrent
+  stop();
+
+  // Remove the torrent
+  remove(bool withData);
+
+  // Update torrent data
+  Future update(TorrentBase torrent);
+
+  Future toggleFileWanted(int fileIndex, bool wanted);
+
+  Future toggleAllFilesWanted(bool wanted);
+
+  Future setSequentialDownload(bool sequential);
+
+  Future setSequentialDownloadFromPiece(int sequentialDownloadFromPiece);
+
+  Future setSpeedLimits({
+    required bool downloadEnabled,
+    required bool uploadEnabled,
+    int? downloadLimitKbps,
+    int? uploadLimitKbps,
+  });
+
+  Future setFilesPriority(
+      {List<int>? priorityHigh,
+      List<int>? priorityLow,
+      List<int>? priorityNormal});
+
+  startStreaming(File file) async {
+    debugPrint('starting streaming ${file.name}');
+    // File already completed
+    if (file.bytesCompleted == file.length) {
+      // Do nothing if file is already completed.
+      return;
+    }
+
+    // Be sure torrent is active
+    start();
+
+    final fileIndex = files.indexWhere((f) => f.name == file.name);
+
+    // File indices for streaming file and detected associated subtitles
+    final List<int> highPriorityFileIndices = [fileIndex];
+
+    // Want subtitles and set them to high priority
+    final externalSubtitles = getExternalSubtitles(file, this);
+    for (final (index, file) in files.indexed) {
+      if (externalSubtitles.firstWhereOrNull((f) => f.name == file.name) !=
+          null) {
+        await toggleFileWanted(index, true);
+        highPriorityFileIndices.add(index);
+      }
+    }
+
+    await toggleFileWanted(fileIndex, true);
+
+    // Set high priority for streaming file and subtitles
+    await setFilesPriority(priorityHigh: highPriorityFileIndices);
+
+    await setSequentialDownload(true);
+  }
+
+  stopStreaming() async {
+    debugPrint('stopping streaming');
+    await setSequentialDownload(false);
+
+    // Reset all files to normal priority
+    final allFileIndices = List.generate(files.length, (index) => index);
+    await setFilesPriority(priorityNormal: allFileIndices);
+  }
+
+  hasLoadedPieces(List<int> piecesToTest) {
+    return piecesToTest.every((p) => pieces[p]);
+  }
+
+  Future openFolder(BuildContext context) async {
+    if (!isDesktop()) return;
+
+    OpenResult result;
+    String folderPath;
+
+    if (files.length == 1) {
+      folderPath = location;
+    } else {
+      var folderName = split(files.first.name).first;
+      folderPath = join(location, folderName);
+    }
+
+    result = await OpenFile.open(
+      folderPath,
+    );
+
+    if (result.type != ResultType.done) {
+      var errorMessage = switch (result.type) {
+        ResultType.noAppToOpen => 'No app to open',
+        ResultType.fileNotFound => 'Not found',
+        ResultType.permissionDenied => 'Permission denied',
+        // It seems fileNotFound is not returned on linux
+        ResultType.error => await Directory(folderPath).exists() == false
+            ? 'Folder not found'
+            : 'Unknown error',
+        _ => 'Unknown error'
+      };
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error opening torrent location: $errorMessage.'),
+          backgroundColor: Colors.orange,
+        ));
+      }
+    }
+  }
+}

@@ -1,0 +1,322 @@
+name: Build apps
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-apps.yml'
+    tags: ['*']
+env:
+  ENV_FILE: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, 'beta') && 'production.env' || 'preview.env' }}
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+      - run: flutter build linux --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          7z a ~/artifacts/release.zip ./build/linux/x64/release/bundle/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-linux
+          path: ~/artifacts/
+
+  linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: master # channel stable does not support arm64 for now
+          flutter-version-file: app/pubspec.yaml
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+      - run: flutter build linux --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          7z a ~/artifacts/release.zip ./build/linux/arm64/release/bundle/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-linux-arm64
+          path: ~/artifacts/
+
+  windows:
+    runs-on: windows-2022
+    env:
+      # Workaround for https://gitlab.kitware.com/cmake/cmake/-/issues/25936
+      TRANSMISSION_PREFIX: ${{ github.workspace }}/transmission-prefix
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - name: Set up Flutter
+        # yq is not installed on windows on v2
+        uses: subosito/flutter-action@v2.18.0
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+      - run: flutter build windows --dart-define-from-file=%ENV_FILE% --obfuscate --split-debug-info=build/symbols
+      - name: Build msix
+        run: dart run msix:create --store --build-windows=false
+      - name: Prepare artifacts
+        run: |
+          mkdir ${{ github.workspace }}/artifacts
+          7z a ${{ github.workspace }}/artifacts/release.zip ./build/windows/x64/runner/Release/*
+          mv build/windows/x64/runner/Release/*.msix ${{ github.workspace }}/artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-windows
+          path: ${{ github.workspace }}/artifacts
+
+  macos:
+    runs-on: macos-15
+    env:
+      # Should be same as defined in /app/macos/Runner.xcodeproj
+      MACOSX_DEPLOYMENT_TARGET: 10.14
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: install dependencies
+        run: brew install create-dmg
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+
+      - name: Build
+        run: flutter build macos --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+
+      - name: Create .dmg
+        run: |
+          cd build/macos/Build/Products/Release/
+          mv *.app GravityTorrent.app
+          create-dmg \
+            --volname "Application Installer" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "GravityTorrent.app" 200 190 \
+            --hide-extension "GravityTorrent.app" \
+            --app-drop-link 600 185 \
+            GravityTorrent.dmg ./GravityTorrent.app
+
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          mv build/macos/Build/Products/Release/*.dmg ~/artifacts/
+          mkdir -p build/macos/Build/Products/Release/release
+          cp -r build/macos/Build/Products/Release/GravityTorrent.app build/macos/Build/Products/Release/release/
+          ditto -c -k build/macos/Build/Products/Release/release ~/artifacts/release.app.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-macos
+          path: ~/artifacts/
+
+  android:
+    runs-on: ubuntu-24.04
+    env:
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+      SOURCE_DATE_EPOCH: 0
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+
+      - name: Decode android-keystore.jks
+        env:
+          ENCODED_STRING: ${{ secrets.ANDROID_KEY_STORE }}
+        run: echo $ENCODED_STRING | base64 -di > android/app/android-keystore.jks
+
+      - name: Decode key.properties
+        env:
+          ENCODED_STRING: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: echo $ENCODED_STRING | base64 -di > android/key.properties
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build
+
+      - name: Inject AdMob Secrets
+        run: |
+          echo "GRAVITY_TORRENT_ADMOB_APP_ID=${{ secrets.GRAVITY_TORRENT_ADMOB_APP_ID }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_BANNER=${{ secrets.GRAVITY_TORRENT_ADMOB_BANNER }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_INTERSTITIAL=${{ secrets.GRAVITY_TORRENT_ADMOB_INTERSTITIAL }}" >> ${ENV_FILE}
+
+      - run: flutter build apk --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+      - run: flutter build appbundle --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          cp ./build/app/outputs/flutter-apk/*.apk ~/artifacts/
+          cp ./build/app/outputs/bundle/release/*.aab ~/artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-android
+          path: ~/artifacts/
+
+  ios:
+    runs-on: macos-15
+    env:
+      # Do not target simulator
+      TARGET_IOS_DEVICE: true
+      IPHONEOS_DEPLOYMENT_TARGET: 12 # Should be same as defined in /app/ios/Runner.
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+      - name: Inject AdMob Secrets
+        run: |
+          echo "GRAVITY_TORRENT_ADMOB_APP_ID=${{ secrets.GRAVITY_TORRENT_ADMOB_APP_ID }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_BANNER=${{ secrets.GRAVITY_TORRENT_ADMOB_BANNER }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_INTERSTITIAL=${{ secrets.GRAVITY_TORRENT_ADMOB_INTERSTITIAL }}" >> ${ENV_FILE}
+
+      - run: flutter build ios --release --no-codesign --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          mkdir -p build/ios/Payload
+          cp -r build/ios/iphoneos/*.app build/ios/Payload/
+          cd build/ios
+          zip -qr GravityTorrent.ipa Payload
+          mv GravityTorrent.ipa ~/artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-ios
+          path: ~/artifacts/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: [linux, linux-arm64, windows, macos, android]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Desktop
+        run: |
+          mv GravityTorrent-linux/release.zip GravityTorrent-${{ github.ref_name }}-linux-x64.zip
+          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-${{ github.ref_name }}-linux-arm64.zip
+          mv GravityTorrent-windows/release.zip GravityTorrent-${{ github.ref_name }}-windows-x64.zip
+          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.app.zip
+          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.dmg
+      - name: Mobile
+        run: |
+          mv GravityTorrent-android/*.apk GravityTorrent-${{ github.ref_name }}-android.apk
+          mv GravityTorrent-ios/*.ipa GravityTorrent-${{ github.ref_name }}-ios.ipa
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: GravityTorrent-*
+
+  continuous-release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: [linux, linux-arm64, windows, macos, android]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Desktop
+        run: |
+          mv GravityTorrent-linux/release.zip GravityTorrent-latest-successful-build-linux-x64.zip
+          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-latest-successful-build-linux-arm64.zip
+          mv GravityTorrent-windows/release.zip GravityTorrent-latest-successful-build-windows-x64.zip
+          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.app.zip
+          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.dmg
+      - name: Mobile
+        run: |
+          mv GravityTorrent-android/*.apk GravityTorrent-latest-successful-build-android.apk
+          mv GravityTorrent-ios/*.ipa GravityTorrent-latest-successful-build-ios.ipa
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-successful-build
+          make_latest: true
+          files: GravityTorrent-*

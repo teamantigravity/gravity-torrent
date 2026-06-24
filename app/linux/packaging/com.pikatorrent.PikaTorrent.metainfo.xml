@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<component type="desktop-application">
+  <id>com.teamantigravity.gravitytorrent</id>
+  <developer id="io.github.G-Ray">
+    <name>Geoffrey Bonneville</name>
+  </developer>
+
+  <name>Gravity Torrent</name>
+  <summary>Just pick a Torrent, stream and download</summary>
+
+  <url type="homepage">https://teamantigravity.com</url>
+  <url type="bugtracker">https://github.com/teamantigravity/gravity-torrent/issues</url>
+  <url type="vcs-browser">https://github.com/teamantigravity/gravity-torrent</url>
+  <url type="help">https://github.com/teamantigravity/gravity-torrent</url>
+
+  <metadata_license>CC-BY-SA-4.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <content_rating type="oars-1.0" />
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
+
+  <description>
+    <p>Stream and download torrents on all your devices.</p>
+
+    <ul>
+      <li>Stream torrents, with subtitles support</li>
+      <li>Share torrents with your friends</li>
+      <li>Available on Windows, Linux, MacOS, Android and iOS</li>
+      <li>A modern and clean user interface, with dark mode support</li>
+      <li>Add tags to your torrents</li>
+      <li>Select files to download or to pause</li>
+      <li>Browse and open files included in your torrents</li>
+      <li>Based on Transmission for low CPU and memory usage</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">com.teamantigravity.gravitytorrent.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Desktop light screenshot</caption>
+      <image>https://teamantigravity.com/desktop-light.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Desktop dark screenshot</caption>
+      <image>https://teamantigravity.com/desktop-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Mobile light screenshot</caption>
+      <image>https://teamantigravity.com/mobile-light.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Mobile dark screenshot</caption>
+      <image>https://teamantigravity.com/mobile-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Desktop player screenshot</caption>
+      <image>https://teamantigravity.com/desktop-player.png</image>
+    </screenshot>
+
+  </screenshots>
+
+  <releases>
+    <release version="0.15.0" date="2026-01-11">
+      <description>
+        <ul>
+          <li>Improved streaming performance and reliability</li>
+          <li>Added playable files filter</li>
+          <li>Multi-selection support for bulk torrent deletion</li>
+          <li>Initial translations and localization support</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.14.0" date="2025-07-27">
+      <description>
+        <ul>
+          <li>Support for audio track selection</li>
+          <li>Speed limits options</li>
+          <li>Added incoming peer port in advanced settings</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.13.0" date="2025-05-13">
+      <description>
+        <ul>
+          <li>Gravity Torrent now runs in the background, with tray icon support.</li>
+          <li>Display a notification when a download completes.</li>
+          <li>Display a warning when network is detected as unavailable.</li>
+          <li>Select wanted files with checkboxes</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.12.0" date="2025-04-10">
+      <description>
+        <ul>
+          <li>New theme and logo</li>
+          <li>Torrents streaming support</li>
+          <li>Torrents sharing support</li>
+          <li>Added donation link</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.11.0" date="2025-01-31">
+      <description>
+        <ul>
+          <li>Added open folder button</li>
+          <li>Added button to pause or download all files in a torrent</li>
+          <li>Bug fixes</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.10.0" date="2025-01-15">
+      <description>
+        <ul>
+          <li>Complete application rewrite.</li>
+          <li>Massive performance improvements</li>
+          <li>An easy to use, clean, and responsive user interface</li>
+          <li>Ability to select/unselect files to download</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.9.0" date="2023-12-13">
+      <description>
+        <ul>
+          <li>Added a library to quickly download free torrents 🍿</li>
+          <li>Allow removing a torrent while keeping data</li>
+          <li>Dark theme is now applied automatically on Linux 🐧</li>
+          <li>Added statistics dialog in about page 📈</li>
+          <li>Updated translations and German 🇩🇪 language</li>
+          <li>Interface, usability improvements, + bug fixes 🐛</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.8.1" date="2023-09-30">
+      <description>
+        <ul>
+          <li>A refreshed interface, with true dark theme support (save battery on OLED screens) 🕶️</li>
+          <li>Improve modals responsiveness 🚀</li>
+          <li>Support for any search engines urls using a placeholder %s 🔍</li>
+          <li>Initial support to display errors strings when a torrent has an issue 🔴</li>
+          <li>Bug fixes: new label input could have erratic behavior, ... 🐛</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.7.1" date="2023-09-20">
+      <description>
+        <ul>
+          <li>Display peers and ETA ✈️</li>
+          <li>Reworked files list, with progress status 🗄️</li>
+          <li>Moved speed stats to the top 🔝</li>
+          <li>Fix port number input, elements going offscreen, session info on desktop, ... 🐛</li>
+          <li>Minor UI improvements 💄</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.6.0" date="2023-09-07">
+      <description>
+        <ul>
+          <li>Sort your torrents by name, progress or size ⬇️ ⬆️</li>
+          <li>Better performances when editing or removing a torrent 🚀</li>
+          <li>Add advanced settings: uTP, DHT, LPD, PEX, port forwarding, and incoming peer port 🧲</li>
+          <li>Initial translations into russian 🇷🇺 , Brazilian portuguese 🇧🇷 , and french 🇫🇷</li>
+          <li>Added archive.org to the default search engines 🗃️</li>
+          <li>Minor UI improvements 💅</li>
+          <li>Bug fixes 🪱</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.5.3" date="2023-08-23" />
+  </releases>
+</component>
