@@ -89,9 +89,17 @@ jobs:
           flutter-version-file: app/pubspec.yaml
       - run: flutter build windows --dart-define-from-file=%ENV_FILE% --obfuscate --split-debug-info=build/symbols
       - name: Build installer
-        run: dart run inno_bundle:build --no-install-inno --no-app
+        run: dart run inno_bundle:build --no-install-inno --no-app > inno_log.txt 2>&1
       - name: Build msix
-        run: dart run msix:create --store --build-windows=false
+        run: dart run msix:create --store --build-windows=false > msix_log.txt 2>&1
+      - name: Upload debug logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs-windows
+          path: |
+            inno_log.txt
+            msix_log.txt
       - name: Prepare artifacts
         shell: bash
         run: |
