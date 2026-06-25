@@ -29,10 +29,10 @@ class _AdBannerSlotState extends State<AdBannerSlot> {
   @override
   Widget build(BuildContext context) {
     if (AdServiceProvider.instance.isAdFree) return const SizedBox.shrink();
-    
+
     final banner = AdServiceProvider.instance.buildBanner();
     if (banner == null) return const SizedBox.shrink();
-    
+
     return SafeArea(
       top: false,
       child: Material(

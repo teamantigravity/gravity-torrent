@@ -9,12 +9,9 @@ import 'package:gravity_torrent/main.dart';
 /// Run all migrations for app updates.
 /// This should be called on app startup after engine initialization.
 Future<void> runMigrations() async {
-
   await cleanupLegacyStreamingStateFile();
   await resetAllFilePriorities();
 }
-
-
 
 /// Clean up legacy session state file from old streaming implementation.
 /// This can be removed in future versions after users have migrated.
