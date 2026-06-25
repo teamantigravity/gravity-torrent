@@ -88,12 +88,14 @@ jobs:
           channel: stable
           flutter-version-file: app/pubspec.yaml
       - run: flutter build windows --dart-define-from-file=%ENV_FILE% --obfuscate --split-debug-info=build/symbols
+      - name: Prepare portable zip
+        run: |
+          mkdir ${{ github.workspace }}/artifacts
+          7z a ${{ github.workspace }}/artifacts/release.zip ./build/windows/x64/runner/Release/*
       - name: Build msix
         run: dart run msix:create --store --build-windows=false
       - name: Prepare artifacts
         run: |
-          mkdir ${{ github.workspace }}/artifacts
-          7z a ${{ github.workspace }}/artifacts/release.zip ./build/windows/x64/runner/Release/*
           mv build/windows/x64/runner/Release/*.msix ${{ github.workspace }}/artifacts/
       - uses: actions/upload-artifact@v4
         with:
