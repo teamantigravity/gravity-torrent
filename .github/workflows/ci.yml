@@ -124,6 +124,7 @@ jobs:
           set -x
           mkdir -p ../artifacts
           choco install innosetup -y
+          export PATH="$PATH:/c/Program Files (x86)/Inno Setup 6"
           dart run inno_bundle:build --no-install-inno --no-app || exit 1
           dart run msix:create --store || exit 1
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
