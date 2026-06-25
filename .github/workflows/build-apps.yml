@@ -88,10 +88,6 @@ jobs:
           channel: stable
           flutter-version-file: app/pubspec.yaml
       - run: flutter build windows --dart-define-from-file=%ENV_FILE% --obfuscate --split-debug-info=build/symbols
-      - name: Install Inno Setup
-        run: |
-          choco install innosetup -y
-          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
       - name: Build installer
         run: dart run inno_bundle:build --no-install-inno --no-app
       - name: Build msix
@@ -285,7 +281,8 @@ jobs:
         run: |
           mv GravityTorrent-linux/release.zip GravityTorrent-${{ github.ref_name }}-linux-x64.zip
           mv GravityTorrent-linux-arm64/release.zip GravityTorrent-${{ github.ref_name }}-linux-arm64.zip
-          mv GravityTorrent-windows/release.zip GravityTorrent-${{ github.ref_name }}-windows-x64.zip
+          mv "GravityTorrent-windows/Gravity Torrent.msix" GravityTorrent-${{ github.ref_name }}-windows-x64.msix
+          mv GravityTorrent-windows/*.exe GravityTorrent-${{ github.ref_name }}-windows-x64.exe
           mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.app.zip
           mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.dmg
       - name: Mobile
@@ -313,7 +310,8 @@ jobs:
         run: |
           mv GravityTorrent-linux/release.zip GravityTorrent-latest-successful-build-linux-x64.zip
           mv GravityTorrent-linux-arm64/release.zip GravityTorrent-latest-successful-build-linux-arm64.zip
-          mv GravityTorrent-windows/release.zip GravityTorrent-latest-successful-build-windows-x64.zip
+          mv "GravityTorrent-windows/Gravity Torrent.msix" GravityTorrent-latest-successful-build-windows-x64.msix
+          mv GravityTorrent-windows/*.exe GravityTorrent-latest-successful-build-windows-x64.exe
           mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.app.zip
           mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.dmg
       - name: Mobile
