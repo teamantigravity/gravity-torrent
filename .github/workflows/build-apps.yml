@@ -93,6 +93,7 @@ jobs:
       - name: Build msix
         run: dart run msix:create --store --build-windows=false
       - name: Prepare artifacts
+        shell: bash
         run: |
           mkdir -p ${{ github.workspace }}/artifacts
           mv build/windows/x64/installer/Release/*.exe ${{ github.workspace }}/artifacts/
