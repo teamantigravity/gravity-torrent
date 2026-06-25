@@ -153,6 +153,8 @@ msix_config:
   identity_name: TeamAntigravity.GravityTorrent
   logo_path: assets/icon.png
   publisher: CN=9FB02A40-50B6-49F9-92D4-AA9DC9AC1AAB
+  output_name: Gravity Torrent
+  executable_file_name: Gravity Torrent.exe
   # protocol and file extensions handling are managed programmatically
   # This is not perfect as registry entries will not be clean once the
   # app is uninstall.
@@ -165,6 +167,7 @@ msix_config:
 inno_bundle:
   id: 9FB02A40-50B6-49F9-92D4-AA9DC9AC1AAB
   name: Gravity Torrent
+  executable_name: Gravity Torrent
   publisher: Team Antigravity
   url: https://teamantigravity.github.io/gravity-torrent
   support_url: https://github.com/teamantigravity/gravity-torrent
