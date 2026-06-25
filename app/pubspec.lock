@@ -552,7 +552,7 @@ packages:
     source: hosted
     version: "0.4.10"
   inno_bundle:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: inno_bundle
       sha256: f5e7dd8aa5d55a101695928a02dcaddbaccc2394c5a53fd727cc905e00987558
