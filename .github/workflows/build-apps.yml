@@ -8,6 +8,11 @@ on:
     tags: ['*']
 env:
   ENV_FILE: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, 'beta') && 'production.env' || 'preview.env' }}
+# Cancel superseded builds on the same branch so the latest push always wins,
+# but never cancel tag/release builds.
+concurrency:
+  group: build-apps-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
   linux:
     runs-on: ubuntu-24.04
@@ -99,13 +104,17 @@ jobs:
       - name: Prepare artifacts
         shell: bash
         run: |
-          mkdir -p ${{ github.workspace }}/artifacts
-          mv build/windows/x64/installer/Release/*.exe ${{ github.workspace }}/artifacts/
-          mv build/windows/x64/runner/Release/*.msix ${{ github.workspace }}/artifacts/
+          # This step runs with working-directory ./app. Use a RELATIVE path:
+          # interpolating the Windows ${{ github.workspace }} value (which uses
+          # backslashes) into bash mangles it, so the files silently land in a
+          # bogus directory and upload-artifact finds nothing to upload.
+          mkdir -p ../artifacts
+          mv build/windows/x64/installer/Release/*.exe ../artifacts/
+          mv build/windows/x64/runner/Release/*.msix ../artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: GravityTorrent-windows
-          path: ${{ github.workspace }}/artifacts
+          path: artifacts
 
   macos:
     runs-on: macos-15
@@ -285,14 +294,15 @@ jobs:
         run: |
           mv GravityTorrent-linux/release.zip GravityTorrent-${{ github.ref_name }}-linux-x64.zip
           mv GravityTorrent-linux-arm64/release.zip GravityTorrent-${{ github.ref_name }}-linux-arm64.zip
-          mv "GravityTorrent-windows/Gravity Torrent.msix" GravityTorrent-${{ github.ref_name }}-windows-x64.msix
+          mv GravityTorrent-windows/*.msix GravityTorrent-${{ github.ref_name }}-windows-x64.msix
           mv GravityTorrent-windows/*.exe GravityTorrent-${{ github.ref_name }}-windows-x64.exe
           mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.app.zip
           mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.dmg
       - name: Mobile
         run: |
           mv GravityTorrent-android/*.apk GravityTorrent-${{ github.ref_name }}-android.apk
-          mv GravityTorrent-ios/*.ipa GravityTorrent-${{ github.ref_name }}-ios.ipa
+          # iOS is best-effort (not in this job's needs); never block the release on it.
+          mv GravityTorrent-ios/*.ipa GravityTorrent-${{ github.ref_name }}-ios.ipa 2>/dev/null || echo "iOS artifact not present; skipping."
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -314,14 +324,15 @@ jobs:
         run: |
           mv GravityTorrent-linux/release.zip GravityTorrent-latest-successful-build-linux-x64.zip
           mv GravityTorrent-linux-arm64/release.zip GravityTorrent-latest-successful-build-linux-arm64.zip
-          mv "GravityTorrent-windows/Gravity Torrent.msix" GravityTorrent-latest-successful-build-windows-x64.msix
+          mv GravityTorrent-windows/*.msix GravityTorrent-latest-successful-build-windows-x64.msix
           mv GravityTorrent-windows/*.exe GravityTorrent-latest-successful-build-windows-x64.exe
           mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.app.zip
           mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.dmg
       - name: Mobile
         run: |
           mv GravityTorrent-android/*.apk GravityTorrent-latest-successful-build-android.apk
-          mv GravityTorrent-ios/*.ipa GravityTorrent-latest-successful-build-ios.ipa
+          # iOS is best-effort (not in this job's needs); never block the rolling release on it.
+          mv GravityTorrent-ios/*.ipa GravityTorrent-latest-successful-build-ios.ipa 2>/dev/null || echo "iOS artifact not present; skipping."
 
       - name: Release
         uses: softprops/action-gh-release@v2
