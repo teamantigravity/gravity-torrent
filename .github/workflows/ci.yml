@@ -209,7 +209,7 @@ jobs:
           mkdir -p ../artifacts
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
           mkdir -p build/macos/Build/Products/Release/release
-          cp -r build/macos/Build/Products/Release/GravityTorrent.app build/macos/Build/Products/Release/release/
+          cp -r "build/macos/Build/Products/Release/Gravity Torrent.app" build/macos/Build/Products/Release/release/
           ditto -c -k build/macos/Build/Products/Release/release "../artifacts/GravityTorrent-${VERSION}-macos-${GITHUB_SHA::7}.app.zip"
       - uses: actions/upload-artifact@v4
         with:

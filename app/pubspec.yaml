@@ -152,7 +152,7 @@ msix_config:
   publisher_display_name: Team Antigravity
   identity_name: TeamAntigravity.GravityTorrent
   logo_path: assets/icon.png
-  publisher: CN=9FB02A40-50B6-49F9-92D4-AA9DC9AC1AAB
+  publisher: CN=Team Antigravity, OID.2.25.311729368913984317654407730594956997722=1
   output_name: Gravity Torrent
   executable_file_name: Gravity Torrent.exe
   # protocol and file extensions handling are managed programmatically
