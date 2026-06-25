@@ -32,9 +32,12 @@ class AdServiceMobile implements AdService {
 
   @override
   bool get canShowAds {
-    if (!_platformSupported || !_initialized || _adFreeNotifier.value)
+    if (!_platformSupported || !_initialized || _adFreeNotifier.value) {
       return false;
-    if (!RemoteConfigService.instance.showAds) return false;
+    }
+    if (!RemoteConfigService.instance.showAds) {
+      return false;
+    }
     return AdIds.useTestIds || AdIds.hasValidProductionIds;
   }
 
