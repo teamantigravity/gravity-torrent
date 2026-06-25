@@ -123,6 +123,8 @@ jobs:
         run: |
           set -x
           mkdir -p ../artifacts
+          curl -Lo is.exe "https://jrsoftware.org/download.php/is.exe"
+          ./is.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
           dart run inno_bundle:build --no-install-inno --no-app || exit 1
           dart run msix:create --store || exit 1
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr '+' '-')
