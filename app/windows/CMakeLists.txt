@@ -9,7 +9,14 @@ project(app LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "Gravity Torrent")
+#
+# NOTE: This value is used directly as the CMake target name. CMake target
+# names may not contain spaces (newer CMake/vcpkg toolchains reject them with
+# "The target name ... is reserved or not valid"). We therefore use a
+# space-free target name here and set the human-readable on-disk name via
+# OUTPUT_NAME in runner/CMakeLists.txt.
+set(BINARY_NAME "GravityTorrent")
+set(BINARY_OUTPUT_NAME "Gravity Torrent")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
