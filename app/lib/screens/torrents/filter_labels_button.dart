@@ -21,7 +21,7 @@ class FilterLabelsButton extends StatelessWidget {
       return IconButton(
           onPressed: () => _handleButtonClick(context),
           icon: Icon(Icons.filter_alt_outlined,
-              color: torrentsModel.filters.enabled ? Colors.lightBlue : null));
+              color: torrentsModel.filters.enabled ? const Color(0xFF4285F4) : null));
     });
   }
 }

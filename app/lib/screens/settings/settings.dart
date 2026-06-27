@@ -293,7 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           subtitle: Text(localizations.speedLimitsDescription,
               style: isSpeedLimitEnabled
-                  ? const TextStyle(color: Colors.cyanAccent)
+                  ? const TextStyle(color: Color(0xFF4285F4))
                   : null),
           trailing: Switch(
               value: isSpeedLimitEnabled,

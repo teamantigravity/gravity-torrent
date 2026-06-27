@@ -16,9 +16,9 @@ class Destination {
 
 const List<Destination> destinations = <Destination>[
   Destination('Torrents', Icon(Icons.downloading, size: 36),
-      Icon(Icons.downloading, size: 36, color: Colors.cyanAccent)),
+      Icon(Icons.downloading, size: 36, color: Color(0xFF4285F4))),
   Destination('Settings', Icon(Icons.settings, size: 36),
-      Icon(Icons.settings, size: 36, color: Colors.cyanAccent)),
+      Icon(Icons.settings, size: 36, color: Color(0xFF4285F4))),
 ];
 
 class Navigation extends StatefulWidget {

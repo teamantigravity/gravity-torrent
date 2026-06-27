@@ -56,7 +56,7 @@ class TorrentListTile extends StatelessWidget {
                   CircularProgressIndicator(
                       value: torrent.progress,
                       valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.cyanAccent),
+                          Color(0xFF4285F4)),
                       strokeWidth: 4),
                   Center(
                       child: IconButton(
@@ -171,7 +171,7 @@ class TorrentListTile extends StatelessWidget {
               const Icon(
                 Icons.arrow_circle_up,
                 size: 16,
-                color: Colors.lightBlue,
+                color: Color(0xFF4285F4),
               ),
               const SizedBox(width: 8),
               Expanded(

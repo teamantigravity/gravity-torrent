@@ -301,14 +301,14 @@ class TorrentPlayerState extends State<TorrentPlayer> {
               device.isMobile()
                   ? MaterialVideoControlsTheme(
                       normal: MaterialVideoControlsThemeData(
-                          seekBarThumbColor: Colors.cyanAccent,
-                          seekBarPositionColor: Colors.cyanAccent,
+                          seekBarThumbColor: const Color(0xFF4285F4),
+                          seekBarPositionColor: const Color(0xFF4285F4),
                           padding: const EdgeInsets.only(bottom: 64),
                           topButtonBar: [_buildBackButton()],
                           bottomButtonBar: _buildMobileBottomButtonBar()),
                       fullscreen: MaterialVideoControlsThemeData(
-                          seekBarThumbColor: Colors.cyanAccent,
-                          seekBarPositionColor: Colors.cyanAccent,
+                          seekBarThumbColor: const Color(0xFF4285F4),
+                          seekBarPositionColor: const Color(0xFF4285F4),
                           padding: const EdgeInsets.only(bottom: 64),
                           topButtonBar: [_buildBackButton()],
                           bottomButtonBar: _buildMobileBottomButtonBar()),
@@ -320,14 +320,14 @@ class TorrentPlayerState extends State<TorrentPlayer> {
                     )
                   : MaterialDesktopVideoControlsTheme(
                       normal: MaterialDesktopVideoControlsThemeData(
-                        seekBarThumbColor: Colors.cyanAccent,
-                        seekBarPositionColor: Colors.cyanAccent,
+                        seekBarThumbColor: const Color(0xFF4285F4),
+                        seekBarPositionColor: const Color(0xFF4285F4),
                         topButtonBar: [_buildBackButton()],
                         bottomButtonBar: _buildDesktopBottomButtonBar(),
                       ),
                       fullscreen: MaterialDesktopVideoControlsThemeData(
-                        seekBarThumbColor: Colors.cyanAccent,
-                        seekBarPositionColor: Colors.cyanAccent,
+                        seekBarThumbColor: const Color(0xFF4285F4),
+                        seekBarPositionColor: const Color(0xFF4285F4),
                         topButtonBar: [_buildBackButton()],
                         bottomButtonBar: _buildDesktopBottomButtonBar(),
                       ),

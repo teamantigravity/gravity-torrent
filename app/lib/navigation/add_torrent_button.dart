@@ -51,8 +51,8 @@ class AddTorrentButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      backgroundColor: Colors.cyanAccent,
-      foregroundColor: Colors.black,
+      backgroundColor: const Color(0xFF4285F4),
+      foregroundColor: Colors.white,
       onPressed: () => _handleClick(context),
       tooltip: 'Pick a Torrent',
       shape: isMobileSize(context) ? const CircleBorder() : null,
