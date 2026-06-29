@@ -12,6 +12,7 @@ import 'package:gravity_torrent/screens/settings/dialogs/peer_port.dart';
 import 'package:gravity_torrent/screens/settings/dialogs/reset_torrent_settings.dart';
 import 'package:gravity_torrent/screens/settings/dialogs/theme_selector.dart';
 import 'package:gravity_torrent/screens/settings/upgrade_page.dart';
+import 'package:gravity_torrent/widgets/ad_banner_slot.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/utils/string_extensions.dart';
 import 'package:gravity_torrent/utils/update.dart';
@@ -245,124 +246,131 @@ class _SettingsScreenState extends State<SettingsScreen> {
           sessionModel.session?.speedLimitDownEnabled == true ||
               sessionModel.session?.speedLimitUpEnabled == true;
 
-      return ListView(children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: Text(localizations.appSettings,
-              style: Theme.of(context).textTheme.titleLarge),
-        ),
-        ListTile(
-            onTap: () => showThemeDialog(context),
-            leading: const Icon(Icons.dark_mode),
-            title: Text(localizations.theme),
-            subtitle: Text(app.theme.name.capitalize())),
-        ListTile(
-            onTap: () => showLocaleDialog(context),
-            leading: const Icon(Icons.language),
-            title: Text(localizations.language),
-            subtitle: Text(localeNames[app.locale] ?? app.locale)),
-        // Hide update check option if app is distributed through an app store
-        if (canCheckForUpdate)
-          ListTile(
-            leading: const Icon(Icons.update),
-            title: Text(localizations.checkForUpdates),
-            trailing: Switch(
-                value: app.checkForUpdate,
-                onChanged: _handlecheckForUpdateToggle),
-            subtitle: Text(localizations.checkForUpdatesDescription),
-          ),
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, top: 16),
-          child: Text(localizations.torrentsSettings,
-              style: Theme.of(context).textTheme.titleLarge),
-        ),
-        ListTile(
-            onTap: isMobile() ? null : () => handlePickFolder(context),
-            leading: const Icon(Icons.folder_open),
-            title: Text(localizations.downloadDirectory),
-            subtitle: Text(downloadDir)),
-        ListTile(
-            onTap: showMaximumActiveDownloadDialog,
-            leading: const Icon(Icons.downloading),
-            title: Text(localizations.maxActiveDownloads),
-            subtitle: Text(downloadQueueSize.toString())),
-        ListTile(
-          leading: const Icon(Icons.speed),
-          title: Text(
-            localizations.enableSpeedLimits,
-          ),
-          subtitle: Text(localizations.speedLimitsDescription,
-              style: isSpeedLimitEnabled
-                  ? const TextStyle(color: Color(0xFF4285F4))
-                  : null),
-          trailing: Switch(
-              value: isSpeedLimitEnabled,
-              onChanged: (bool _) {
-                _handleEnableSpeedLimits(!isSpeedLimitEnabled);
-              }),
-        ),
-        ListTile(
-            enabled: isSpeedLimitEnabled,
-            onTap: showSpeedLimitDownDialog,
-            leading: const Icon(Icons.arrow_circle_down),
-            title: Text(localizations.downloadSpeedLimit),
-            subtitle: Text(
-                '${sessionModel.session?.speedLimitDown.toString()} ${localizations.kilobytesPerSecond}')),
-        ListTile(
-            enabled: isSpeedLimitEnabled,
-            onTap: showSpeedLimitUpDialog,
-            leading: const Icon(Icons.arrow_circle_up),
-            title: Text(localizations.uploadSpeedLimit),
-            subtitle: Text(
-                '${sessionModel.session?.speedLimitUp.toString()} ${localizations.kilobytesPerSecond}')),
-        ListTile(
-            leading: const Icon(Icons.settings),
-            trailing: Switch(
-                value: showAdvancedSettings,
-                onChanged: (v) => {
-                      setState(() {
-                        showAdvancedSettings = !showAdvancedSettings;
-                      })
+      return Column(
+        children: [
+          Expanded(
+            child: ListView(children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Text(localizations.appSettings,
+                    style: Theme.of(context).textTheme.titleLarge),
+              ),
+              ListTile(
+                  onTap: () => showThemeDialog(context),
+                  leading: const Icon(Icons.dark_mode),
+                  title: Text(localizations.theme),
+                  subtitle: Text(app.theme.name.capitalize())),
+              ListTile(
+                  onTap: () => showLocaleDialog(context),
+                  leading: const Icon(Icons.language),
+                  title: Text(localizations.language),
+                  subtitle: Text(localeNames[app.locale] ?? app.locale)),
+              // Hide update check option if app is distributed through an app store
+              if (canCheckForUpdate)
+                ListTile(
+                  leading: const Icon(Icons.update),
+                  title: Text(localizations.checkForUpdates),
+                  trailing: Switch(
+                      value: app.checkForUpdate,
+                      onChanged: _handlecheckForUpdateToggle),
+                  subtitle: Text(localizations.checkForUpdatesDescription),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, top: 16),
+                child: Text(localizations.torrentsSettings,
+                    style: Theme.of(context).textTheme.titleLarge),
+              ),
+              ListTile(
+                  onTap: isMobile() ? null : () => handlePickFolder(context),
+                  leading: const Icon(Icons.folder_open),
+                  title: Text(localizations.downloadDirectory),
+                  subtitle: Text(downloadDir)),
+              ListTile(
+                  onTap: showMaximumActiveDownloadDialog,
+                  leading: const Icon(Icons.downloading),
+                  title: Text(localizations.maxActiveDownloads),
+                  subtitle: Text(downloadQueueSize.toString())),
+              ListTile(
+                leading: const Icon(Icons.speed),
+                title: Text(
+                  localizations.enableSpeedLimits,
+                ),
+                subtitle: Text(localizations.speedLimitsDescription,
+                    style: isSpeedLimitEnabled
+                        ? const TextStyle(color: Color(0xFF4285F4))
+                        : null),
+                trailing: Switch(
+                    value: isSpeedLimitEnabled,
+                    onChanged: (bool _) {
+                      _handleEnableSpeedLimits(!isSpeedLimitEnabled);
                     }),
-            title: Text(localizations.showAdvancedSettings)),
-        if (showAdvancedSettings) ...[
-          ListTile(
-              onTap: showPeerPortDialog,
-              leading: const Icon(Icons.arrow_right_alt),
-              title: Text(localizations.listeningPort),
-              subtitle: Text(peerPort.toString())),
-        ],
-        ListTile(
-            onTap: showResetTorrentsSettingsDialog,
-            leading: const Icon(Icons.settings_backup_restore),
-            title: Text(localizations.resetTorrentsSettings)),
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, top: 16),
-          child: Text(localizations.about,
-              style: Theme.of(context).textTheme.titleLarge),
-        ),
-        ListTile(
-            leading: const Icon(Icons.bolt),
-            // onTap: () => showThemeDialog(context),
-            title: Text(localizations.version),
-            subtitle: Text(app.version)),
-        if (!AdServiceProvider.instance.isAdFree)
-          ListTile(
-            leading: const Icon(Icons.workspace_premium_outlined),
-            title: Text(localizations.removeAds),
-            subtitle: Text(localizations.premiumSubtitle),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const UpgradePage()),
-            ),
+              ),
+              ListTile(
+                  enabled: isSpeedLimitEnabled,
+                  onTap: showSpeedLimitDownDialog,
+                  leading: const Icon(Icons.arrow_circle_down),
+                  title: Text(localizations.downloadSpeedLimit),
+                  subtitle: Text(
+                      '${sessionModel.session?.speedLimitDown.toString()} ${localizations.kilobytesPerSecond}')),
+              ListTile(
+                  enabled: isSpeedLimitEnabled,
+                  onTap: showSpeedLimitUpDialog,
+                  leading: const Icon(Icons.arrow_circle_up),
+                  title: Text(localizations.uploadSpeedLimit),
+                  subtitle: Text(
+                      '${sessionModel.session?.speedLimitUp.toString()} ${localizations.kilobytesPerSecond}')),
+              ListTile(
+                  leading: const Icon(Icons.settings),
+                  trailing: Switch(
+                      value: showAdvancedSettings,
+                      onChanged: (v) => {
+                            setState(() {
+                              showAdvancedSettings = !showAdvancedSettings;
+                            })
+                          }),
+                  title: Text(localizations.showAdvancedSettings)),
+              if (showAdvancedSettings) ...[
+                ListTile(
+                    onTap: showPeerPortDialog,
+                    leading: const Icon(Icons.arrow_right_alt),
+                    title: Text(localizations.listeningPort),
+                    subtitle: Text(peerPort.toString())),
+              ],
+              ListTile(
+                  onTap: showResetTorrentsSettingsDialog,
+                  leading: const Icon(Icons.settings_backup_restore),
+                  title: Text(localizations.resetTorrentsSettings)),
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, top: 16),
+                child: Text(localizations.about,
+                    style: Theme.of(context).textTheme.titleLarge),
+              ),
+              ListTile(
+                  leading: const Icon(Icons.bolt),
+                  // onTap: () => showThemeDialog(context),
+                  title: Text(localizations.version),
+                  subtitle: Text(app.version)),
+              if (!AdServiceProvider.instance.isAdFree)
+                ListTile(
+                  leading: const Icon(Icons.workspace_premium_outlined),
+                  title: Text(localizations.removeAds),
+                  subtitle: Text(localizations.premiumSubtitle),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                        builder: (_) => const UpgradePage()),
+                  ),
+                ),
+              ListTile(
+                leading: const Icon(Icons.bug_report),
+                title: Text(localizations.reportBug),
+                onTap: () => launchUrl(Uri.parse(
+                    'https://github.com/teamantigravity/gravity-torrent/issues/new/choose')),
+              ),
+            ]),
           ),
-
-        ListTile(
-          leading: const Icon(Icons.bug_report),
-          title: Text(localizations.reportBug),
-          onTap: () => launchUrl(Uri.parse(
-              'https://github.com/teamantigravity/gravity-torrent/issues/new/choose')),
-        ),
-      ]);
+          const AdBannerSlot(),
+        ],
+      );
     });
   }
 }

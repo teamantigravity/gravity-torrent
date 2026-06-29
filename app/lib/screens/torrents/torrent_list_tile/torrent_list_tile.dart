@@ -5,6 +5,7 @@ import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
 import 'package:gravity_torrent/screens/torrents/torrent_list_tile/torrent_status.dart';
+import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/utils/app_links.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
@@ -41,6 +42,7 @@ class TorrentListTile extends StatelessWidget {
           if (isSelectionMode) {
             onSelectionChanged?.call();
           } else {
+            AdServiceProvider.instance.showInterstitialIfReady();
             showDeviceSheet(context, torrent.name,
                 TorrentDetailsModalSheet(id: torrent.id));
           }
@@ -93,14 +95,17 @@ class TorrentListTile extends StatelessWidget {
                 children: [
                   IconButton(
                       tooltip: localizations.play,
-                      onPressed: () => showDeviceSheet(
-                          context,
-                          torrent.name,
-                          TorrentDetailsModalSheet(
-                            id: torrent.id,
-                            initialTab: 0,
-                            showOnlyPlayableFiles: true,
-                          )),
+                      onPressed: () {
+                        AdServiceProvider.instance.showInterstitialIfReady();
+                        showDeviceSheet(
+                            context,
+                            torrent.name,
+                            TorrentDetailsModalSheet(
+                              id: torrent.id,
+                              initialTab: 0,
+                              showOnlyPlayableFiles: true,
+                            ));
+                      },
                       icon: const Icon(
                         Icons.play_circle_outlined,
                       )),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gravity_torrent/navigation/add_torrent_button.dart';
+import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
 
@@ -42,20 +43,24 @@ class _Navigation extends State<Navigation> {
   void _handleNavigationBarDestinationSelected(int selectedIndex) {
     if (selectedIndex == 0) {
       context.go('/torrents');
+      AdServiceProvider.instance.showInterstitialIfReady();
     }
 
     if (selectedIndex == 2) {
       context.go('/settings');
+      AdServiceProvider.instance.showInterstitialIfReady();
     }
   }
 
   void _handleNavigationRailDestinationSelected(int selectedIndex) {
     if (selectedIndex == 0) {
       context.go('/torrents');
+      AdServiceProvider.instance.showInterstitialIfReady();
     }
 
     if (selectedIndex == 1) {
       context.go('/settings');
+      AdServiceProvider.instance.showInterstitialIfReady();
     }
   }
 
