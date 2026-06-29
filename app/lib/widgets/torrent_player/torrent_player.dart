@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:gravity_torrent/engine/file.dart' as torrent_file;
@@ -245,6 +246,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       icon: const Icon(Icons.arrow_back, color: Colors.white),
       onPressed: () {
         Navigator.pop(context);
+        AdServiceProvider.instance.showInterstitialIfReady();
       },
     );
   }

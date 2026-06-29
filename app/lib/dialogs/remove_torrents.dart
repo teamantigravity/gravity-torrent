@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 
 class RemoveTorrentsDialog extends StatelessWidget {
   final List<Torrent> torrents;
@@ -14,6 +15,7 @@ class RemoveTorrentsDialog extends StatelessWidget {
     final torrentIds = torrents.map((t) => t.id).toList();
     await engine.removeTorrents(torrentIds, withData);
     await engine.fetchTorrents();
+    AdServiceProvider.instance.showInterstitialIfReady();
   }
 
   @override

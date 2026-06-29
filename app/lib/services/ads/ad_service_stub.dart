@@ -32,6 +32,9 @@ class AdServiceStub implements AdService {
   void showInterstitialIfReady() {}
 
   @override
+  void showAppOpenAdIfReady() {}
+
+  @override
   void dispose() {
     _adFreeNotifier.dispose();
   }

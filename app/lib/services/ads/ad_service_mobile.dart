@@ -9,11 +9,15 @@ import 'package:gravity_torrent/services/remote_config/remote_config_service.dar
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// AdMob-backed implementation. Only active on Android/iOS when remote config allows.
-class AdServiceMobile implements AdService {
+class AdServiceMobile with WidgetsBindingObserver implements AdService {
   bool _initialized = false;
   final ValueNotifier<bool> _adFreeNotifier = ValueNotifier<bool>(false);
   InterstitialAd? _interstitial;
   int _interstitialRetries = 0;
+
+  AppOpenAd? _appOpenAd;
+  bool _isShowingAd = false;
+  bool _firstAppOpenShown = false;
 
   static const _adFreeKey = 'gravity_torrent_ad_free';
 
@@ -38,7 +42,7 @@ class AdServiceMobile implements AdService {
     if (!RemoteConfigService.instance.showAds) {
       return false;
     }
-    return AdIds.useTestIds || AdIds.hasValidProductionIds;
+    return AdIds.hasValidProductionIds;
   }
 
   @override
@@ -57,10 +61,19 @@ class AdServiceMobile implements AdService {
       }
       await MobileAds.instance.initialize();
       _initialized = true;
+      WidgetsBinding.instance.addObserver(this);
       _preloadInterstitial();
+      _preloadAppOpenAd();
     } catch (e) {
       debugPrint('[AdService] init failed (continuing without ads): $e');
       _initialized = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      showAppOpenAdIfReady();
     }
   }
 
@@ -72,6 +85,8 @@ class AdServiceMobile implements AdService {
     if (value) {
       await _interstitial?.dispose();
       _interstitial = null;
+      await _appOpenAd?.dispose();
+      _appOpenAd = null;
     }
   }
 
@@ -85,6 +100,49 @@ class AdServiceMobile implements AdService {
   void showInterstitialIfReady() {
     if (!canShowAds || _interstitial == null) return;
     unawaited(_interstitial!.show());
+  }
+
+  @override
+  void showAppOpenAdIfReady() {
+    if (!canShowAds || _appOpenAd == null || _isShowingAd) return;
+    _firstAppOpenShown = true;
+    unawaited(_appOpenAd!.show());
+  }
+
+  void _preloadAppOpenAd() {
+    if (!canShowAds || _appOpenAd != null) return;
+    AppOpenAd.load(
+      adUnitId: AdIds.appOpen,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd = ad;
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (ad) {
+              _isShowingAd = true;
+            },
+            onAdDismissedFullScreenContent: (ad) {
+              _isShowingAd = false;
+              ad.dispose();
+              _appOpenAd = null;
+              _preloadAppOpenAd();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              _isShowingAd = false;
+              ad.dispose();
+              _appOpenAd = null;
+              _preloadAppOpenAd();
+            },
+          );
+          if (!_firstAppOpenShown) {
+            showAppOpenAdIfReady();
+          }
+        },
+        onAdFailedToLoad: (_) {
+          _appOpenAd = null;
+        },
+      ),
+    );
   }
 
   void _preloadInterstitial() {
@@ -123,8 +181,11 @@ class AdServiceMobile implements AdService {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_interstitial?.dispose());
+    unawaited(_appOpenAd?.dispose());
     _interstitial = null;
+    _appOpenAd = null;
   }
 }
 

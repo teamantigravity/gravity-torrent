@@ -17,5 +17,8 @@ abstract class AdService {
   /// Non-blocking interstitial after a natural break (never during critical flows).
   void showInterstitialIfReady();
 
+  /// Non-blocking app open ad.
+  void showAppOpenAdIfReady();
+
   void dispose();
 }
