@@ -1,0 +1,474 @@
+name: Build apps
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-apps.yml'
+    tags: ['*']
+env:
+  ENV_FILE: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, 'beta') && 'production.env' || 'preview.env' }}
+# Cancel superseded builds on the same branch so the latest push always wins,
+# but never cancel tag/release builds.
+concurrency:
+  group: build-apps-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+          cache: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: ${{ runner.os }}-linux
+      - run: flutter build linux --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          7z a ~/artifacts/release.zip ./build/linux/x64/release/bundle/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-linux
+          path: ~/artifacts/
+
+  linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: master # channel stable does not support arm64 for now
+          flutter-version-file: app/pubspec.yaml
+          cache: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-arm64-pub-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-pub-
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: ${{ runner.os }}-linux-arm64
+      - run: flutter build linux --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          7z a ~/artifacts/release.zip ./build/linux/arm64/release/bundle/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-linux-arm64
+          path: ~/artifacts/
+
+  windows:
+    runs-on: windows-2022
+    env:
+      # Workaround for https://gitlab.kitware.com/cmake/cmake/-/issues/25936
+      TRANSMISSION_PREFIX: ${{ github.workspace }}/transmission-prefix
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - name: Set up Flutter
+        # yq is not installed on windows on v2
+        uses: subosito/flutter-action@v2.18.0
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+          cache: true
+      - name: Set up sccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          variant: sccache
+          key: ${{ runner.os }}-windows
+      - run: flutter build windows --dart-define-from-file=%ENV_FILE% --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          # The previous single-shot download of is.exe had no retry or
+          # validation, so a transient network blip (or an HTML error page
+          # served instead of the installer) broke Windows packaging even
+          # though `flutter build windows` had already succeeded. Retry with
+          # validation, then fall back to Chocolatey (bundled on the runner).
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://jrsoftware.org/download.php/is.exe'
+          $out = 'is.exe'
+          $installed = $false
+          for ($i = 1; $i -le 5; $i++) {
+            try {
+              Write-Host "Downloading Inno Setup (attempt $i)..."
+              Invoke-WebRequest -Uri $url -OutFile $out -MaximumRedirection 5
+              if ((Get-Item $out).Length -lt 1MB) {
+                throw "Downloaded file is too small; likely not the installer"
+              }
+              $p = Start-Process -FilePath $out `
+                -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' `
+                -Wait -PassThru
+              if ($p.ExitCode -ne 0) {
+                throw "Installer exited with code $($p.ExitCode)"
+              }
+              $installed = $true
+              break
+            } catch {
+              Write-Warning "Attempt $i failed: $_"
+              Start-Sleep -Seconds ([Math]::Min(30, 5 * $i))
+            }
+          }
+          if (-not $installed) {
+            Write-Host "Direct download failed; falling back to Chocolatey..."
+            choco install innosetup -y --no-progress
+          }
+      - name: Build installer
+        run: dart run inno_bundle:build --no-install-inno --no-app
+      - name: Build msix
+        run: dart run msix:create --store --build-windows=false
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          # This step runs with working-directory ./app. Use a RELATIVE path:
+          # interpolating the Windows ${{ github.workspace }} value (which uses
+          # backslashes) into bash mangles it, so the files silently land in a
+          # bogus directory and upload-artifact finds nothing to upload.
+          mkdir -p ../artifacts
+          mv build/windows/x64/installer/Release/*.exe ../artifacts/
+          mv build/windows/x64/runner/Release/*.msix ../artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-windows
+          path: artifacts
+
+  macos:
+    runs-on: macos-15
+    env:
+      # Should be same as defined in /app/macos/Runner.xcodeproj
+      MACOSX_DEPLOYMENT_TARGET: 10.14
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: install dependencies
+        run: brew install create-dmg
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+          cache: true
+
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: ${{ runner.os }}-macos
+      - name: Build
+        run: flutter build macos --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+
+      - name: Create .dmg
+        run: |
+          cd build/macos/Build/Products/Release/
+          mv *.app GravityTorrent.app
+          create-dmg \
+            --volname "Application Installer" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "GravityTorrent.app" 200 190 \
+            --hide-extension "GravityTorrent.app" \
+            --app-drop-link 600 185 \
+            GravityTorrent.dmg ./GravityTorrent.app
+
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          mv build/macos/Build/Products/Release/*.dmg ~/artifacts/
+          mkdir -p build/macos/Build/Products/Release/release
+          cp -r build/macos/Build/Products/Release/GravityTorrent.app build/macos/Build/Products/Release/release/
+          ditto -c -k build/macos/Build/Products/Release/release ~/artifacts/release.app.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-macos
+          path: ~/artifacts/
+
+  android:
+    runs-on: ubuntu-24.04
+    env:
+      VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
+      SOURCE_DATE_EPOCH: 0
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+
+      - name: Decode android-keystore.jks
+        env:
+          ENCODED_STRING: ${{ secrets.ANDROID_KEY_STORE }}
+        run: echo $ENCODED_STRING | base64 -di > android/app/android-keystore.jks
+
+      - name: Decode key.properties
+        env:
+          ENCODED_STRING: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: echo $ENCODED_STRING | base64 -di > android/key.properties
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+          cache: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build
+
+      - name: Inject AdMob Secrets
+        run: |
+          echo "GRAVITY_TORRENT_ADMOB_APP_ID=${{ secrets.GRAVITY_TORRENT_ADMOB_APP_ID }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_BANNER=${{ secrets.GRAVITY_TORRENT_ADMOB_BANNER }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_INTERSTITIAL=${{ secrets.GRAVITY_TORRENT_ADMOB_INTERSTITIAL }}" >> ${ENV_FILE}
+
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: ${{ runner.os }}-android
+      - run: flutter build apk --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - run: flutter build appbundle --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts-apk
+          mkdir ~/artifacts-aab
+          cp ./build/app/outputs/flutter-apk/*.apk ~/artifacts-apk/
+          cp ./build/app/outputs/bundle/release/*.aab ~/artifacts-aab/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-android-apk
+          path: ~/artifacts-apk/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-android-aab
+          path: ~/artifacts-aab/
+
+  ios:
+    runs-on: macos-15
+    env:
+      # Do not target simulator
+      TARGET_IOS_DEVICE: true
+      IPHONEOS_DEPLOYMENT_TARGET: 12 # Should be same as defined in /app/ios/Runner.
+    defaults:
+      run:
+        working-directory: ./app
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/app/vcpkg
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: app/pubspec.yaml
+          cache: true
+      - name: Inject AdMob Secrets
+        run: |
+          echo "GRAVITY_TORRENT_ADMOB_APP_ID=${{ secrets.GRAVITY_TORRENT_ADMOB_APP_ID }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_BANNER=${{ secrets.GRAVITY_TORRENT_ADMOB_BANNER }}" >> ${ENV_FILE}
+          echo "GRAVITY_TORRENT_ADMOB_INTERSTITIAL=${{ secrets.GRAVITY_TORRENT_ADMOB_INTERSTITIAL }}" >> ${ENV_FILE}
+
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-ios-pub-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-ios-pub-
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: ${{ runner.os }}-ios
+      - run: flutter build ios --release --no-codesign --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - name: Prepare artifacts
+        run: |
+          mkdir ~/artifacts
+          mkdir -p build/ios/Payload
+          cp -r build/ios/iphoneos/*.app build/ios/Payload/
+          cd build/ios
+          zip -qr GravityTorrent.ipa Payload
+          mv GravityTorrent.ipa ~/artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GravityTorrent-ios
+          path: ~/artifacts/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: [linux, linux-arm64, windows, macos, android]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Desktop
+        run: |
+          mv GravityTorrent-linux/release.zip GravityTorrent-${{ github.ref_name }}-linux-x64.zip
+          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-${{ github.ref_name }}-linux-arm64.zip
+          mv GravityTorrent-windows/*.msix GravityTorrent-${{ github.ref_name }}-windows-x64.msix
+          mv GravityTorrent-windows/*.exe GravityTorrent-${{ github.ref_name }}-windows-x64.exe
+          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.app.zip
+          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.dmg
+      - name: Mobile
+        run: |
+          mv GravityTorrent-android-apk/*.apk GravityTorrent-${{ github.ref_name }}-android.apk
+          mv GravityTorrent-android-aab/*.aab GravityTorrent-${{ github.ref_name }}-android.aab
+          # iOS is best-effort (not in this job's needs); never block the release on it.
+          mv GravityTorrent-ios/*.ipa GravityTorrent-${{ github.ref_name }}-ios.ipa 2>/dev/null || echo "iOS artifact not present; skipping."
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: GravityTorrent-*
+
+  continuous-release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs: [linux, linux-arm64, windows, macos, android]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Desktop
+        run: |
+          mv GravityTorrent-linux/release.zip GravityTorrent-latest-successful-build-linux-x64.zip
+          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-latest-successful-build-linux-arm64.zip
+          mv GravityTorrent-windows/*.msix GravityTorrent-latest-successful-build-windows-x64.msix
+          mv GravityTorrent-windows/*.exe GravityTorrent-latest-successful-build-windows-x64.exe
+          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.app.zip
+          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.dmg
+      - name: Mobile
+        run: |
+          mv GravityTorrent-android-apk/*.apk GravityTorrent-latest-successful-build-android.apk
+          mv GravityTorrent-android-aab/*.aab GravityTorrent-latest-successful-build-android.aab
+          # iOS is best-effort (not in this job's needs); never block the rolling release on it.
+          mv GravityTorrent-ios/*.ipa GravityTorrent-latest-successful-build-ios.ipa 2>/dev/null || echo "iOS artifact not present; skipping."
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-successful-build
+          make_latest: true
+          files: GravityTorrent-*

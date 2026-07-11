@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!-- Outer ring paths -->
+  <!-- Top Left: Green -->
+  <path d="M 50 15 A 35 35 0 0 0 15 50" fill="none" stroke="#34A853" stroke-width="10" stroke-linecap="round"/>
+  <!-- Bottom Left: Yellow -->
+  <path d="M 15 50 A 35 35 0 0 0 50 85" fill="none" stroke="#FBBC05" stroke-width="10" stroke-linecap="round"/>
+  <!-- Bottom Right: Red -->
+  <path d="M 50 85 A 35 35 0 0 0 85 50" fill="none" stroke="#EA4335" stroke-width="10" stroke-linecap="round"/>
+  <!-- Top Right: Blue -->
+  <path d="M 85 50 A 35 35 0 0 0 50 15" fill="none" stroke="#4285F4" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Center blue circle -->
+  <circle cx="50" cy="50" r="15" fill="#4285F4" />
+
+  <!-- Small red dot (top right) -->
+  <circle cx="66" cy="34" r="4.5" fill="#EA4335" />
+</svg>

@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Fast quality gate only. All platform builds and the rolling
+# `latest-successful-build` release are owned by build-apps.yml, so CI no
+# longer duplicates those heavy jobs (which previously got cancelled on every
+# new push and raced build-apps.yml on the release tag).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.41.8"
+
+jobs:
+  # Single quality gate. Previously format/analyze/test were three separate
+  # jobs, each spinning up a fresh runner + Flutter SDK + `pub get`. Merging
+  # them removes two redundant environment setups (and two extra `pub get`s),
+  # cutting wall-clock time and runner minutes. The pub package cache is keyed
+  # on pubspec.lock so dependency resolution is skipped on cache hits.
+  quality:
+    name: Format, analyze & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: dart format --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
