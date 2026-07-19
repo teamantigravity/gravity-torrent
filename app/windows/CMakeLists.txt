@@ -15,8 +15,8 @@ project(app LANGUAGES CXX)
 # "The target name ... is reserved or not valid"). We therefore use a
 # space-free target name here and set the human-readable on-disk name via
 # OUTPUT_NAME in runner/CMakeLists.txt.
-set(BINARY_NAME "GravityTorrent")
-set(BINARY_OUTPUT_NAME "Gravity Torrent")
+set(BINARY_NAME "gravity_torrent")
+set(BINARY_OUTPUT_NAME "gravity_torrent")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

@@ -6,8 +6,11 @@ class MaximumActiveDownloadEditorDialog extends StatefulWidget {
   final void Function(int) onSave;
   final int currentValue;
 
-  const MaximumActiveDownloadEditorDialog(
-      {super.key, required this.onSave, required this.currentValue});
+  const MaximumActiveDownloadEditorDialog({
+    super.key,
+    required this.onSave,
+    required this.currentValue,
+  });
 
   @override
   State<MaximumActiveDownloadEditorDialog> createState() =>
@@ -22,7 +25,8 @@ class _MaximumActiveDownloadEditorState
   void initState() {
     super.initState();
     _maximumActiveDownloadsController = TextEditingController.fromValue(
-        TextEditingValue(text: widget.currentValue.toString()));
+      TextEditingValue(text: widget.currentValue.toString()),
+    );
   }
 
   @override
@@ -48,9 +52,7 @@ class _MaximumActiveDownloadEditorState
             controller: _maximumActiveDownloadsController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              labelText: localizations.enterNumber,
-            ),
+            decoration: InputDecoration(labelText: localizations.enterNumber),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return localizations.emptyNumber;

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
@@ -16,7 +17,7 @@ enum TorrentStatus {
   queuedToDownload,
   downloading,
   queuedToSeed,
-  seeding
+  seeding,
 }
 
 class TorrentBase {
@@ -56,36 +57,37 @@ abstract class Torrent extends TorrentBase {
   final int speedLimitUp;
   final DateTime doneDate;
 
-  Torrent(
-      {required super.id,
-      required super.labels,
-      required this.name,
-      required this.progress,
-      required this.status,
-      required this.size,
-      required this.rateDownload,
-      required this.rateUpload,
-      required this.downloadedEver,
-      required this.uploadedEver,
-      required this.eta,
-      required this.pieces,
-      required this.pieceSize,
-      required this.errorString,
-      required this.pieceCount,
-      required this.location,
-      required this.isPrivate,
-      required this.addedDate,
-      required this.comment,
-      required this.creator,
-      required this.files,
-      required this.peersConnected,
-      required this.magnetLink,
-      required this.sequentialDownload,
-      required this.speedLimitDownEnabled,
-      required this.speedLimitUpEnabled,
-      required this.speedLimitDown,
-      required this.speedLimitUp,
-      required this.doneDate});
+  Torrent({
+    required super.id,
+    required super.labels,
+    required this.name,
+    required this.progress,
+    required this.status,
+    required this.size,
+    required this.rateDownload,
+    required this.rateUpload,
+    required this.downloadedEver,
+    required this.uploadedEver,
+    required this.eta,
+    required this.pieces,
+    required this.pieceSize,
+    required this.errorString,
+    required this.pieceCount,
+    required this.location,
+    required this.isPrivate,
+    required this.addedDate,
+    required this.comment,
+    required this.creator,
+    required this.files,
+    required this.peersConnected,
+    required this.magnetLink,
+    required this.sequentialDownload,
+    required this.speedLimitDownEnabled,
+    required this.speedLimitUpEnabled,
+    required this.speedLimitDown,
+    required this.speedLimitUp,
+    required this.doneDate,
+  });
 
   // Start the torrent
   Future<void> start();
@@ -114,13 +116,14 @@ abstract class Torrent extends TorrentBase {
     int? uploadLimitKbps,
   });
 
-  Future setFilesPriority(
-      {List<int>? priorityHigh,
-      List<int>? priorityLow,
-      List<int>? priorityNormal});
+  Future setFilesPriority({
+    List<int>? priorityHigh,
+    List<int>? priorityLow,
+    List<int>? priorityNormal,
+  });
 
-  startStreaming(File file) async {
-    debugPrint('starting streaming ${file.name}');
+  Future<void> startStreaming(File file) async {
+    if (kDebugMode) debugPrint('starting streaming ${file.name}');
     // File already completed
     if (file.bytesCompleted == file.length) {
       // Do nothing if file is already completed.
@@ -131,6 +134,11 @@ abstract class Torrent extends TorrentBase {
     await start();
 
     final fileIndex = files.indexWhere((f) => f.name == file.name);
+    if (fileIndex == -1) {
+      throw StateError(
+        'Streaming file ${file.name} not found in torrent $name',
+      );
+    }
 
     // File indices for streaming file and detected associated subtitles
     final List<int> highPriorityFileIndices = [fileIndex];
@@ -153,8 +161,8 @@ abstract class Torrent extends TorrentBase {
     await setSequentialDownload(true);
   }
 
-  stopStreaming() async {
-    debugPrint('stopping streaming');
+  Future<void> stopStreaming() async {
+    if (kDebugMode) debugPrint('stopping streaming');
     await setSequentialDownload(false);
 
     // Reset all files to normal priority
@@ -162,8 +170,8 @@ abstract class Torrent extends TorrentBase {
     await setFilesPriority(priorityNormal: allFileIndices);
   }
 
-  hasLoadedPieces(List<int> piecesToTest) {
-    return piecesToTest.every((p) => pieces[p]);
+  bool hasLoadedPieces(List<int> piecesToTest) {
+    return piecesToTest.every((p) => p >= 0 && p < pieces.length && pieces[p]);
   }
 
   Future openFolder(BuildContext context) async {
@@ -204,14 +212,16 @@ abstract class Torrent extends TorrentBase {
             : result.message.isNotEmpty
                 ? result.message
                 : 'Unknown error',
-        _ => 'Unknown error'
+        _ => 'Unknown error',
       };
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error opening torrent location: $errorMessage.'),
-          backgroundColor: Colors.orange,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening torrent location: $errorMessage.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     }
   }

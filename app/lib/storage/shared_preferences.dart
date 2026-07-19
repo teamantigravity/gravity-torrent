@@ -20,4 +20,9 @@ class SharedPrefsStorage {
     var prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
   }
+
+  static remove(String key) async {
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
 }

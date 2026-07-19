@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:yaru/yaru.dart';
 
@@ -8,7 +10,7 @@ class WindowTitleBar extends StatefulWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
 
   @override
-  Size get preferredSize => const Size(0, kYaruTitleBarHeight);
+  Size get preferredSize => Size(0, Platform.isLinux ? kYaruTitleBarHeight : 0);
 
   @override
   State<WindowTitleBar> createState() => _WindowTitleBarState();
@@ -17,6 +19,9 @@ class WindowTitleBar extends StatefulWidget implements PreferredSizeWidget {
 class _WindowTitleBarState extends State<WindowTitleBar> {
   @override
   Widget build(BuildContext context) {
+    if (!Platform.isLinux) {
+      return const SizedBox.shrink();
+    }
     return StreamBuilder<YaruWindowState>(
       stream: YaruWindow.states(context),
       builder: (context, snapshot) {

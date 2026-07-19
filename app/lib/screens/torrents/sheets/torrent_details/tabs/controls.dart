@@ -18,8 +18,8 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
   late bool _sequential;
   late bool _downLimitEnabled;
   late bool _upLimitEnabled;
-  late TextEditingController _downController;
-  late TextEditingController _upController;
+  TextEditingController? _downController;
+  TextEditingController? _upController;
   bool _saving = false;
 
   @override
@@ -40,6 +40,8 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     _sequential = torrent.sequentialDownload;
     _downLimitEnabled = torrent.speedLimitDownEnabled;
     _upLimitEnabled = torrent.speedLimitUpEnabled;
+    _downController?.dispose();
+    _upController?.dispose();
     _downController = TextEditingController(
       text: torrent.speedLimitDown > 0 ? '${torrent.speedLimitDown}' : '',
     );
@@ -50,8 +52,8 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
 
   @override
   void dispose() {
-    _downController.dispose();
-    _upController.dispose();
+    _downController?.dispose();
+    _upController?.dispose();
     super.dispose();
   }
 
@@ -71,11 +73,11 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       int? down;
       int? up;
       if (_downLimitEnabled) {
-        down = _parseLimit(_downController.text, l10n);
+        down = _parseLimit(_downController?.text ?? '', l10n);
         if (down == null) throw FormatException(l10n.emptyNumber);
       }
       if (_upLimitEnabled) {
-        up = _parseLimit(_upController.text, l10n);
+        up = _parseLimit(_upController?.text ?? '', l10n);
         if (up == null) throw FormatException(l10n.emptyNumber);
       }
       setState(() => _saving = true);
@@ -127,9 +129,9 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (_) {
       if (mounted) {
         setState(() => _sequential = !value);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.sequentialDownloadFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.sequentialDownloadFailed)));
       }
     }
   }
@@ -181,7 +183,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
               ? null
               : (v) => setState(() {
                     _downLimitEnabled = v;
-                    if (!v) _downController.clear();
+                    if (!v) _downController?.clear();
                   }),
         ),
         if (_downLimitEnabled)
@@ -203,7 +205,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
               ? null
               : (v) => setState(() {
                     _upLimitEnabled = v;
-                    if (!v) _upController.clear();
+                    if (!v) _upController?.clear();
                   }),
         ),
         if (_upLimitEnabled)

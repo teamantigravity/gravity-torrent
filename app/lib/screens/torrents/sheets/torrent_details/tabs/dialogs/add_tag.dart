@@ -45,19 +45,20 @@ class _AddTagDialogState extends State<AddTagDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-                controller: _labelController,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.label_outline),
-                  hintText: '${localizations.movie}, ${localizations.music}...',
-                  label: Text(localizations.tag),
-                ),
-                onFieldSubmitted: (value) => _handleSubmit(),
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) {
-                    return localizations.invalidText;
-                  }
-                  return null;
-                })
+              controller: _labelController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.label_outline),
+                hintText: '${localizations.movie}, ${localizations.music}...',
+                label: Text(localizations.tag),
+              ),
+              onFieldSubmitted: (value) => _handleSubmit(),
+              validator: (String? value) {
+                if (value == null || value.isEmpty) {
+                  return localizations.invalidText;
+                }
+                return null;
+              },
+            ),
           ],
         ),
       ),
@@ -68,10 +69,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
             Navigator.of(context).pop();
           },
         ),
-        TextButton(
-          onPressed: _handleSubmit,
-          child: Text(localizations.add),
-        ),
+        TextButton(onPressed: _handleSubmit, child: Text(localizations.add)),
       ],
     );
   }

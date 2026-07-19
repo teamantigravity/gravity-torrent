@@ -30,8 +30,10 @@ import 'package:gravity_torrent/platforms/android/default_session.dart'
 import 'package:gravity_torrent/platforms/ios/default_session.dart' as ios;
 
 Future<Directory> getConfigDir() async {
-  final configDir =
-      path.join((await getApplicationSupportDirectory()).path, 'transmission');
+  final configDir = path.join(
+    (await getApplicationSupportDirectory()).path,
+    'transmission',
+  );
   return Directory(configDir);
 }
 
@@ -67,131 +69,140 @@ const torrentGetFields = [
   TorrentField.speedLimitUp,
   TorrentField.doneDate,
   TorrentField.leftUntilDone,
-  TorrentField.sizeWhenDone
+  TorrentField.sizeWhenDone,
 ];
 
 TransmissionTorrent createTransmissionTorrentFromJson(
-    TransmissionTorrentModel torrent) {
+  TransmissionTorrentModel torrent,
+) {
   return TransmissionTorrent(
-      id: torrent.id,
-      name: torrent.name,
-      progress: torrent.sizeWhenDone > 0
-          ? (torrent.sizeWhenDone - torrent.leftUntilDone) /
-              torrent.sizeWhenDone
-          : 0.0,
-      status: torrent.status,
-      size: torrent.totalSize,
-      rateDownload: torrent.rateDownload,
-      rateUpload: torrent.rateUpload,
-      labels: torrent.labels,
-      addedDate: torrent.addedDate,
-      errorString: torrent.errorString,
-      magnetLink: torrent.magnetLink,
-      isPrivate: torrent.isPrivate,
-      location: torrent.location,
-      files: torrent.files
-          .asMap()
-          .entries
-          .map((entry) => torrent_file.File(
-              name: entry.value.name,
-              length: entry.value.length,
-              bytesCompleted: entry.value.bytesCompleted,
-              // fileStats and files are parallel arrays; guard against a
-              // transient length mismatch to avoid a RangeError.
-              wanted: entry.key < torrent.fileStats.length
-                  ? torrent.fileStats[entry.key].wanted
-                  : true,
-              beginPiece: entry.value.beginPiece,
-              endPiece: entry.value.endPiece))
-          .toList(),
-      downloadedEver: torrent.downloadedEver,
-      uploadedEver: torrent.uploadedEver,
-      eta: torrent.eta,
-      pieces: torrent.pieces,
-      pieceCount: torrent.pieceCount,
-      pieceSize: torrent.pieceSize,
-      comment: torrent.comment,
-      creator: torrent.creator,
-      peersConnected: torrent.peersConnected,
-      sequentialDownload: torrent.sequentialDownload,
-      speedLimitDownEnabled: torrent.speedLimitDownEnabled,
-      speedLimitUpEnabled: torrent.speedLimitUpEnabled,
-      speedLimitDown: torrent.speedLimitDown,
-      speedLimitUp: torrent.speedLimitUp,
-      doneDate: torrent.doneDate);
+    id: torrent.id,
+    name: torrent.name,
+    progress: torrent.sizeWhenDone > 0
+        ? (torrent.sizeWhenDone - torrent.leftUntilDone) / torrent.sizeWhenDone
+        : 0.0,
+    status: torrent.status,
+    size: torrent.totalSize,
+    rateDownload: torrent.rateDownload,
+    rateUpload: torrent.rateUpload,
+    labels: torrent.labels,
+    addedDate: torrent.addedDate,
+    errorString: torrent.errorString,
+    magnetLink: torrent.magnetLink,
+    isPrivate: torrent.isPrivate,
+    location: torrent.location,
+    files: torrent.files
+        .asMap()
+        .entries
+        .map(
+          (entry) => torrent_file.File(
+            name: entry.value.name,
+            length: entry.value.length,
+            bytesCompleted: entry.value.bytesCompleted,
+            // fileStats and files are parallel arrays; guard against a
+            // transient length mismatch to avoid a RangeError.
+            wanted: entry.key < torrent.fileStats.length
+                ? torrent.fileStats[entry.key].wanted
+                : true,
+            beginPiece: entry.value.beginPiece,
+            endPiece: entry.value.endPiece,
+          ),
+        )
+        .toList(),
+    downloadedEver: torrent.downloadedEver,
+    uploadedEver: torrent.uploadedEver,
+    eta: torrent.eta,
+    pieces: torrent.pieces,
+    pieceCount: torrent.pieceCount,
+    pieceSize: torrent.pieceSize,
+    comment: torrent.comment,
+    creator: torrent.creator,
+    peersConnected: torrent.peersConnected,
+    sequentialDownload: torrent.sequentialDownload,
+    speedLimitDownEnabled: torrent.speedLimitDownEnabled,
+    speedLimitUpEnabled: torrent.speedLimitUpEnabled,
+    speedLimitDown: torrent.speedLimitDown,
+    speedLimitUp: torrent.speedLimitUp,
+    doneDate: torrent.doneDate,
+  );
 }
 
 final TorrentGetRequest torrentGetRequest = TorrentGetRequest(
-    arguments: TorrentGetRequestArguments(fields: [
-  TorrentField.id,
-  TorrentField.name,
-  TorrentField.percentDone,
-  TorrentField.status,
-  TorrentField.totalSize,
-  TorrentField.rateDownload,
-  TorrentField.rateUpload,
-  TorrentField.labels,
-  TorrentField.addedDate,
-  TorrentField.errorString,
-  TorrentField.isPrivate,
-  TorrentField.downloadDir,
-  TorrentField.files,
-  TorrentField.fileStats,
-  TorrentField.downloadedEver,
-  TorrentField.uploadedEver,
-  TorrentField.eta,
-  TorrentField.pieces,
-  TorrentField.pieceSize,
-  TorrentField.pieceCount,
-  TorrentField.comment,
-  TorrentField.creator,
-  TorrentField.peersConnected,
-  TorrentField.magnetLink,
-  TorrentField.sequentialDownload,
-  TorrentField.speedLimitDownEnabled,
-  TorrentField.speedLimitUpEnabled,
-  TorrentField.speedLimitDown,
-  TorrentField.speedLimitUp,
-  TorrentField.doneDate
-]));
+  arguments: TorrentGetRequestArguments(
+    fields: [
+      TorrentField.id,
+      TorrentField.name,
+      TorrentField.percentDone,
+      TorrentField.status,
+      TorrentField.totalSize,
+      TorrentField.rateDownload,
+      TorrentField.rateUpload,
+      TorrentField.labels,
+      TorrentField.addedDate,
+      TorrentField.errorString,
+      TorrentField.isPrivate,
+      TorrentField.downloadDir,
+      TorrentField.files,
+      TorrentField.fileStats,
+      TorrentField.downloadedEver,
+      TorrentField.uploadedEver,
+      TorrentField.eta,
+      TorrentField.pieces,
+      TorrentField.pieceSize,
+      TorrentField.pieceCount,
+      TorrentField.comment,
+      TorrentField.creator,
+      TorrentField.peersConnected,
+      TorrentField.magnetLink,
+      TorrentField.sequentialDownload,
+      TorrentField.speedLimitDownEnabled,
+      TorrentField.speedLimitUpEnabled,
+      TorrentField.speedLimitDown,
+      TorrentField.speedLimitUp,
+      TorrentField.doneDate,
+    ],
+  ),
+);
 
 class TransmissionTorrent extends Torrent {
-  TransmissionTorrent(
-      {required super.id,
-      required super.name,
-      required super.progress,
-      required super.status,
-      required super.size,
-      required super.rateDownload,
-      required super.rateUpload,
-      required super.downloadedEver,
-      required super.uploadedEver,
-      required super.eta,
-      required super.pieces,
-      required super.pieceCount,
-      required super.pieceSize,
-      required super.errorString,
-      required super.addedDate,
-      required super.isPrivate,
-      required super.location,
-      required super.creator,
-      required super.comment,
-      required super.files,
-      required super.labels,
-      required super.peersConnected,
-      required super.magnetLink,
-      required super.sequentialDownload,
-      required super.speedLimitDownEnabled,
-      required super.speedLimitUpEnabled,
-      required super.speedLimitDown,
-      required super.speedLimitUp,
-      required super.doneDate});
+  TransmissionTorrent({
+    required super.id,
+    required super.name,
+    required super.progress,
+    required super.status,
+    required super.size,
+    required super.rateDownload,
+    required super.rateUpload,
+    required super.downloadedEver,
+    required super.uploadedEver,
+    required super.eta,
+    required super.pieces,
+    required super.pieceCount,
+    required super.pieceSize,
+    required super.errorString,
+    required super.addedDate,
+    required super.isPrivate,
+    required super.location,
+    required super.creator,
+    required super.comment,
+    required super.files,
+    required super.labels,
+    required super.peersConnected,
+    required super.magnetLink,
+    required super.sequentialDownload,
+    required super.speedLimitDownEnabled,
+    required super.speedLimitUpEnabled,
+    required super.speedLimitDown,
+    required super.speedLimitUp,
+    required super.doneDate,
+  });
 
   @override
   Future<void> start() async {
     var request = TorrentActionRequest(
-        action: TorrentAction.start,
-        arguments: TorrentActionRequestArguments(ids: [id]));
+      action: TorrentAction.start,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
   }
@@ -199,8 +210,9 @@ class TransmissionTorrent extends Torrent {
   @override
   Future<void> stop() async {
     var request = TorrentActionRequest(
-        action: TorrentAction.stop,
-        arguments: TorrentActionRequestArguments(ids: [id]));
+      action: TorrentAction.stop,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
   }
@@ -208,8 +220,11 @@ class TransmissionTorrent extends Torrent {
   @override
   Future<void> remove(bool withData) async {
     var request = TorrentRemoveRequest(
-        arguments: TorrentRemoveRequestArguments(
-            ids: [id], deleteLocalData: withData));
+      arguments: TorrentRemoveRequestArguments(
+        ids: [id],
+        deleteLocalData: withData,
+      ),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
   }
@@ -217,8 +232,8 @@ class TransmissionTorrent extends Torrent {
   @override
   Future update(TorrentBase torrent) async {
     var request = TorrentSetRequest(
-        arguments:
-            TorrentSetRequestArguments(ids: [id], labels: torrent.labels));
+      arguments: TorrentSetRequestArguments(ids: [id], labels: torrent.labels),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
   }
@@ -226,10 +241,12 @@ class TransmissionTorrent extends Torrent {
   @override
   Future toggleFileWanted(int fileIndex, bool wanted) async {
     var request = TorrentSetRequest(
-        arguments: TorrentSetRequestArguments(
-            ids: [id],
-            filesWanted: wanted ? [fileIndex] : null,
-            filesUnwanted: !wanted ? [fileIndex] : null));
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        filesWanted: wanted ? [fileIndex] : null,
+        filesUnwanted: !wanted ? [fileIndex] : null,
+      ),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
   }
@@ -237,17 +254,24 @@ class TransmissionTorrent extends Torrent {
   @override
   Future toggleAllFilesWanted(bool wanted) async {
     final filesIndexesNotCompleted = files.indexed
-        .where((indexedElement) =>
-            indexedElement.$2.bytesCompleted != indexedElement.$2.length)
+        .where(
+          (indexedElement) =>
+              indexedElement.$2.bytesCompleted != indexedElement.$2.length,
+        )
         .map((indexedElement) => indexedElement.$1)
         .toList();
 
     final request = TorrentSetRequest(
-        arguments: wanted
-            ? TorrentSetRequestArguments(
-                ids: [id], filesWanted: filesIndexesNotCompleted)
-            : TorrentSetRequestArguments(
-                ids: [id], filesUnwanted: filesIndexesNotCompleted));
+      arguments: wanted
+          ? TorrentSetRequestArguments(
+              ids: [id],
+              filesWanted: filesIndexesNotCompleted,
+            )
+          : TorrentSetRequestArguments(
+              ids: [id],
+              filesUnwanted: filesIndexesNotCompleted,
+            ),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
   }
@@ -255,8 +279,11 @@ class TransmissionTorrent extends Torrent {
   @override
   Future setSequentialDownload(bool sequential) async {
     var request = TorrentSetRequest(
-        arguments: TorrentSetRequestArguments(
-            ids: [id], sequentialDownload: sequential));
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        sequentialDownload: sequential,
+      ),
+    );
 
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
@@ -266,8 +293,11 @@ class TransmissionTorrent extends Torrent {
   Future setSequentialDownloadFromPiece(int piece) async {
     debugPrint('setSequentialDownloadFromPiece $piece');
     var request = TorrentSetRequest(
-        arguments: TorrentSetRequestArguments(
-            ids: [id], sequentialDownloadFromPiece: piece));
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        sequentialDownloadFromPiece: piece,
+      ),
+    );
 
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
@@ -294,16 +324,19 @@ class TransmissionTorrent extends Torrent {
   }
 
   @override
-  Future setFilesPriority(
-      {List<int>? priorityHigh,
-      List<int>? priorityLow,
-      List<int>? priorityNormal}) async {
+  Future setFilesPriority({
+    List<int>? priorityHigh,
+    List<int>? priorityLow,
+    List<int>? priorityNormal,
+  }) async {
     var request = TorrentSetRequest(
-        arguments: TorrentSetRequestArguments(
-            ids: [id],
-            priorityHigh: priorityHigh,
-            priorityLow: priorityLow,
-            priorityNormal: priorityNormal));
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        priorityHigh: priorityHigh,
+        priorityLow: priorityLow,
+        priorityNormal: priorityNormal,
+      ),
+    );
 
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     engine.requestCheckpoint();
@@ -311,68 +344,88 @@ class TransmissionTorrent extends Torrent {
 }
 
 class TransmissionSession extends Session {
-  TransmissionSession(
-      {super.downloadDir,
-      super.downloadQueueEnabled,
-      super.downloadQueueSize,
-      super.peerPort,
-      super.speedLimitDownEnabled,
-      super.speedLimitUpEnabled,
-      super.speedLimitDown,
-      super.speedLimitUp,
-      super.seedRatioLimit,
-      super.seedRatioLimited,
-      super.encryption,
-      super.blocklistEnabled,
-      super.blocklistUrl,
-      super.blocklistSize,
-      super.dhtEnabled,
-      super.pexEnabled,
-      super.lpdEnabled,
-      super.utpEnabled,
-      super.altSpeedEnabled,
-      super.altSpeedDown,
-      super.altSpeedUp,
-      super.altSpeedTimeEnabled,
-      super.altSpeedTimeBegin,
-      super.altSpeedTimeEnd,
-      super.altSpeedTimeDay,
-      super.idleSeedingLimitEnabled,
-      super.idleSeedingLimit});
+  TransmissionSession({
+    super.downloadDir,
+    super.downloadQueueEnabled,
+    super.downloadQueueSize,
+    super.peerPort,
+    super.speedLimitDownEnabled,
+    super.speedLimitUpEnabled,
+    super.speedLimitDown,
+    super.speedLimitUp,
+    super.seedRatioLimit,
+    super.seedRatioLimited,
+    super.encryption,
+    super.blocklistEnabled,
+    super.blocklistUrl,
+    super.blocklistSize,
+    super.dhtEnabled,
+    super.pexEnabled,
+    super.lpdEnabled,
+    super.utpEnabled,
+    super.altSpeedEnabled,
+    super.altSpeedDown,
+    super.altSpeedUp,
+    super.altSpeedTimeEnabled,
+    super.altSpeedTimeBegin,
+    super.altSpeedTimeEnd,
+    super.altSpeedTimeDay,
+    super.idleSeedingLimitEnabled,
+    super.idleSeedingLimit,
+  });
 
   @override
   Future<void> update(SessionBase session) async {
     SessionSetRequest request = SessionSetRequest(
-        arguments: SessionSetRequestArguments(
-            downloadDir: session.downloadDir,
-            downloadQueueSize: session.downloadQueueSize,
-            peerPort: session.peerPort,
-            speedLimitDownEnabled: session.speedLimitDownEnabled,
-            speedLimitUpEnabled: session.speedLimitUpEnabled,
-            speedLimitDown: session.speedLimitDown,
-            speedLimitUp: session.speedLimitUp,
-            seedRatioLimit: session.seedRatioLimit,
-            seedRatioLimited: session.seedRatioLimited,
-            encryption: session.encryption?.rpcValue,
-            blocklistEnabled: session.blocklistEnabled,
-            blocklistUrl: session.blocklistUrl,
-            dhtEnabled: session.dhtEnabled,
-            pexEnabled: session.pexEnabled,
-            lpdEnabled: session.lpdEnabled,
-            utpEnabled: session.utpEnabled,
-            altSpeedEnabled: session.altSpeedEnabled,
-            altSpeedDown: session.altSpeedDown,
-            altSpeedUp: session.altSpeedUp,
-            altSpeedTimeEnabled: session.altSpeedTimeEnabled,
-            altSpeedTimeBegin: session.altSpeedTimeBegin,
-            altSpeedTimeEnd: session.altSpeedTimeEnd,
-            altSpeedTimeDay: session.altSpeedTimeDay,
-            idleSeedingLimitEnabled: session.idleSeedingLimitEnabled,
-            idleSeedingLimit: session.idleSeedingLimit));
+      arguments: SessionSetRequestArguments(
+        downloadDir: session.downloadDir,
+        downloadQueueSize: session.downloadQueueSize,
+        peerPort: session.peerPort,
+        speedLimitDownEnabled: session.speedLimitDownEnabled,
+        speedLimitUpEnabled: session.speedLimitUpEnabled,
+        speedLimitDown: session.speedLimitDown,
+        speedLimitUp: session.speedLimitUp,
+        seedRatioLimit: session.seedRatioLimit,
+        seedRatioLimited: session.seedRatioLimited,
+        encryption: session.encryption?.rpcValue,
+        blocklistEnabled: session.blocklistEnabled,
+        blocklistUrl: session.blocklistUrl,
+        dhtEnabled: session.dhtEnabled,
+        pexEnabled: session.pexEnabled,
+        lpdEnabled: session.lpdEnabled,
+        utpEnabled: session.utpEnabled,
+        altSpeedEnabled: session.altSpeedEnabled,
+        altSpeedDown: session.altSpeedDown,
+        altSpeedUp: session.altSpeedUp,
+        altSpeedTimeEnabled: session.altSpeedTimeEnabled,
+        altSpeedTimeBegin: session.altSpeedTimeBegin,
+        altSpeedTimeEnd: session.altSpeedTimeEnd,
+        altSpeedTimeDay: session.altSpeedTimeDay,
+        idleSeedingLimitEnabled: session.idleSeedingLimitEnabled,
+        idleSeedingLimit: session.idleSeedingLimit,
+      ),
+    );
 
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     flutter_libtransmission.saveSettings();
   }
+}
+
+List<Torrent> _parseTorrentsResponse(String res) {
+  final TorrentGetResponse decodedRes = TorrentGetResponse.fromJson(
+    jsonDecode(res),
+  );
+  return decodedRes.arguments.torrents
+      .map((torrent) {
+        try {
+          return createTransmissionTorrentFromJson(torrent);
+        } catch (e, stack) {
+          debugPrint('Failed to parse torrent: $e\n$stack');
+          return null;
+        }
+      })
+      .whereType<Torrent>()
+      .toList();
 }
 
 class TransmissionEngine extends Engine {
@@ -381,23 +434,17 @@ class TransmissionEngine extends Engine {
 
   void startCheckpointTimer() {
     _checkpointTimer?.cancel();
-    _checkpointTimer = Timer.periodic(
-      const Duration(seconds: 20),
-      (_) async {
-        await saveSession();
-      },
-    );
+    _checkpointTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
+      await saveSession();
+    });
   }
 
   @override
   void requestCheckpoint() {
     _saveDebounce?.cancel();
-    _saveDebounce = Timer(
-      const Duration(seconds: 3),
-      () async {
-        await saveSession();
-      },
-    );
+    _saveDebounce = Timer(const Duration(seconds: 3), () async {
+      await saveSession();
+    });
   }
 
   @override
@@ -434,14 +481,23 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<TorrentAddedResponse> addTorrent(
-      String? filename, String? metainfo, String? downloadDir) async {
+    String? filename,
+    String? metainfo,
+    String? downloadDir,
+  ) async {
     var torrentAddRequest = TorrentAddRequest(
-        arguments: TorrentAddRequestArguments(
-            filename: filename, metainfo: metainfo, downloadDir: downloadDir));
-    var jsonResponse = await flutter_libtransmission
-        .requestAsync(jsonEncode(torrentAddRequest));
-    TorrentAddResponse response =
-        TorrentAddResponse.fromJson(jsonDecode(jsonResponse));
+      arguments: TorrentAddRequestArguments(
+        filename: filename,
+        metainfo: metainfo,
+        downloadDir: downloadDir,
+      ),
+    );
+    var jsonResponse = await flutter_libtransmission.requestAsync(
+      jsonEncode(torrentAddRequest),
+    );
+    TorrentAddResponse response = TorrentAddResponse.fromJson(
+      jsonDecode(jsonResponse),
+    );
 
     if (response.result != 'success') {
       throw TorrentAddError();
@@ -462,35 +518,33 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<List<Torrent>> fetchTorrents() async {
-    String res = await flutter_libtransmission.requestAsync(jsonEncode(
+    String res = await flutter_libtransmission.requestAsync(
+      jsonEncode(
         TorrentGetRequest(
-            arguments: TorrentGetRequestArguments(fields: torrentGetFields))));
+          arguments: TorrentGetRequestArguments(fields: torrentGetFields),
+        ),
+      ),
+    );
 
-    final TorrentGetResponse decodedRes =
-        TorrentGetResponse.fromJson(jsonDecode(res));
-
-    return decodedRes.arguments.torrents
-        .map((torrent) {
-          try {
-            return createTransmissionTorrentFromJson(torrent);
-          } catch (e, stack) {
-            debugPrint('Failed to parse torrent: $e\n$stack');
-            return null;
-          }
-        })
-        .whereType<Torrent>()
-        .toList();
+    return compute(_parseTorrentsResponse, res);
   }
 
   @override
   Future<Torrent> fetchTorrent(int id) async {
-    String res = await flutter_libtransmission.requestAsync(jsonEncode(
+    String res = await flutter_libtransmission.requestAsync(
+      jsonEncode(
         TorrentGetRequest(
-            arguments: TorrentGetRequestArguments(
-                ids: [id], fields: torrentGetFields))));
+          arguments: TorrentGetRequestArguments(
+            ids: [id],
+            fields: torrentGetFields,
+          ),
+        ),
+      ),
+    );
 
-    final TorrentGetResponse decodedRes =
-        TorrentGetResponse.fromJson(jsonDecode(res));
+    final TorrentGetResponse decodedRes = TorrentGetResponse.fromJson(
+      jsonDecode(res),
+    );
 
     final torrents = decodedRes.arguments.torrents;
     if (torrents.isEmpty) {
@@ -502,70 +556,75 @@ class TransmissionEngine extends Engine {
   @override
   Future<Session> fetchSession() async {
     SessionGetRequest sessionGetRequest = SessionGetRequest(
-        arguments: SessionGetRequestArguments(fields: [
-      SessionField.downloadDir,
-      SessionField.downloadQueueEnabled,
-      SessionField.downloadQueueSize,
-      SessionField.peerPort,
-      SessionField.speedLimitDownEnabled,
-      SessionField.speedLimitUpEnabled,
-      SessionField.speedLimitDown,
-      SessionField.speedLimitUp,
-      SessionField.encryption,
-      SessionField.blocklistEnabled,
-      SessionField.blocklistUrl,
-      SessionField.blocklistSize,
-      SessionField.dhtEnabled,
-      SessionField.pexEnabled,
-      SessionField.lpdEnabled,
-      SessionField.utpEnabled,
-      SessionField.seedRatioLimit,
-      SessionField.seedRatioLimited,
-      SessionField.altSpeedEnabled,
-      SessionField.altSpeedDown,
-      SessionField.altSpeedUp,
-      SessionField.altSpeedTimeEnabled,
-      SessionField.altSpeedTimeBegin,
-      SessionField.altSpeedTimeEnd,
-      SessionField.altSpeedTimeDay,
-      SessionField.idleSeedingLimitEnabled,
-      SessionField.idleSeedingLimit
-    ]));
-    String res = await flutter_libtransmission
-        .requestAsync(jsonEncode(sessionGetRequest));
+      arguments: SessionGetRequestArguments(
+        fields: [
+          SessionField.downloadDir,
+          SessionField.downloadQueueEnabled,
+          SessionField.downloadQueueSize,
+          SessionField.peerPort,
+          SessionField.speedLimitDownEnabled,
+          SessionField.speedLimitUpEnabled,
+          SessionField.speedLimitDown,
+          SessionField.speedLimitUp,
+          SessionField.encryption,
+          SessionField.blocklistEnabled,
+          SessionField.blocklistUrl,
+          SessionField.blocklistSize,
+          SessionField.dhtEnabled,
+          SessionField.pexEnabled,
+          SessionField.lpdEnabled,
+          SessionField.utpEnabled,
+          SessionField.seedRatioLimit,
+          SessionField.seedRatioLimited,
+          SessionField.altSpeedEnabled,
+          SessionField.altSpeedDown,
+          SessionField.altSpeedUp,
+          SessionField.altSpeedTimeEnabled,
+          SessionField.altSpeedTimeBegin,
+          SessionField.altSpeedTimeEnd,
+          SessionField.altSpeedTimeDay,
+          SessionField.idleSeedingLimitEnabled,
+          SessionField.idleSeedingLimit,
+        ],
+      ),
+    );
+    String res = await flutter_libtransmission.requestAsync(
+      jsonEncode(sessionGetRequest),
+    );
 
-    final SessionGetResponse decodedRes =
-        SessionGetResponse.fromJson(jsonDecode(res));
+    final SessionGetResponse decodedRes = SessionGetResponse.fromJson(
+      jsonDecode(res),
+    );
 
     return TransmissionSession(
-        downloadDir: decodedRes.arguments.downloadDir,
-        downloadQueueEnabled: decodedRes.arguments.downloadQueueEnabled,
-        downloadQueueSize: decodedRes.arguments.downloadQueueSize,
-        peerPort: decodedRes.arguments.peerPort,
-        speedLimitDownEnabled: decodedRes.arguments.speedLimitDownEnabled,
-        speedLimitUpEnabled: decodedRes.arguments.speedLimitUpEnabled,
-        speedLimitDown: decodedRes.arguments.speedLimitDown,
-        speedLimitUp: decodedRes.arguments.speedLimitUp,
-        encryption:
-            EncryptionMode.fromRpcValue(decodedRes.arguments.encryption),
-        blocklistEnabled: decodedRes.arguments.blocklistEnabled,
-        blocklistUrl: decodedRes.arguments.blocklistUrl,
-        blocklistSize: decodedRes.arguments.blocklistSize,
-        dhtEnabled: decodedRes.arguments.dhtEnabled,
-        pexEnabled: decodedRes.arguments.pexEnabled,
-        lpdEnabled: decodedRes.arguments.lpdEnabled,
-        utpEnabled: decodedRes.arguments.utpEnabled,
-        seedRatioLimit: decodedRes.arguments.seedRatioLimit,
-        seedRatioLimited: decodedRes.arguments.seedRatioLimited,
-        altSpeedEnabled: decodedRes.arguments.altSpeedEnabled,
-        altSpeedDown: decodedRes.arguments.altSpeedDown,
-        altSpeedUp: decodedRes.arguments.altSpeedUp,
-        altSpeedTimeEnabled: decodedRes.arguments.altSpeedTimeEnabled,
-        altSpeedTimeBegin: decodedRes.arguments.altSpeedTimeBegin,
-        altSpeedTimeEnd: decodedRes.arguments.altSpeedTimeEnd,
-        altSpeedTimeDay: decodedRes.arguments.altSpeedTimeDay,
-        idleSeedingLimitEnabled: decodedRes.arguments.idleSeedingLimitEnabled,
-        idleSeedingLimit: decodedRes.arguments.idleSeedingLimit);
+      downloadDir: decodedRes.arguments.downloadDir,
+      downloadQueueEnabled: decodedRes.arguments.downloadQueueEnabled,
+      downloadQueueSize: decodedRes.arguments.downloadQueueSize,
+      peerPort: decodedRes.arguments.peerPort,
+      speedLimitDownEnabled: decodedRes.arguments.speedLimitDownEnabled,
+      speedLimitUpEnabled: decodedRes.arguments.speedLimitUpEnabled,
+      speedLimitDown: decodedRes.arguments.speedLimitDown,
+      speedLimitUp: decodedRes.arguments.speedLimitUp,
+      encryption: EncryptionMode.fromRpcValue(decodedRes.arguments.encryption),
+      blocklistEnabled: decodedRes.arguments.blocklistEnabled,
+      blocklistUrl: decodedRes.arguments.blocklistUrl,
+      blocklistSize: decodedRes.arguments.blocklistSize,
+      dhtEnabled: decodedRes.arguments.dhtEnabled,
+      pexEnabled: decodedRes.arguments.pexEnabled,
+      lpdEnabled: decodedRes.arguments.lpdEnabled,
+      utpEnabled: decodedRes.arguments.utpEnabled,
+      seedRatioLimit: decodedRes.arguments.seedRatioLimit,
+      seedRatioLimited: decodedRes.arguments.seedRatioLimited,
+      altSpeedEnabled: decodedRes.arguments.altSpeedEnabled,
+      altSpeedDown: decodedRes.arguments.altSpeedDown,
+      altSpeedUp: decodedRes.arguments.altSpeedUp,
+      altSpeedTimeEnabled: decodedRes.arguments.altSpeedTimeEnabled,
+      altSpeedTimeBegin: decodedRes.arguments.altSpeedTimeBegin,
+      altSpeedTimeEnd: decodedRes.arguments.altSpeedTimeEnd,
+      altSpeedTimeDay: decodedRes.arguments.altSpeedTimeDay,
+      idleSeedingLimitEnabled: decodedRes.arguments.idleSeedingLimitEnabled,
+      idleSeedingLimit: decodedRes.arguments.idleSeedingLimit,
+    );
   }
 
   @override
@@ -582,9 +641,11 @@ class TransmissionEngine extends Engine {
 
   @override
   Future setTorrentsLocation(
-      TorrentSetLocationArguments torrentSetLocationArguments) async {
-    final request =
-        TorrentSetLocationRequest(arguments: torrentSetLocationArguments);
+    TorrentSetLocationArguments torrentSetLocationArguments,
+  ) async {
+    final request = TorrentSetLocationRequest(
+      arguments: torrentSetLocationArguments,
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     requestCheckpoint();
   }
@@ -592,33 +653,53 @@ class TransmissionEngine extends Engine {
   @override
   Future removeTorrents(List<int> torrentIds, bool withData) async {
     var request = TorrentRemoveRequest(
-        arguments: TorrentRemoveRequestArguments(
-            ids: torrentIds, deleteLocalData: withData));
+      arguments: TorrentRemoveRequestArguments(
+        ids: torrentIds,
+        deleteLocalData: withData,
+      ),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     requestCheckpoint();
   }
 
   @override
   Future pauseTorrent(int id) async {
+    return pauseTorrents([id]);
+  }
+
+  @override
+  Future pauseTorrents(List<int> ids) async {
+    if (ids.isEmpty) return;
     var request = TorrentActionRequest(
-        action: TorrentAction.stop,
-        arguments: TorrentActionRequestArguments(ids: [id]));
+      action: TorrentAction.stop,
+      arguments: TorrentActionRequestArguments(ids: ids),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     requestCheckpoint();
   }
 
   @override
   Future resumeTorrent(int id) async {
+    return resumeTorrents([id]);
+  }
+
+  @override
+  Future resumeTorrents(List<int> ids) async {
+    if (ids.isEmpty) return;
     var request = TorrentActionRequest(
-        action: TorrentAction.start,
-        arguments: TorrentActionRequestArguments(ids: [id]));
+      action: TorrentAction.start,
+      arguments: TorrentActionRequestArguments(ids: ids),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     requestCheckpoint();
   }
 
   @override
-  Future setTorrentSpeedLimit(int id,
-      {int? downloadLimit, int? uploadLimit}) async {
+  Future setTorrentSpeedLimit(
+    int id, {
+    int? downloadLimit,
+    int? uploadLimit,
+  }) async {
     final downloadEnabled = downloadLimit != null && downloadLimit > 0;
     final uploadEnabled = uploadLimit != null && uploadLimit > 0;
     final request = TorrentSetRequest(
@@ -637,8 +718,11 @@ class TransmissionEngine extends Engine {
   @override
   Future setTorrentSequentialDownload(int id, bool sequential) async {
     var request = TorrentSetRequest(
-        arguments: TorrentSetRequestArguments(
-            ids: [id], sequentialDownload: sequential));
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        sequentialDownload: sequential,
+      ),
+    );
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     requestCheckpoint();
   }

@@ -22,21 +22,25 @@ class _LocaleSelectorState extends State<LocaleSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppModel>(builder: (context, app, child) {
-      var groupValue = app.locale;
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ...AppLocalizations.supportedLocales.map((locale) {
-            return RadioListTile<String>(
-                title:
-                    Text(localeNames[locale.toString()] ?? locale.toString()),
+    return Consumer<AppModel>(
+      builder: (context, app, child) {
+        var groupValue = app.locale;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ...AppLocalizations.supportedLocales.map((locale) {
+              return RadioListTile<String>(
+                title: Text(
+                  localeNames[locale.toString()] ?? locale.toString(),
+                ),
                 value: locale.toString(),
                 groupValue: groupValue,
-                onChanged: handleChange);
-          })
-        ],
-      );
-    });
+                onChanged: handleChange,
+              );
+            }),
+          ],
+        );
+      },
+    );
   }
 }

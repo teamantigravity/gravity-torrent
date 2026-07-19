@@ -50,12 +50,25 @@
 - **Seeding limits** — seed ratio and idle seeding timeout.
 - **Reset** all Transmission session settings.
 
+### SOTA cross-platform UX
+
+- **Adaptive Material 3 UI** — dynamic color theming from the system wallpaper / accent color (Android 12+), with responsive breakpoints and an adaptive navigation rail / bottom bar.
+- **Feature flags** — all new SOTA features are gated by persistent, runtime-toggleable flags. Flags are also backed by a remote kill-switch so any feature can be disabled in an emergency without an app update.
+- **Smart notifications** — progress notification with live speed and pause/resume actions for all downloads, plus per-torrent completion notifications.
+- **Background audio & media session** — playback continues in the background on Android, iOS and macOS, with media controls in the notification / control center / lock screen (via `audio_service`).
+- **Picture-in-Picture / compact floating window** — PiP-ready on Android, with a compact always-on-top floating window fallback on desktop.
+- **Haptic feedback** — subtle tactile feedback on supported mobile controls.
+- **App shortcuts** — quick actions to add a torrent or open the torrent list on mobile launchers.
+- **Privacy vault** — optional biometric / PIN app lock and a privacy-score dashboard.
+- **Data-usage analytics** — on-device dashboard with a 7-day download/upload chart and per-torrent totals (via `fl_chart`).
+- **Local remote control** — token-authenticated HTTP server on the local network, with a QR code for pairing and pause/resume/listing actions.
+
 ### Platform integration
 
-- **Android** — foreground service for background operation, storage permission handling, and content-URI import.
-- **iOS** — default download directory handling.
+- **Android** — foreground service for background operation, storage permission handling, content-URI import, and media session notification.
+- **iOS** — default download directory handling and `audio` background mode.
 - **Windows** — registry registration for `magnet:` links and `.torrent` files, plus MSIX and Inno Setup packaging.
-- **macOS** — native app bundle and system tray support.
+- **macOS** — native app bundle, system tray, and media session support.
 - **Linux** — GTK windowing, system tray, and AppIndicator support.
 - **Desktop** — system tray with show/hide window, custom close behavior, and persistent background operation.
 
@@ -66,6 +79,7 @@
 - **Remote config** for dynamic ad and feature toggling.
 - **In-app update checks** for non-store builds.
 - **Download completion notifications**.
+- **Service locator** (`get_it`) for dependency injection, used by background notification handlers.
 
 ---
 
@@ -86,7 +100,7 @@
 
 ### Prerequisites
 
-- [Flutter](https://docs.flutter.dev/get-started/install) **3.41.8** (SDK constraint `^3.5.3`)
+- [Flutter](https://docs.flutter.dev/get-started/install) **3.44.6** (SDK constraint `^3.5.3`)
 - A working C++ toolchain for native builds
 - Platform SDKs for your target (Android Studio, Xcode, Visual Studio, or Linux desktop dependencies)
 

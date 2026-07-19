@@ -90,8 +90,10 @@ class _TorrentScreen extends State<TorrentsScreen>
                     children: [
                       downloadSvg,
                       const SizedBox(height: 16),
-                      Text(localizations.noDownloadsYet,
-                          style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        localizations.noDownloadsYet,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ],
                   ),
                 ),
@@ -126,7 +128,8 @@ class _TorrentScreen extends State<TorrentsScreen>
                           : () async {
                               final selectedTorrents = torrentsModel.torrents
                                   .where(
-                                      (t) => _selectedTorrentIds.contains(t.id))
+                                    (t) => _selectedTorrentIds.contains(t.id),
+                                  )
                                   .toList();
 
                               if (selectedTorrents.length == 1) {
@@ -134,7 +137,8 @@ class _TorrentScreen extends State<TorrentsScreen>
                                   context: context,
                                   builder: (BuildContext context) {
                                     return RemoveTorrentDialog(
-                                        torrent: selectedTorrents.first);
+                                      torrent: selectedTorrents.first,
+                                    );
                                   },
                                 );
                               } else {
@@ -142,7 +146,8 @@ class _TorrentScreen extends State<TorrentsScreen>
                                   context: context,
                                   builder: (BuildContext context) {
                                     return RemoveTorrentsDialog(
-                                        torrents: selectedTorrents);
+                                      torrents: selectedTorrents,
+                                    );
                                   },
                                 );
                               }
@@ -154,9 +159,7 @@ class _TorrentScreen extends State<TorrentsScreen>
                     const SortButton(),
                     const FilterLabelsButton(),
                     const Spacer(),
-                    TextSearch(
-                      onChange: torrentsModel.setFilterText,
-                    ),
+                    TextSearch(onChange: torrentsModel.setFilterText),
                   ],
                 ],
               ),
@@ -190,22 +193,25 @@ class _TorrentScreen extends State<TorrentsScreen>
                         children: [
                           _buildActionDivider(),
                           SlidableAction(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.surface,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
                             onPressed: (_) => showDeviceSheet(
-                                context,
-                                torrent.name,
-                                TorrentDetailsModalSheet(
-                                  id: torrent.id,
-                                  initialTab: 0,
-                                  showOnlyPlayableFiles: true,
-                                )),
+                              context,
+                              torrent.name,
+                              TorrentDetailsModalSheet(
+                                id: torrent.id,
+                                initialTab: 0,
+                                showOnlyPlayableFiles: true,
+                              ),
+                            ),
                             icon: Icons.play_circle_outlined,
                           ),
                           _buildActionDivider(),
                           SlidableAction(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.surface,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
                             onPressed: (_) =>
                                 shareLink(context, torrent.magnetLink),
                             icon: Icons.share,
@@ -213,21 +219,24 @@ class _TorrentScreen extends State<TorrentsScreen>
                           if (isDesktop()) ...[
                             _buildActionDivider(),
                             SlidableAction(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.surface,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surface,
                               onPressed: (_) => torrent.openFolder(context),
                               icon: Icons.folder_outlined,
                             ),
                           ],
                           _buildActionDivider(),
                           SlidableAction(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.surface,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
                             onPressed: (_) => showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return RemoveTorrentDialog(torrent: torrent);
-                                }),
+                              context: context,
+                              builder: (BuildContext context) {
+                                return RemoveTorrentDialog(torrent: torrent);
+                              },
+                            ),
                             icon: Icons.delete_outline,
                           ),
                         ],

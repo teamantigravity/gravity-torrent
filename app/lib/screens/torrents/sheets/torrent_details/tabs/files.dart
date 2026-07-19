@@ -47,18 +47,23 @@ class _FilesTabState extends State<FilesTab> {
       final result = await OpenFile.open(path.join(widget.location, filepath));
       if (!mounted) return;
       if (result.type != ResultType.done) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              'Could not open file: ${result.message.isNotEmpty ? result.message : 'Unknown error'}'),
-          backgroundColor: Colors.orange,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not open file: ${result.message.isNotEmpty ? result.message : 'Unknown error'}',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not open file: $e'),
-        backgroundColor: Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open file: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
@@ -82,12 +87,18 @@ class _FilesTabState extends State<FilesTab> {
   _handlePlayClick(BuildContext context, File file) {
     String filePath = path.join(widget.location, file.name);
 
-    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
         settings: const RouteSettings(name: 'player'),
         builder: (BuildContext context) {
           return TorrentPlayer(
-              filePath: filePath, torrent: widget.torrent, file: file);
-        }));
+            filePath: filePath,
+            torrent: widget.torrent,
+            file: file,
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -114,16 +125,19 @@ class _FilesTabState extends State<FilesTab> {
           ListTile(
             leading: const Icon(Icons.play_circle_outlined),
             title: Text(localizations.showOnlyPlayableFiles),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              Switch(
-                value: _showOnlyPlayable,
-                onChanged: (value) {
-                  setState(() {
-                    _showOnlyPlayable = value;
-                  });
-                },
-              )
-            ]),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Switch(
+                  value: _showOnlyPlayable,
+                  onChanged: (value) {
+                    setState(() {
+                      _showOnlyPlayable = value;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
         if (files.isNotEmpty)
           ListTile(
@@ -131,10 +145,11 @@ class _FilesTabState extends State<FilesTab> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Checkbox(
-                    value: globalWantedState,
-                    tristate: true,
-                    onChanged: (_) =>
-                        _handleAllWantedChange(context, !areAllFilesWanted)),
+                  value: globalWantedState,
+                  tristate: true,
+                  onChanged: (_) =>
+                      _handleAllWantedChange(context, !areAllFilesWanted),
+                ),
               ],
             ),
           ),
@@ -154,37 +169,42 @@ class _FilesTabState extends State<FilesTab> {
               var originalIndex = files.indexOf(file);
 
               return ListTile(
-                  leading: Icon(getFileIcon(file.name)),
-                  title: Text(file.name),
-                  subtitle: Row(
-                    children: [
-                      percent < 100
-                          ? Text('${percent.toString()} %')
-                          : const Icon(Icons.download_done, size: 16),
-                      Text(' • ${prettyBytes(file.length.toDouble())}'),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 8,
-                    children: [
-                      if (isPlayable)
-                        IconButton(
-                          onPressed: () {
-                            _handlePlayClick(context, file);
-                          },
-                          icon: const Icon(Icons.play_circle_outlined),
-                          tooltip: localizations.play,
-                        ),
-                      Checkbox(
-                          value: file.wanted,
-                          onChanged: file.bytesCompleted == file.length
-                              ? null
-                              : (_) => _handleWantedChange(
-                                  context, originalIndex, !file.wanted)),
-                    ],
-                  ),
-                  onTap: completed ? () => _openFile(file.name) : null);
+                leading: Icon(getFileIcon(file.name)),
+                title: Text(file.name),
+                subtitle: Row(
+                  children: [
+                    percent < 100
+                        ? Text('${percent.toString()} %')
+                        : const Icon(Icons.download_done, size: 16),
+                    Text(' • ${prettyBytes(file.length.toDouble())}'),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: [
+                    if (isPlayable)
+                      IconButton(
+                        onPressed: () {
+                          _handlePlayClick(context, file);
+                        },
+                        icon: const Icon(Icons.play_circle_outlined),
+                        tooltip: localizations.play,
+                      ),
+                    Checkbox(
+                      value: file.wanted,
+                      onChanged: file.bytesCompleted == file.length
+                          ? null
+                          : (_) => _handleWantedChange(
+                                context,
+                                originalIndex,
+                                !file.wanted,
+                              ),
+                    ),
+                  ],
+                ),
+                onTap: completed ? () => _openFile(file.name) : null,
+              );
             },
           ),
         ),

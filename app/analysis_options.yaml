@@ -10,6 +10,11 @@
 include: package:flutter_lints/flutter.yaml
 
 linter:
+  # strict_top_level_inference was introduced in flutter_lints 6 and flags every
+  # top-level function missing an explicit return type. The codebase predates
+  # this rule; disabling it keeps the diff focused on the rename and dependency
+  # upgrade rather than a broad style refactor.
+  #
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
   # included above or to enable additional rules. A list of all available lints
@@ -21,6 +26,7 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    strict_top_level_inference: false
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 

@@ -12,86 +12,70 @@ Future<void> registerAppInRegistry() async {
 }
 
 Future<void> registerAppCmd() async {
-  String appPath = Platform.resolvedExecutable;
+  final appPath = Platform.resolvedExecutable;
 
-  String protocolRegKey = 'Software\\Classes\\$appName';
-  String protocolCmdRegKey = 'shell\\open\\command';
-  RegistryValue protocolCmdRegValue = RegistryValue(
-    '',
-    RegistryValueType.string,
-    '"$appPath" "%1"',
-  );
+  final protocolRegKey = 'Software\\Classes\\$appName';
+  const protocolCmdRegKey = 'shell\\open\\command';
+  final protocolCmdRegValue = RegistryValue.string('"$appPath" "%1"');
 
-  final regKey = Registry.currentUser.createKey(protocolRegKey);
-  regKey.createKey(protocolCmdRegKey).createValue(protocolCmdRegValue);
+  final regKey = CURRENT_USER.create(protocolRegKey);
+  regKey.create(protocolCmdRegKey).setValue('', protocolCmdRegValue);
 }
 
 Future<void> registerApp() async {
-  String appRegKey = 'Software\\RegisteredApplications';
-  RegistryValue appCapability = const RegistryValue(
-    appName,
-    RegistryValueType.string,
-    appCapabilityPath,
-  );
+  const appRegKey = 'Software\\RegisteredApplications';
+  final appCapability = RegistryValue.string(appCapabilityPath);
 
-  final regKey = Registry.currentUser.createKey(appRegKey);
-  regKey.createValue(appCapability);
+  final regKey = CURRENT_USER.create(appRegKey);
+  regKey.setValue(appName, appCapability);
 }
 
 Future<void> registerCapabilities() async {
-  final regKey =
-      Registry.currentUser.createKey('Software\\$appName\\Capabilities');
-  regKey.createValue(const RegistryValue(
+  final regKey = CURRENT_USER.create(
+    'Software\\$appName\\Capabilities',
+  );
+  regKey.setValue(
     'ApplicationDescription',
-    RegistryValueType.string,
-    'BitTorrent software',
-  ));
+    RegistryValue.string('BitTorrent software'),
+  );
 
-  final fileRegKey = Registry.currentUser
-      .createKey('Software\\$appName\\Capabilities\\FILEAssociations');
-  fileRegKey.createValue(const RegistryValue(
+  final fileRegKey = CURRENT_USER.create(
+    'Software\\$appName\\Capabilities\\FILEAssociations',
+  );
+  fileRegKey.setValue(
     '.torrent',
-    RegistryValueType.string,
-    appName,
-  ));
+    RegistryValue.string(appName),
+  );
 
-  final mimeRegKey = Registry.currentUser
-      .createKey('Software\\$appName\\Capabilities\\MIMEAssociations');
-  mimeRegKey.createValue(const RegistryValue(
+  final mimeRegKey = CURRENT_USER.create(
+    'Software\\$appName\\Capabilities\\MIMEAssociations',
+  );
+  mimeRegKey.setValue(
     'application/x-bittorrent',
-    RegistryValueType.string,
-    appName,
-  ));
+    RegistryValue.string(appName),
+  );
 
-  final urlRegKey = Registry.currentUser
-      .createKey('Software\\$appName\\Capabilities\\URLAssociations');
+  final urlRegKey = CURRENT_USER.create(
+    'Software\\$appName\\Capabilities\\URLAssociations',
+  );
 
-  urlRegKey.createValue(const RegistryValue(
+  urlRegKey.setValue(
     'magnet',
-    RegistryValueType.string,
-    appName,
-  ));
+    RegistryValue.string(appName),
+  );
 
   await registerScheme('gravitytorrent');
 }
 
 Future<void> registerScheme(String scheme) async {
-  String appPath = Platform.resolvedExecutable;
+  final appPath = Platform.resolvedExecutable;
 
-  String protocolRegKey = 'Software\\Classes\\$scheme';
-  RegistryValue protocolRegValue = const RegistryValue(
-    'URL Protocol',
-    RegistryValueType.string,
-    '',
-  );
-  String protocolCmdRegKey = 'shell\\open\\command';
-  RegistryValue protocolCmdRegValue = RegistryValue(
-    '',
-    RegistryValueType.string,
-    '"$appPath" "%1"',
-  );
+  final protocolRegKey = 'Software\\Classes\\$scheme';
+  final protocolRegValue = RegistryValue.string('');
+  const protocolCmdRegKey = 'shell\\open\\command';
+  final protocolCmdRegValue = RegistryValue.string('"$appPath" "%1"');
 
-  final regKey = Registry.currentUser.createKey(protocolRegKey);
-  regKey.createValue(protocolRegValue);
-  regKey.createKey(protocolCmdRegKey).createValue(protocolCmdRegValue);
+  final regKey = CURRENT_USER.create(protocolRegKey);
+  regKey.setValue('URL Protocol', protocolRegValue);
+  regKey.create(protocolCmdRegKey).setValue('', protocolCmdRegValue);
 }

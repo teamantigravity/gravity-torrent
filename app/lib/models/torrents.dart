@@ -1,11 +1,14 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/models/feature_flags.dart';
+import 'package:gravity_torrent/services/analytics_service.dart';
+import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/notifications.dart';
 
@@ -24,11 +27,11 @@ class Filters {
 
   Filters.copy(Filters other) : this(labels: Set.from(other.labels));
 
-  addLabel(String label) {
+  void addLabel(String label) {
     labels.add(label);
   }
 
-  removeLabel(String label) {
+  void removeLabel(String label) {
     labels.remove(label);
   }
 }
@@ -48,21 +51,26 @@ class TorrentsModel extends ChangeNotifier {
   bool _isFetching = false; // mutex to prevent concurrent fetches
   bool _disposed = false;
 
+  FeatureFlagsModel? _featureFlags;
+
   /// When ON (default), any torrent that reaches [TorrentStatus.seeding]
   /// will be automatically stopped so the device does not upload indefinitely.
   bool stopSeedingWhenComplete = true;
 
-  TorrentsModel() {
+  TorrentsModel({FeatureFlagsModel? featureFlags}) {
+    _featureFlags = featureFlags;
     _init();
   }
 
-  _init() async {
+  Future<void> _init() async {
     await _loadSettings();
     if (_disposed) return;
     fetchTorrents();
     // Indefinitely refresh
-    _timer = Timer.periodic(const Duration(seconds: refreshIntervalSeconds),
-        (timer) => fetchTorrents());
+    _timer = Timer.periodic(
+      const Duration(seconds: refreshIntervalSeconds),
+      (timer) => fetchTorrents(),
+    );
   }
 
   void stopTimer() {
@@ -78,10 +86,12 @@ class TorrentsModel extends ChangeNotifier {
     super.dispose();
   }
 
-  _loadSettings() async {
+  Future<void> _loadSettings() async {
     var sortName = await SharedPrefsStorage.getString('sort') ?? sort.name;
-    sort =
-        Sort.values.firstWhere((e) => e.name == sortName, orElse: () => sort);
+    sort = Sort.values.firstWhere(
+      (e) => e.name == sortName,
+      orElse: () => sort,
+    );
     reverseSort =
         await SharedPrefsStorage.getBool('reverseSort') ?? reverseSort;
     stopSeedingWhenComplete =
@@ -90,12 +100,16 @@ class TorrentsModel extends ChangeNotifier {
 
     try {
       final session = await engine.fetchSession();
-      await session.update(SessionBase(
-        seedRatioLimited: stopSeedingWhenComplete,
-        seedRatioLimit: stopSeedingWhenComplete ? 0.0 : null,
-      ));
+      await session.update(
+        SessionBase(
+          seedRatioLimited: stopSeedingWhenComplete,
+          seedRatioLimit: stopSeedingWhenComplete ? 0.0 : null,
+        ),
+      );
     } catch (e) {
-      debugPrint('Failed to set seedRatioLimited in transmission: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to set seedRatioLimited in transmission: $e');
+      }
     }
   }
 
@@ -106,23 +120,29 @@ class TorrentsModel extends ChangeNotifier {
 
     try {
       final session = await engine.fetchSession();
-      await session.update(SessionBase(
-        seedRatioLimited: value,
-        seedRatioLimit: value ? 0.0 : null,
-      ));
+      await session.update(
+        SessionBase(
+          seedRatioLimited: value,
+          seedRatioLimit: value ? 0.0 : null,
+        ),
+      );
     } catch (e) {
-      debugPrint('Failed to set seedRatioLimited in transmission: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to set seedRatioLimited in transmission: $e');
+      }
     }
 
     // If turning on, immediately pause any currently-seeding torrents
     if (value) {
-      for (final torrent in List<Torrent>.from(torrents)) {
-        if (torrent.status == TorrentStatus.seeding) {
-          try {
-            await engine.pauseTorrent(torrent.id);
-          } catch (e) {
-            debugPrint('Failed to pause seeding torrent ${torrent.id}: $e');
-          }
+      final seedingIds = torrents
+          .where((t) => t.status == TorrentStatus.seeding)
+          .map((t) => t.id)
+          .toList();
+      if (seedingIds.isNotEmpty) {
+        try {
+          await engine.pauseTorrents(seedingIds);
+        } catch (e) {
+          if (kDebugMode) debugPrint('Failed to pause seeding torrents: $e');
         }
       }
     }
@@ -134,15 +154,14 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   List<Torrent> _filterTorrentsName(List<Torrent> torrents) {
-    return filterText.isNotEmpty
-        ? extractAllSorted(
-                query: filterText,
-                choices: torrents.toList(),
-                getter: (t) => t.name,
-                cutoff: 60)
-            .map((result) => torrents[result.index])
-            .toList()
-        : torrents;
+    if (filterText.isEmpty) return torrents;
+    final choices = List<Torrent>.unmodifiable(torrents);
+    return extractAllSorted(
+      query: filterText,
+      choices: choices,
+      getter: (t) => t.name,
+      cutoff: 60,
+    ).map((result) => choices[result.index]).toList();
   }
 
   List<Torrent> _filterTorrents(List<Torrent> torrents) {
@@ -171,7 +190,14 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   Future<TorrentAddedResponse> addTorrent(
-      String? filename, String? metainfo, String? downloadDir) async {
+    String? filename,
+    String? metainfo,
+    String? downloadDir,
+  ) async {
+    if (!(await QuotaService.instance.canAddTorrent())) {
+      throw TorrentAddError('Monthly bandwidth quota exceeded');
+    }
+
     final response = await engine.addTorrent(filename, metainfo, downloadDir);
     if (response == TorrentAddedResponse.added) {
       await fetchTorrents();
@@ -195,26 +221,78 @@ class TorrentsModel extends ChangeNotifier {
       final DateTime now = DateTime.now();
       final List<Torrent> fetched = await engine.fetchTorrents();
 
-      // Display notification for torrents completed during last refresh
-      for (final torrent in fetched) {
-        final diff = now.difference(torrent.doneDate).inSeconds;
-        if (diff >= 0 && diff < refreshIntervalSeconds) {
-          showNotification(
-              title: 'Download completed',
-              body: torrent.name,
-              notificationsDetailsType: NotificationsDetailsTypes
-                  .downloadsCompletedAndroidNotificationDetails);
+      // Display smart notifications for completed and in-progress downloads
+      if (_featureFlags?.useEnhancedNotifications ?? true) {
+        final downloading = fetched
+            .where((t) => t.status == TorrentStatus.downloading)
+            .toList();
+
+        if (downloading.isNotEmpty) {
+          final totalProgress =
+              downloading.fold<double>(0, (sum, t) => sum + t.progress) /
+                  downloading.length;
+          final rateDown = downloading.fold<int>(
+            0,
+            (sum, t) => sum + t.rateDownload,
+          );
+          await showDownloadProgressNotification(
+            progress: (totalProgress * 100).toInt(),
+            count: downloading.length,
+            rateDownBytes: rateDown,
+          );
+        } else {
+          await cancelDownloadProgressNotification();
+        }
+
+        // Display notification for torrents completed during last refresh
+        for (final torrent in fetched) {
+          final diff = now.difference(torrent.doneDate).inSeconds;
+          if (diff >= 0 && diff < refreshIntervalSeconds) {
+            showCompletedNotification(torrent.name, id: torrent.id + 1000);
+          }
         }
       }
 
       // Auto-pause seeding torrents if user has that preference on
       if (stopSeedingWhenComplete) {
-        for (final torrent in fetched) {
-          if (torrent.status == TorrentStatus.seeding) {
+        final seedingIds = fetched
+            .where((t) => t.status == TorrentStatus.seeding)
+            .map((t) => t.id)
+            .toList();
+        if (seedingIds.isNotEmpty) {
+          try {
+            await engine.pauseTorrents(seedingIds);
+          } catch (e) {
+            if (kDebugMode) debugPrint('Failed to pause seeding torrents: $e');
+          }
+        }
+      }
+
+      // Enforce monthly bandwidth quota by pausing active torrents
+      if (_featureFlags?.enableQuota ?? false) {
+        await QuotaService.instance.load();
+        final quotaStatus = QuotaService.instance.status;
+        if (quotaStatus == QuotaStatus.exceeded) {
+          final activeIds = fetched
+              .where(
+                (t) =>
+                    t.status == TorrentStatus.downloading ||
+                    t.status == TorrentStatus.seeding,
+              )
+              .map((t) => t.id)
+              .toList();
+          if (activeIds.isNotEmpty) {
             try {
-              await engine.pauseTorrent(torrent.id);
+              await engine.pauseTorrents(activeIds);
+              if (kDebugMode) {
+                debugPrint(
+                  'QuotaService: paused active torrents, quota exceeded',
+                );
+              }
             } catch (e) {
-              debugPrint('Failed to pause seeding torrent ${torrent.id}: $e');
+              if (kDebugMode) {
+                debugPrint('Failed to pause torrents for quota: $e');
+              }
             }
           }
         }
@@ -222,13 +300,10 @@ class TorrentsModel extends ChangeNotifier {
 
       torrents = fetched;
 
-      labels = torrents
-          .fold<List<String>>(
-              [],
-              (previousValue, element) =>
-                  previousValue..addAll(element.labels ?? []))
-          .toSet()
-          .toList();
+      labels = {
+        for (final t in torrents)
+          if (t.labels != null) ...t.labels!,
+      }.toList();
 
       // Remove filtered labels that do not exist anymore
       for (final label in List<String>.from(filters.labels)) {
@@ -241,9 +316,25 @@ class TorrentsModel extends ChangeNotifier {
         hasLoaded = true;
       }
 
+      // Record data usage analytics for the dashboard
+      if (_featureFlags?.enableAnalytics ?? false) {
+        final totalDownloaded = fetched.fold<int>(
+          0,
+          (sum, t) => sum + t.downloadedEver,
+        );
+        final totalUploaded = fetched.fold<int>(
+          0,
+          (sum, t) => sum + t.uploadedEver,
+        );
+        _safeRecordAnalytics(
+          downloadedBytes: totalDownloaded,
+          uploadedBytes: totalUploaded,
+        );
+      }
+
       processDisplayedTorrents();
     } catch (e, stack) {
-      debugPrint('fetchTorrents error: $e\n$stack');
+      if (kDebugMode) debugPrint('fetchTorrents error: $e\n$stack');
       // Still call processDisplayedTorrents so UI doesn't freeze
       processDisplayedTorrents();
     } finally {
@@ -251,27 +342,44 @@ class TorrentsModel extends ChangeNotifier {
     }
   }
 
-  processDisplayedTorrents() {
+  void processDisplayedTorrents() {
     if (_disposed) return;
-    displayedTorrents =
-        _filterTorrents(_filterTorrentsName(_sortTorrents(torrents)));
+    displayedTorrents = _filterTorrents(
+      _filterTorrentsName(_sortTorrents(torrents)),
+    );
     notifyListeners();
   }
 
-  setFilterText(String value) {
+  void _safeRecordAnalytics({
+    required int downloadedBytes,
+    required int uploadedBytes,
+  }) {
+    unawaited(
+      AnalyticsService.instance
+          .recordTotals(
+        downloadedBytes: downloadedBytes,
+        uploadedBytes: uploadedBytes,
+      )
+          .catchError((Object e, StackTrace s) {
+        if (kDebugMode) debugPrint('Analytics error: $e\n$s');
+      }),
+    );
+  }
+
+  void setFilterText(String value) {
     filterText = value;
     processDisplayedTorrents();
   }
 
-  setSort(Sort value, bool reverse) async {
-    SharedPrefsStorage.setString('sort', value.name);
-    SharedPrefsStorage.setBool('reverseSort', reverse);
+  Future<void> setSort(Sort value, bool reverse) async {
+    await SharedPrefsStorage.setString('sort', value.name);
+    await SharedPrefsStorage.setBool('reverseSort', reverse);
     sort = value;
     reverseSort = reverse;
     processDisplayedTorrents();
   }
 
-  setFilters(Filters updatedFilters) async {
+  Future<void> setFilters(Filters updatedFilters) async {
     filters = updatedFilters;
     processDisplayedTorrents();
   }

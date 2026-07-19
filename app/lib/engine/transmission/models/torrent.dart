@@ -35,7 +35,7 @@ enum TorrentField {
   speedLimitUp,
   doneDate,
   leftUntilDone,
-  sizeWhenDone
+  sizeWhenDone,
 }
 
 class TransmissionTorrentFile {
@@ -45,8 +45,13 @@ class TransmissionTorrentFile {
   final int beginPiece;
   final int endPiece;
 
-  TransmissionTorrentFile(this.name, this.length, this.bytesCompleted,
-      this.beginPiece, this.endPiece);
+  TransmissionTorrentFile(
+    this.name,
+    this.length,
+    this.bytesCompleted,
+    this.beginPiece,
+    this.endPiece,
+  );
 
   TransmissionTorrentFile.fromJson(Map<String, dynamic> json)
       : name = json['name'],
@@ -100,38 +105,39 @@ class TransmissionTorrentModel {
   final int sizeWhenDone;
 
   const TransmissionTorrentModel(
-      this.id,
-      this.name,
-      this.percentDone,
-      this.status,
-      this.totalSize,
-      this.rateDownload,
-      this.rateUpload,
-      this.downloadedEver,
-      this.uploadedEver,
-      this.eta, // in seconds
-      this.errorString,
-      this.pieces,
-      this.pieceSize,
-      this.pieceCount,
-      this.addedDate,
-      this.isPrivate,
-      this.location,
-      this.comment,
-      this.creator,
-      this.files,
-      this.labels,
-      this.peersConnected,
-      this.fileStats,
-      this.magnetLink,
-      this.sequentialDownload,
-      this.speedLimitDownEnabled,
-      this.speedLimitUpEnabled,
-      this.speedLimitDown,
-      this.speedLimitUp,
-      this.doneDate,
-      this.leftUntilDone,
-      this.sizeWhenDone);
+    this.id,
+    this.name,
+    this.percentDone,
+    this.status,
+    this.totalSize,
+    this.rateDownload,
+    this.rateUpload,
+    this.downloadedEver,
+    this.uploadedEver,
+    this.eta, // in seconds
+    this.errorString,
+    this.pieces,
+    this.pieceSize,
+    this.pieceCount,
+    this.addedDate,
+    this.isPrivate,
+    this.location,
+    this.comment,
+    this.creator,
+    this.files,
+    this.labels,
+    this.peersConnected,
+    this.fileStats,
+    this.magnetLink,
+    this.sequentialDownload,
+    this.speedLimitDownEnabled,
+    this.speedLimitUpEnabled,
+    this.speedLimitDown,
+    this.speedLimitUp,
+    this.doneDate,
+    this.leftUntilDone,
+    this.sizeWhenDone,
+  );
 
   TransmissionTorrentModel.fromJson(Map<String, dynamic> json)
       : id = json['id'] as int,
@@ -168,14 +174,18 @@ class TransmissionTorrentModel {
         creator = json['creator'] as String? ?? '',
         comment = json['comment'] as String? ?? '',
         files = (json['files'] as List<dynamic>?)
-                ?.map<TransmissionTorrentFile>((j) =>
-                    TransmissionTorrentFile.fromJson(j as Map<String, dynamic>))
+                ?.map<TransmissionTorrentFile>(
+                  (j) => TransmissionTorrentFile.fromJson(
+                      j as Map<String, dynamic>),
+                )
                 .toList() ??
             [],
         fileStats = (json['fileStats'] as List<dynamic>?)
-                ?.map<TransmissionTorrentFileStats>((j) =>
-                    TransmissionTorrentFileStats.fromJson(
-                        j as Map<String, dynamic>))
+                ?.map<TransmissionTorrentFileStats>(
+                  (j) => TransmissionTorrentFileStats.fromJson(
+                    j as Map<String, dynamic>,
+                  ),
+                )
                 .toList() ??
             [],
         labels = List<String>.from(json['labels'] as List<dynamic>? ?? []),
@@ -196,7 +206,8 @@ class TransmissionTorrentModel {
         speedLimitUp =
             (json['upload_limit'] ?? json['uploadLimit']) as int? ?? 0,
         doneDate = DateTime.fromMillisecondsSinceEpoch(
-            (json['doneDate'] as int? ?? 0) * 1000),
+          (json['doneDate'] as int? ?? 0) * 1000,
+        ),
         leftUntilDone = json['leftUntilDone'] as int? ?? 0,
         sizeWhenDone = json['sizeWhenDone'] as int? ?? 0;
 }

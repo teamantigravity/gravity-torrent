@@ -34,8 +34,10 @@ class SessionGetRequest {
 
   SessionGetRequest({required this.arguments});
 
-  Map<String, dynamic> toJson() =>
-      {'method': method, 'arguments': arguments.toJson()};
+  Map<String, dynamic> toJson() => {
+        'method': method,
+        'arguments': arguments.toJson(),
+      };
 }
 
 class SessionGetRequestArguments {
@@ -73,9 +75,9 @@ class SessionGetRequestArguments {
           SessionField.altSpeedTimeEnd => 'alt-speed-time-end',
           SessionField.altSpeedTimeDay => 'alt-speed-time-day',
           SessionField.idleSeedingLimitEnabled => 'idle-seeding-limit-enabled',
-          SessionField.idleSeedingLimit => 'idle-seeding-limit'
+          SessionField.idleSeedingLimit => 'idle-seeding-limit',
         };
-      }).toList()
+      }).toList(),
     };
 
     return json;

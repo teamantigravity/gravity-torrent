@@ -22,28 +22,33 @@ class _ThemeSelectorState extends State<ThemeSelector> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return Consumer<AppModel>(builder: (context, app, child) {
-      var groupValue = app.theme;
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          RadioListTile<ThemeMode>(
+    return Consumer<AppModel>(
+      builder: (context, app, child) {
+        var groupValue = app.theme;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            RadioListTile<ThemeMode>(
               title: Text(localizations.system),
               value: ThemeMode.system,
               groupValue: groupValue,
-              onChanged: handleChange),
-          RadioListTile<ThemeMode>(
+              onChanged: handleChange,
+            ),
+            RadioListTile<ThemeMode>(
               title: Text(localizations.light),
               value: ThemeMode.light,
               groupValue: groupValue,
-              onChanged: handleChange),
-          RadioListTile<ThemeMode>(
+              onChanged: handleChange,
+            ),
+            RadioListTile<ThemeMode>(
               title: Text(localizations.dark),
               value: ThemeMode.dark,
               groupValue: groupValue,
-              onChanged: handleChange),
-        ],
-      );
-    });
+              onChanged: handleChange,
+            ),
+          ],
+        );
+      },
+    );
   }
 }

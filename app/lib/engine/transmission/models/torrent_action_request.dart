@@ -12,7 +12,7 @@ class TorrentActionRequest {
       TorrentAction.startNow => 'torrent-start-now',
       TorrentAction.stop => 'torrent-stop',
       TorrentAction.verify => 'torrent-verify',
-      TorrentAction.reannounce => 'reannounce'
+      TorrentAction.reannounce => 'reannounce',
     };
 
     return {'method': method, 'arguments': arguments.toJson()};

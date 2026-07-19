@@ -20,12 +20,10 @@ class TermsOfUseDialog extends StatelessWidget {
     return AlertDialog(
       title: const Text('Terms of use'),
       content: const Text(
-          'By using Gravity Torrent, you accept the content you download or share is your sole responsibility.'),
+        'By using Gravity Torrent, you accept the content you download or share is your sole responsibility.',
+      ),
       actions: [
-        TextButton(
-          onPressed: _handleRefuseClick,
-          child: const Text('Refuse'),
-        ),
+        TextButton(onPressed: _handleRefuseClick, child: const Text('Refuse')),
         TextButton(
           onPressed: () => _handleAcceptClick(context),
           child: const Text('Accept'),

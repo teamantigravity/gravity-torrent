@@ -9,11 +9,14 @@ class QuittingDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Quitting'),
-      content:
-          const Column(mainAxisSize: MainAxisSize.min, spacing: 16, children: [
-        Text('Please wait while Gravity Torrent is stopping...'),
-        CircularProgressIndicator()
-      ]),
+      content: const Column(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 16,
+        children: [
+          Text('Please wait while Gravity Torrent is stopping...'),
+          CircularProgressIndicator(),
+        ],
+      ),
       actions: [
         TextButton(
           child: const Text('Force quit'),

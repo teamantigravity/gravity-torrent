@@ -35,7 +35,9 @@ The [Team Antigravity website](https://github.com/teamantigravity/teamantigravit
 
 ## Legacy migration
 
-
+- **Windows executable / installer rename** — The Windows MSIX `output_name` and Inno Setup `executable_name` changed from `GravityTorrent` to `Gravity Torrent` (with spaces). Existing shortcuts, scheduled tasks, and auto-update scripts that reference `GravityTorrent.exe` or the old installer path will need to be recreated. Release notes should call this out before users upgrade.
+- **App lock PIN storage** — The app lock PIN hash is now stored via `flutter_secure_storage` (Keystore/Keychain-backed) instead of plain `SharedPreferences`.
+- **Desktop compact floating player** — The player supports an always-on-top floating window on desktop via `PipService` and `window_manager`. Mobile picture-in-picture is not implemented in the current player and is not declared in the manifest.
 
 ## Logo
 

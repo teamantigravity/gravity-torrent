@@ -7,8 +7,11 @@ class RatioInputDialog extends StatefulWidget {
   final void Function(double) onSave;
   final double currentValue;
 
-  const RatioInputDialog(
-      {super.key, required this.onSave, required this.currentValue});
+  const RatioInputDialog({
+    super.key,
+    required this.onSave,
+    required this.currentValue,
+  });
 
   @override
   State<RatioInputDialog> createState() => _RatioInputDialogState();
@@ -22,7 +25,8 @@ class _RatioInputDialogState extends State<RatioInputDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-        text: widget.currentValue > 0 ? widget.currentValue.toString() : '2.0');
+      text: widget.currentValue > 0 ? widget.currentValue.toString() : '2.0',
+    );
   }
 
   @override
@@ -43,14 +47,13 @@ class _RatioInputDialogState extends State<RatioInputDialog> {
           children: <Widget>[
             TextFormField(
               controller: _controller,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
               ],
-              decoration: InputDecoration(
-                labelText: localizations.ratio,
-              ),
+              decoration: InputDecoration(labelText: localizations.ratio),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return localizations.emptyNumber;

@@ -96,6 +96,6 @@ Future<bool> isDistributedFromAppStore() async {
   return switch (installationSource) {
     Source.IS_INSTALLED_FROM_LOCAL_SOURCE => false,
     Source.UNKNOWN => false,
-    _ => true
+    _ => true,
   };
 }

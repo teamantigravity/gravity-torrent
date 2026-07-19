@@ -4,7 +4,13 @@ import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.
 
 enum TorrentAddedResponse { added, duplicated }
 
-class TorrentAddError extends Error {}
+class TorrentAddError extends Error {
+  TorrentAddError([this.message]);
+  final String? message;
+
+  @override
+  String toString() => message ?? 'TorrentAddError';
+}
 
 /// BitTorrent engine abstraction.
 abstract class Engine {
@@ -22,7 +28,10 @@ abstract class Engine {
 
   // Add a torrent
   Future<TorrentAddedResponse> addTorrent(
-      String? filename, String? metainfo, String? downloadDir);
+    String? filename,
+    String? metainfo,
+    String? downloadDir,
+  );
 
   // Fetch all torrents
   Future<List<Torrent>> fetchTorrents();
@@ -36,7 +45,8 @@ abstract class Engine {
   Future resetSettings();
 
   Future setTorrentsLocation(
-      TorrentSetLocationArguments torrentSetLocationArguments);
+    TorrentSetLocationArguments torrentSetLocationArguments,
+  );
 
   // Remove multiple torrents
   Future removeTorrents(List<int> torrentIds, bool withData);
@@ -44,8 +54,14 @@ abstract class Engine {
   // Pause a torrent
   Future pauseTorrent(int id);
 
+  // Pause multiple torrents
+  Future pauseTorrents(List<int> ids);
+
   // Resume a torrent
   Future resumeTorrent(int id);
+
+  // Resume multiple torrents
+  Future resumeTorrents(List<int> ids);
 
   // Set per-torrent download/upload speed limits (kbps). 0 means unlimited.
   Future setTorrentSpeedLimit(int id, {int? downloadLimit, int? uploadLimit});

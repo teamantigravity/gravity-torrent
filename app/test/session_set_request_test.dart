@@ -68,8 +68,9 @@ void main() {
     });
 
     test('omits null fields from the payload', () {
-      final request =
-          SessionSetRequest(arguments: SessionSetRequestArguments());
+      final request = SessionSetRequest(
+        arguments: SessionSetRequestArguments(),
+      );
       final json = request.toJson()['arguments'] as Map<String, dynamic>;
       expect(json.isEmpty, isTrue);
     });

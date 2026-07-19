@@ -6,11 +6,12 @@ class SubtitlesSelectorDialog extends StatefulWidget {
   final List<SubtitleTrack> subtitles;
   final Function(SubtitleTrack) onSubtitleSelected;
   final String currentValue;
-  const SubtitlesSelectorDialog(
-      {super.key,
-      required this.onSubtitleSelected,
-      required this.currentValue,
-      required this.subtitles});
+  const SubtitlesSelectorDialog({
+    super.key,
+    required this.onSubtitleSelected,
+    required this.currentValue,
+    required this.subtitles,
+  });
 
   @override
   State<SubtitlesSelectorDialog> createState() =>
@@ -27,19 +28,20 @@ class _SubtitlesSelectorDialogState extends State<SubtitlesSelectorDialog> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             // Internal subtitles
-            ...widget.subtitles
-                .where((s) => s.id != 'auto')
-                .toList()
-                .map((sub) {
+            ...widget.subtitles.where((s) => s.id != 'auto').toList().map((
+              sub,
+            ) {
               return RadioListTile(
-                  title: Text(
-                      sub.id == 'no' ? 'No subtitle' : sub.title ?? 'Unknown'),
-                  value: sub.id,
-                  groupValue: widget.currentValue,
-                  onChanged: (t) {
-                    widget.onSubtitleSelected(sub);
-                    Navigator.of(context).pop();
-                  });
+                title: Text(
+                  sub.id == 'no' ? 'No subtitle' : sub.title ?? 'Unknown',
+                ),
+                value: sub.id,
+                groupValue: widget.currentValue,
+                onChanged: (t) {
+                  widget.onSubtitleSelected(sub);
+                  Navigator.of(context).pop();
+                },
+              );
             }),
           ],
         ),

@@ -6,8 +6,11 @@ void main() {
     test('accepts all supported subtitle extensions', () {
       for (final ext in subtitleExtensions) {
         expect(isSubtitleFileName('movie$ext'), isTrue, reason: ext);
-        expect(isSubtitleFileName('movie${ext.toUpperCase()}'), isTrue,
-            reason: ext);
+        expect(
+          isSubtitleFileName('movie${ext.toUpperCase()}'),
+          isTrue,
+          reason: ext,
+        );
       }
     });
 
@@ -46,10 +49,12 @@ void main() {
       expect(detectSubtitleLanguage('movie.srt'), isNull);
     });
 
-    test('does not misdetect a short undelimited movie title as a language',
-        () {
-      expect(detectSubtitleLanguage('Up.srt'), isNull);
-      expect(detectSubtitleLanguage('Room.srt'), isNull);
-    });
+    test(
+      'does not misdetect a short undelimited movie title as a language',
+      () {
+        expect(detectSubtitleLanguage('Up.srt'), isNull);
+        expect(detectSubtitleLanguage('Room.srt'), isNull);
+      },
+    );
   });
 }

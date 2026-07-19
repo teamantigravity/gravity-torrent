@@ -17,13 +17,17 @@ class FilterLabelsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TorrentsModel>(builder: (context, torrentsModel, child) {
-      return IconButton(
+    return Consumer<TorrentsModel>(
+      builder: (context, torrentsModel, child) {
+        return IconButton(
           onPressed: () => _handleButtonClick(context),
-          icon: Icon(Icons.filter_alt_outlined,
-              color: torrentsModel.filters.enabled
-                  ? const Color(0xFF4285F4)
-                  : null));
-    });
+          icon: Icon(
+            Icons.filter_alt_outlined,
+            color:
+                torrentsModel.filters.enabled ? const Color(0xFF4285F4) : null,
+          ),
+        );
+      },
+    );
   }
 }

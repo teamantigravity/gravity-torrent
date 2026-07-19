@@ -38,35 +38,40 @@ class _FiltersDialogState extends State<FiltersDialog> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return Consumer<TorrentsModel>(builder: (context, torrentsModel, child) {
-      return AlertDialog(
-        title: const Text('Filters'),
-        content: torrentsModel.labels.isEmpty
-            ? Text(localizations.noTagsAddedYet)
-            : Wrap(
-                spacing: 8.0, // gap between adjacent chips
-                runSpacing: 4.0,
-                children: [
-                    ...torrentsModel.labels.map((String label) => FilterChip(
-                          label: Text(label),
-                          selected: filters.labels.contains(label),
-                          onSelected: (bool selected) =>
-                              handleFilterChipSelected(selected, label),
-                        ))
-                  ]),
-        actions: <Widget>[
-          TextButton(
-            child: Text(localizations.cancel),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-          TextButton(
-            child: Text(localizations.apply),
-            onPressed: () => _handleApply(context),
-          ),
-        ],
-      );
-    });
+    return Consumer<TorrentsModel>(
+      builder: (context, torrentsModel, child) {
+        return AlertDialog(
+          title: const Text('Filters'),
+          content: torrentsModel.labels.isEmpty
+              ? Text(localizations.noTagsAddedYet)
+              : Wrap(
+                  spacing: 8.0, // gap between adjacent chips
+                  runSpacing: 4.0,
+                  children: [
+                    ...torrentsModel.labels.map(
+                      (String label) => FilterChip(
+                        label: Text(label),
+                        selected: filters.labels.contains(label),
+                        onSelected: (bool selected) =>
+                            handleFilterChipSelected(selected, label),
+                      ),
+                    ),
+                  ],
+                ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(localizations.cancel),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text(localizations.apply),
+              onPressed: () => _handleApply(context),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

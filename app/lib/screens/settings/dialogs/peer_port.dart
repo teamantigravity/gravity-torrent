@@ -6,8 +6,11 @@ class PeerPortDialog extends StatefulWidget {
   final void Function(int) onSave;
   final int currentValue;
 
-  const PeerPortDialog(
-      {super.key, required this.onSave, required this.currentValue});
+  const PeerPortDialog({
+    super.key,
+    required this.onSave,
+    required this.currentValue,
+  });
 
   @override
   State<PeerPortDialog> createState() => _MaximumActiveDownloadEditorState();
@@ -20,7 +23,8 @@ class _MaximumActiveDownloadEditorState extends State<PeerPortDialog> {
   void initState() {
     super.initState();
     peerPort = TextEditingController.fromValue(
-        TextEditingValue(text: widget.currentValue.toString()));
+      TextEditingValue(text: widget.currentValue.toString()),
+    );
   }
 
   @override
@@ -45,9 +49,7 @@ class _MaximumActiveDownloadEditorState extends State<PeerPortDialog> {
             controller: peerPort,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              labelText: localizations.enterNumber,
-            ),
+            decoration: InputDecoration(labelText: localizations.enterNumber),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return localizations.emptyNumber;

@@ -23,13 +23,14 @@ class StreamingServer {
 
   CancelableOperation? _cancelableOperation;
 
-  StreamingServer(
-      {required this.filePath,
-      required this.bufferSize,
-      required this.torrent,
-      required this.torrentFile});
+  StreamingServer({
+    required this.filePath,
+    required this.bufferSize,
+    required this.torrent,
+    required this.torrentFile,
+  });
 
-  void start() async {
+  Future<void> start() async {
     _file = File(filePath);
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     _server = server;
@@ -41,12 +42,17 @@ class StreamingServer {
     if (!_serverReadyCompleter.isCompleted) {
       _serverReadyCompleter.complete();
     }
-    debugPrint(
-        'streaming_server: starting streaming server on ${await getAddress()}');
+    if (kDebugMode) {
+      debugPrint(
+        'streaming_server: starting streaming server on ${await getAddress()}',
+      );
+    }
 
     await for (HttpRequest request in server) {
       // Cancel the previous request
-      debugPrint('streaming_server: cancel previous request...');
+      if (kDebugMode) {
+        debugPrint('streaming_server: cancel previous request...');
+      }
       await _cancelableOperation?.cancel();
       final completer = CancelableCompleter();
 
@@ -54,15 +60,15 @@ class StreamingServer {
       _cancelableOperation = CancelableOperation.fromFuture(
         _handleRequest(request, completer),
         onCancel: () {
-          debugPrint('Previous request cancelled.');
+          if (kDebugMode) debugPrint('Previous request cancelled.');
           completer.operation.cancel();
         },
       );
     }
   }
 
-  void stop() async {
-    debugPrint('streaming_server: stop');
+  Future<void> stop() async {
+    if (kDebugMode) debugPrint('streaming_server: stop');
     _stopped = true;
     await _cancelableOperation?.cancel();
     await _server?.close(force: true);
@@ -83,7 +89,9 @@ class StreamingServer {
   }
 
   Future<void> _handleRequest(
-      HttpRequest request, CancelableCompleter cancelableCompleter) async {
+    HttpRequest request,
+    CancelableCompleter cancelableCompleter,
+  ) async {
     try {
       if (request.method == 'GET') {
         await _handleGetRequest(request, cancelableCompleter);
@@ -91,9 +99,11 @@ class StreamingServer {
         request.response.statusCode = HttpStatus.methodNotAllowed;
       }
     } on CancellationException {
-      debugPrint('streaming_server: Request cancelled');
+      if (kDebugMode) debugPrint('streaming_server: Request cancelled');
     } catch (e) {
-      debugPrint("streaming_server: Error processing request: $e");
+      if (kDebugMode) {
+        debugPrint("streaming_server: Error processing request: $e");
+      }
       request.response.statusCode = HttpStatus.internalServerError;
     } finally {
       await request.response.close();
@@ -102,42 +112,62 @@ class StreamingServer {
   }
 
   Future<void> _handleGetRequest(
-      HttpRequest request, CancelableCompleter cancelableCompleter) async {
+    HttpRequest request,
+    CancelableCompleter cancelableCompleter,
+  ) async {
     // Wait for at least first piece
-    debugPrint('streaming_server: _handleGetRequest');
+    if (kDebugMode) debugPrint('streaming_server: _handleGetRequest');
     if (torrent.pieceSize <= 0) {
       request.response.statusCode = HttpStatus.internalServerError;
       return;
     }
     await _waitForPieces(
-        from: torrentFile.beginPiece,
-        count: 1,
-        cancelableCompleter: cancelableCompleter);
+      from: torrentFile.beginPiece,
+      count: 1,
+      cancelableCompleter: cancelableCompleter,
+    );
     final fileSize = torrentFile.length;
     final rangeHeader = request.headers.value('range');
 
     if (rangeHeader != null) {
       await _handleRangeRequest(
-          request, fileSize, rangeHeader, cancelableCompleter);
+        request,
+        fileSize,
+        rangeHeader,
+        cancelableCompleter,
+      );
     } else {
       await _sendFullFile(request, fileSize, cancelableCompleter);
     }
   }
 
-  Future<void> _sendFullFile(HttpRequest request, int fileSize,
-      CancelableCompleter cancelableCompleter) async {
-    debugPrint('streaming_server: _sendFullFile');
+  Future<void> _sendFullFile(
+    HttpRequest request,
+    int fileSize,
+    CancelableCompleter cancelableCompleter,
+  ) async {
+    if (kDebugMode) debugPrint('streaming_server: _sendFullFile');
     final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
     request.response.headers.contentType = ContentType.parse(mimeType);
     request.response.headers.contentLength = fileSize;
 
-    await _pipeFileRangeInBlocks(_file, request.response, 0, fileSize - 1,
-        torrent.pieceSize, cancelableCompleter);
+    await _pipeFileRangeInBlocks(
+      _file,
+      request.response,
+      0,
+      fileSize - 1,
+      torrent.pieceSize,
+      cancelableCompleter,
+    );
   }
 
-  Future<void> _handleRangeRequest(HttpRequest request, int fileSize,
-      String rangeHeader, CancelableCompleter cancelableCompleter) async {
-    debugPrint('streaming_server: _handleRangeRequest');
+  Future<void> _handleRangeRequest(
+    HttpRequest request,
+    int fileSize,
+    String rangeHeader,
+    CancelableCompleter cancelableCompleter,
+  ) async {
+    if (kDebugMode) debugPrint('streaming_server: _handleRangeRequest');
     final rangeRegex = RegExp(r'bytes=(\d*)-(\d*)');
     final match = rangeRegex.firstMatch(rangeHeader);
 
@@ -157,10 +187,18 @@ class StreamingServer {
     }
 
     if (endStr != null && endStr.isNotEmpty) {
-      end = int.parse(endStr);
+      if (startStr != null && startStr.isNotEmpty) {
+        end = int.parse(endStr);
+      } else {
+        // Suffix range: bytes=-N
+        final suffixLength = int.parse(endStr);
+        start = fileSize - suffixLength;
+        if (start < 0) start = 0;
+        end = fileSize - 1;
+      }
     }
 
-    if (start < 0 || end >= fileSize || start > end) {
+    if (start < 0 || start >= fileSize || start > end) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
       request.response.headers.set('Content-Range', 'bytes */$fileSize');
       return;
@@ -172,17 +210,28 @@ class StreamingServer {
     final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
     request.response.headers.contentType = ContentType.parse(mimeType);
     request.response.headers.contentLength = contentLength;
-    request.response.headers
-        .set('Content-Range', 'bytes $start-$end/$fileSize');
+    request.response.headers.set(
+      'Content-Range',
+      'bytes $start-$end/$fileSize',
+    );
 
     final piece = (start / torrent.pieceSize).floor();
 
-    debugPrint(
-        'handleRangeRequest $start ${end + 1} $contentLength piece: $piece ${torrent.pieceSize}');
+    if (kDebugMode) {
+      debugPrint(
+        'handleRangeRequest $start ${end + 1} $contentLength piece: $piece ${torrent.pieceSize}',
+      );
+    }
 
     await torrent.setSequentialDownloadFromPiece(piece);
-    await _pipeFileRangeInBlocks(_file, request.response, start, end,
-        torrent.pieceSize, cancelableCompleter);
+    await _pipeFileRangeInBlocks(
+      _file,
+      request.response,
+      start,
+      end,
+      torrent.pieceSize,
+      cancelableCompleter,
+    );
   }
 
   List<int> _computeNeededPieces(int? from, int? count) {
@@ -197,10 +246,13 @@ class StreamingServer {
     return neededPieces;
   }
 
-  Future<void> _waitForPieces(
-      {int? from, int? count, CancelableCompleter? cancelableCompleter}) async {
+  Future<void> _waitForPieces({
+    int? from,
+    int? count,
+    CancelableCompleter? cancelableCompleter,
+  }) async {
     final neededPieces = _computeNeededPieces(from, count);
-    debugPrint('streaming_server: neededPieces $neededPieces');
+    if (kDebugMode) debugPrint('streaming_server: neededPieces $neededPieces');
 
     await waitForPiecesList(
       torrent: torrent,
@@ -208,7 +260,7 @@ class StreamingServer {
       onCancelled: cancelableCompleter != null
           ? () {
               if (cancelableCompleter.isCanceled) {
-                debugPrint('streaming_server: cancel throw');
+                if (kDebugMode) debugPrint('streaming_server: cancel throw');
                 return true;
               }
               return false;
@@ -218,19 +270,25 @@ class StreamingServer {
   }
 
   Future<void> _pipeFileRangeInBlocks(
-      File file,
-      HttpResponse response,
-      int start,
-      int end,
-      int blockSize,
-      CancelableCompleter cancelableCompleter) async {
-    debugPrint(
-        'streaming_server: _pipeFileRangeInBlocks start: $start end: $end');
+    File file,
+    HttpResponse response,
+    int start,
+    int end,
+    int blockSize,
+    CancelableCompleter cancelableCompleter,
+  ) async {
+    if (kDebugMode) {
+      debugPrint(
+        'streaming_server: _pipeFileRangeInBlocks start: $start end: $end',
+      );
+    }
 
     int currentStart = start;
     while (currentStart <= end) {
       if (cancelableCompleter.isCanceled) {
-        debugPrint('streaming_server: _pipeFileRangeInBlocks isCanceled !!!');
+        if (kDebugMode) {
+          debugPrint('streaming_server: _pipeFileRangeInBlocks isCanceled !!!');
+        }
         throw CancellationException();
       }
 
@@ -241,12 +299,20 @@ class StreamingServer {
 
       final piece = (currentStart / torrent.pieceSize).floor();
       await _waitForPieces(
-          from: piece, cancelableCompleter: cancelableCompleter);
-      debugPrint(
-          'streaming_server: reading piece: $piece start: $start end: $end');
+        from: piece,
+        cancelableCompleter: cancelableCompleter,
+      );
+      if (kDebugMode) {
+        debugPrint(
+          'streaming_server: reading piece: $piece start: $start end: $end',
+        );
+      }
       final readStream = file.openRead(currentStart, currentEnd + 1);
 
       await for (final chunk in readStream) {
+        if (cancelableCompleter.isCanceled) {
+          throw CancellationException();
+        }
         response.add(chunk);
         await response.flush();
       }

@@ -28,7 +28,9 @@
 		<string>MainMenu</string>
 		<key>NSPrincipalClass</key>
 		<string>NSApplication</string>
-		<key>CFBundleURLTypes</key>
+		<key>NSFaceIDUsageDescription</key>
+	<string>Use Touch ID to unlock Gravity Torrent.</string>
+	<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
 				<key>CFBundleURLName</key>

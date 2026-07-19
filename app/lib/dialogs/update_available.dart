@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-final Uri url =
-    Uri.parse('https://github.com/teamantigravity/gravity-torrent/releases');
+final Uri url = Uri.parse(
+  'https://github.com/teamantigravity/gravity-torrent/releases',
+);
 
 class UpdateAvailableDialog extends StatelessWidget {
   final String latestVersion;
@@ -17,10 +18,12 @@ class UpdateAvailableDialog extends StatelessWidget {
     final result = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!context.mounted) return;
     if (!result) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Could not open the release page'),
-        backgroundColor: Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the release page'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
     Navigator.pop(context);

@@ -18,8 +18,10 @@ Future<void> resetAllFilePriorities() async {
 
     for (final torrent in torrents) {
       if (torrent.files.isNotEmpty) {
-        final allFileIndices =
-            List.generate(torrent.files.length, (index) => index);
+        final allFileIndices = List.generate(
+          torrent.files.length,
+          (index) => index,
+        );
         await torrent.setFilesPriority(priorityNormal: allFileIndices);
       }
     }

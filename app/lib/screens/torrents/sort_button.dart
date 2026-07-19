@@ -16,7 +16,8 @@ class SortButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-        onPressed: () => _handleButtonClick(context),
-        icon: const Icon(Icons.sort));
+      onPressed: () => _handleButtonClick(context),
+      icon: const Icon(Icons.sort),
+    );
   }
 }

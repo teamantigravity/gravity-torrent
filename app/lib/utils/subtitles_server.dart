@@ -15,7 +15,7 @@ class SubtitlesServer {
 
   SubtitlesServer({required this.torrent});
 
-  void start() async {
+  Future<void> start() async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     _server = server;
     if (_stopped) {
@@ -31,7 +31,7 @@ class SubtitlesServer {
     }
   }
 
-  void stop() async {
+  Future<void> stop() async {
     _stopped = true;
     await _server?.close(force: true);
     _server = null;
@@ -60,14 +60,22 @@ class SubtitlesServer {
     } catch (e) {
       request.response.statusCode = HttpStatus.internalServerError;
       request.response.write('500: Internal Server Error');
-      debugPrint('Error serving file: $e');
+      if (kDebugMode) debugPrint('Error serving file: $e');
     }
 
     await request.response.close();
   }
 
   Future<void> serveFile(HttpResponse response, String filePath) async {
-    final file = File(p.join(torrent.location, filePath));
+    final resolved = p.normalize(p.join(torrent.location, filePath));
+    final root = p.normalize(torrent.location);
+    if (!p.isWithin(root, resolved) && resolved != root) {
+      response.statusCode = HttpStatus.forbidden;
+      response.write('403: Forbidden');
+      return;
+    }
+
+    final file = File(resolved);
 
     if (await file.exists()) {
       final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;

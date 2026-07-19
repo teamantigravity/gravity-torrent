@@ -13,8 +13,9 @@ final appUri = const String.fromEnvironment('APP_URL').isNotEmpty
 
 createAppLink(String link) {
   Uri uri = Uri(fragment: Uri(queryParameters: {'magnet': link}).toString());
-  String fragmentString =
-      encodeToBase64(uri.toString().substring(2)); // Remove leading #?
+  String fragmentString = encodeToBase64(
+    uri.toString().substring(2),
+  ); // Remove leading #?
   final appLink = Uri.encodeFull('$appUri#$fragmentString');
 
   return appLink;
@@ -41,18 +42,20 @@ isAppLink(String appLink) {
   return appLink.startsWith(appUri);
 }
 
-shareLink(BuildContext context, String magnetLink) async {
+Future<void> shareLink(BuildContext context, String magnetLink) async {
   String link = createAppLink(magnetLink);
 
   if (isMobile()) {
-    await Share.share(link);
+    await SharePlus.instance.share(ShareParams(text: link));
   } else {
     await Clipboard.setData(ClipboardData(text: link));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Link copied'),
-      backgroundColor: Colors.lightGreen,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Link copied'),
+        backgroundColor: Colors.lightGreen,
+      ),
+    );
   }
 }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:gravity_torrent/engine/file.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
@@ -48,8 +49,10 @@ bool isSubtitleFileName(String fileName) =>
 ///   movie[en].srt    -> en
 ///   movie.srt        -> null
 String? detectSubtitleLanguage(String fileName) {
-  final base =
-      fileName.substring(0, fileName.length - _fileExtension(fileName).length);
+  final base = fileName.substring(
+    0,
+    fileName.length - _fileExtension(fileName).length,
+  );
   // Split on common subtitle delimiters: . _ - space [ ] ( )
   final parts = base.split(RegExp(r'[\]\s_\-.\[()]+'));
   // A lone, undelimited base (e.g. "movie.srt" -> "movie") has no distinct
@@ -135,28 +138,47 @@ String? _normalizeLanguageTag(String tag) {
 List<File> getExternalSubtitles(File file, Torrent torrent) {
   final slashesCount = countSlashesRegex(file.name);
   final externalSubtitlesFiles = torrent.files
-      .where((f) =>
-          slashesCount == countSlashesRegex(f.name) &&
-          isSubtitleFileName(f.name))
+      .where(
+        (f) =>
+            slashesCount == countSlashesRegex(f.name) &&
+            isSubtitleFileName(f.name),
+      )
       .toList();
 
   return externalSubtitlesFiles;
 }
 
-downloadSubtitles(File file, Torrent torrent) async {
+Future<void> downloadSubtitles(
+  File file,
+  Torrent torrent, {
+  CancelableCompleter? cancelableCompleter,
+}) async {
   final List<File> subtitles = getExternalSubtitles(file, torrent);
   for (var sub in subtitles) {
+    if (cancelableCompleter?.isCanceled ?? false) return;
     await torrent.setSequentialDownloadFromPiece(sub.beginPiece);
-    await _waitForFileComplete(torrent: torrent, fileName: sub.name);
+    await _waitForFileComplete(
+      torrent: torrent,
+      fileName: sub.name,
+      cancelableCompleter: cancelableCompleter,
+    );
   }
 }
 
-Future<void> _waitForFileComplete(
-    {required Torrent torrent, required String fileName}) async {
+Future<void> _waitForFileComplete({
+  required Torrent torrent,
+  required String fileName,
+  CancelableCompleter? cancelableCompleter,
+}) async {
   final file = torrent.files.firstWhereOrNull((f) => f.name == fileName);
   if (file == null) return;
   final pieceCount = file.endPiece - file.beginPiece;
-  await waitForPieces(torrent: torrent, file: file, pieceCount: pieceCount);
+  await waitForPieces(
+    torrent: torrent,
+    file: file,
+    pieceCount: pieceCount < 0 ? 0 : pieceCount,
+    cancelableCompleter: cancelableCompleter,
+  );
 }
 
 class ExternalSubtitle {

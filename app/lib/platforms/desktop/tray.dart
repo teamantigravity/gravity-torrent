@@ -19,7 +19,8 @@ initTray(BuildContext context) async {
       await trayManager.setIcon('assets/tray_icon.ico');
     } else if (isFlatpak()) {
       await trayManager.setIcon(
-          Platform.environment['FLATPAK_ID'] ?? 'assets/tray_icon.png');
+        Platform.environment['FLATPAK_ID'] ?? 'assets/tray_icon.png',
+      );
     } else {
       await trayManager.setIcon('assets/tray_icon.png');
     }
@@ -30,15 +31,9 @@ initTray(BuildContext context) async {
 
     Menu menu = Menu(
       items: [
-        MenuItem(
-          key: 'show_window',
-          label: 'Show Window',
-        ),
+        MenuItem(key: 'show_window', label: 'Show Window'),
         MenuItem.separator(),
-        MenuItem(
-          key: 'exit_app',
-          label: 'Exit App',
-        ),
+        MenuItem(key: 'exit_app', label: 'Exit App'),
       ],
     );
 

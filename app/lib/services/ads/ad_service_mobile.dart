@@ -18,6 +18,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
   AppOpenAd? _appOpenAd;
   bool _isShowingAd = false;
   bool _firstAppOpenShown = false;
+  bool _observerAdded = false;
 
   static const _adFreeKey = 'gravity_torrent_ad_free';
 
@@ -61,6 +62,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
       }
       await MobileAds.instance.initialize();
       _initialized = true;
+      _observerAdded = true;
       WidgetsBinding.instance.addObserver(this);
       _preloadInterstitial();
       _preloadAppOpenAd();
@@ -181,7 +183,10 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    if (_observerAdded) {
+      _observerAdded = false;
+      WidgetsBinding.instance.removeObserver(this);
+    }
     unawaited(_interstitial?.dispose());
     unawaited(_appOpenAd?.dispose());
     _interstitial = null;

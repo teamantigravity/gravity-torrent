@@ -11,11 +11,12 @@ class File {
   final int beginPiece;
   final int endPiece;
 
-  File(
-      {required this.name,
-      required this.length,
-      required this.bytesCompleted,
-      required this.wanted,
-      required this.beginPiece,
-      required this.endPiece});
+  File({
+    required this.name,
+    required this.length,
+    required this.bytesCompleted,
+    required this.wanted,
+    required this.beginPiece,
+    required this.endPiece,
+  });
 }

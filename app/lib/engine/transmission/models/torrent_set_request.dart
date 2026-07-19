@@ -4,8 +4,10 @@ class TorrentSetRequest {
 
   TorrentSetRequest({required this.arguments});
 
-  Map<String, dynamic> toJson() =>
-      {'method': method, 'arguments': arguments.toJson()};
+  Map<String, dynamic> toJson() => {
+        'method': method,
+        'arguments': arguments.toJson(),
+      };
 }
 
 class TorrentSetRequestArguments {
@@ -23,20 +25,21 @@ class TorrentSetRequestArguments {
   final int? speedLimitDown;
   final int? speedLimitUp;
 
-  TorrentSetRequestArguments(
-      {required this.ids,
-      this.labels,
-      this.filesWanted,
-      this.filesUnwanted,
-      this.sequentialDownload,
-      this.sequentialDownloadFromPiece,
-      this.priorityHigh,
-      this.priorityLow,
-      this.priorityNormal,
-      this.speedLimitDownEnabled,
-      this.speedLimitUpEnabled,
-      this.speedLimitDown,
-      this.speedLimitUp});
+  TorrentSetRequestArguments({
+    required this.ids,
+    this.labels,
+    this.filesWanted,
+    this.filesUnwanted,
+    this.sequentialDownload,
+    this.sequentialDownloadFromPiece,
+    this.priorityHigh,
+    this.priorityLow,
+    this.priorityNormal,
+    this.speedLimitDownEnabled,
+    this.speedLimitUpEnabled,
+    this.speedLimitDown,
+    this.speedLimitUp,
+  });
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};

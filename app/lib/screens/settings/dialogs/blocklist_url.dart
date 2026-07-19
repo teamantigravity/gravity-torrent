@@ -7,8 +7,11 @@ class BlocklistUrlDialog extends StatefulWidget {
   final void Function(String) onSave;
   final String currentValue;
 
-  const BlocklistUrlDialog(
-      {super.key, required this.onSave, required this.currentValue});
+  const BlocklistUrlDialog({
+    super.key,
+    required this.onSave,
+    required this.currentValue,
+  });
 
   @override
   State<BlocklistUrlDialog> createState() => _BlocklistUrlDialogState();
@@ -46,8 +49,10 @@ class _BlocklistUrlDialogState extends State<BlocklistUrlDialog> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(localizations.blocklistUrlDescription,
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            localizations.blocklistUrlDescription,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
       actions: <Widget>[

@@ -17,7 +17,7 @@ Future<void> waitForPiecesList({
   required List<int> neededPieces,
   bool Function()? onCancelled,
 }) async {
-  final waitForPiecesCompleter = Completer();
+  final waitForPiecesCompleter = Completer<void>();
 
   Future<void> testPiecesComplete(Timer? timer) async {
     try {
@@ -81,6 +81,7 @@ Future<void> waitForPieces({
   required int pieceCount,
   CancelableCompleter? cancelableCompleter,
 }) async {
+  if (pieceCount < 0) pieceCount = 0;
   List<int> neededPieces = [];
   final endPiece = (file.beginPiece + pieceCount).clamp(0, file.endPiece);
   for (int i = file.beginPiece; i < endPiece; i++) {

@@ -7,13 +7,12 @@ import 'package:provider/provider.dart';
 class RemoveTorrentDialog extends StatelessWidget {
   final Torrent torrent;
 
-  const RemoveTorrentDialog({
-    super.key,
-    required this.torrent,
-  });
+  const RemoveTorrentDialog({super.key, required this.torrent});
 
   Future<void> _removeTorrent(
-      TorrentsModel torrentsModel, bool withData) async {
+    TorrentsModel torrentsModel,
+    bool withData,
+  ) async {
     await torrent.remove(withData);
     // Use TorrentsModel so the UI list is updated immediately. The model is
     // captured before popping the dialog so the refresh still runs even though

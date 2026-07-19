@@ -18,7 +18,9 @@ class TorrentGetResponseArguments {
 
   TorrentGetResponseArguments.fromJson(Map<String, dynamic> json)
       : torrents = ((json['torrents'] as List<dynamic>?) ?? [])
-            .map<TransmissionTorrentModel>((j) =>
-                TransmissionTorrentModel.fromJson(j as Map<String, dynamic>))
+            .map<TransmissionTorrentModel>(
+              (j) =>
+                  TransmissionTorrentModel.fromJson(j as Map<String, dynamic>),
+            )
             .toList();
 }

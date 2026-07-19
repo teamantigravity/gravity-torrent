@@ -8,8 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PurchaseServiceMobile implements PurchaseService {
   PurchaseServiceMobile() {
-    _subscription =
-        InAppPurchase.instance.purchaseStream.listen(_onRawPurchases);
+    _subscription = InAppPurchase.instance.purchaseStream.listen(
+      _onRawPurchases,
+    );
   }
 
   static const _adFreeKey = 'gravity_torrent_ad_free';
@@ -58,8 +59,9 @@ class PurchaseServiceMobile implements PurchaseService {
     final response = await _iap.queryProductDetails({kRemoveAdsProductId});
     if (response.error != null || response.productDetails.isEmpty) return;
     await _iap.buyNonConsumable(
-      purchaseParam:
-          PurchaseParam(productDetails: response.productDetails.first),
+      purchaseParam: PurchaseParam(
+        productDetails: response.productDetails.first,
+      ),
     );
   }
 

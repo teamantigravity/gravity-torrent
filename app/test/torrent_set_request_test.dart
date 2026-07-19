@@ -43,13 +43,15 @@ void main() {
       'torrent-get requests sequential download and per-torrent speed '
       'limit fields under their RPC-native names', () {
     final request = TorrentGetRequest(
-      arguments: TorrentGetRequestArguments(fields: const [
-        TorrentField.sequentialDownload,
-        TorrentField.speedLimitDownEnabled,
-        TorrentField.speedLimitUpEnabled,
-        TorrentField.speedLimitDown,
-        TorrentField.speedLimitUp,
-      ]),
+      arguments: TorrentGetRequestArguments(
+        fields: const [
+          TorrentField.sequentialDownload,
+          TorrentField.speedLimitDownEnabled,
+          TorrentField.speedLimitUpEnabled,
+          TorrentField.speedLimitDown,
+          TorrentField.speedLimitUp,
+        ],
+      ),
     );
 
     final fields = (request.toJson()['arguments']

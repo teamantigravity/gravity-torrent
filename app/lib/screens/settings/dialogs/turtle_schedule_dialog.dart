@@ -97,8 +97,10 @@ class _TurtleScheduleDialogState extends State<TurtleScheduleDialog> {
               onTap: () => _pickTime(isBegin: false),
             ),
             const SizedBox(height: 12),
-            Text(localizations.scheduleDays,
-                style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              localizations.scheduleDays,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,

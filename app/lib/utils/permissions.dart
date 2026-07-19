@@ -18,11 +18,13 @@ Future<bool> checkAndRequestStoragePermissions(BuildContext context) async {
     var isPermanentlyDenied = await Permission.storage.isPermanentlyDenied;
     if (context.mounted) {
       await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return StoragePermissionDialog(
-                isPermanentlyDenied: isPermanentlyDenied);
-          });
+        context: context,
+        builder: (BuildContext context) {
+          return StoragePermissionDialog(
+            isPermanentlyDenied: isPermanentlyDenied,
+          );
+        },
+      );
     }
     return await Permission.storage.isGranted;
   } else {
@@ -32,11 +34,13 @@ Future<bool> checkAndRequestStoragePermissions(BuildContext context) async {
         await Permission.manageExternalStorage.isPermanentlyDenied;
     if (context.mounted) {
       await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return StoragePermissionDialog(
-                isPermanentlyDenied: isPermanentlyDenied);
-          });
+        context: context,
+        builder: (BuildContext context) {
+          return StoragePermissionDialog(
+            isPermanentlyDenied: isPermanentlyDenied,
+          );
+        },
+      );
     }
     return await Permission.manageExternalStorage.isGranted;
   }

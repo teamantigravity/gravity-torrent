@@ -6,6 +6,7 @@ import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
 import 'package:gravity_torrent/screens/torrents/torrent_list_tile/torrent_status.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
+import 'package:gravity_torrent/widgets/torrent_health_badge.dart';
 import 'package:gravity_torrent/utils/app_links.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
@@ -33,162 +34,182 @@ class TorrentListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return Consumer<TorrentsModel>(builder: (context, torrentsModel, child) {
-      return ListTile(
-        contentPadding: !isMobileSize(context)
-            ? const EdgeInsets.only(left: 16, right: 16)
-            : null,
-        onTap: () {
-          if (isSelectionMode) {
-            onSelectionChanged?.call();
-          } else {
-            AdServiceProvider.instance.showInterstitialIfReady();
-            showDeviceSheet(context, torrent.name,
-                TorrentDetailsModalSheet(id: torrent.id));
-          }
-        },
-        onLongPress: onLongPress,
-        leading: (isSelectionMode)
-            ? Checkbox(
-                value: isSelected,
-                onChanged: (_) => onSelectionChanged?.call(),
-              )
-            : FittedBox(
-                child: Stack(alignment: Alignment.center, children: [
-                  CircularProgressIndicator(
-                      value: torrent.progress,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF4285F4)),
-                      strokeWidth: 4),
-                  Center(
-                      child: IconButton(
-                    onPressed: () async {
-                      torrent.status == TorrentStatus.stopped
-                          ? await torrent.start()
-                          : await torrent.stop();
-                      await torrentsModel.fetchTorrents();
-                    },
-                    icon: torrent.status == TorrentStatus.stopped
-                        ? const Icon(Icons.play_arrow)
-                        : const Icon(Icons.pause),
-                    tooltip: torrent.status == TorrentStatus.stopped
-                        ? localizations.resume
-                        : localizations.pause,
-                  )),
-                ]),
-              ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(torrent.name,
+    return Consumer<TorrentsModel>(
+      builder: (context, torrentsModel, child) {
+        return ListTile(
+          contentPadding: !isMobileSize(context)
+              ? const EdgeInsets.only(left: 16, right: 16)
+              : null,
+          onTap: () {
+            if (isSelectionMode) {
+              onSelectionChanged?.call();
+            } else {
+              AdServiceProvider.instance.showInterstitialIfReady();
+              showDeviceSheet(
+                context,
+                torrent.name,
+                TorrentDetailsModalSheet(id: torrent.id),
+              );
+            }
+          },
+          onLongPress: onLongPress,
+          leading: (isSelectionMode)
+              ? Checkbox(
+                  value: isSelected,
+                  onChanged: (_) => onSelectionChanged?.call(),
+                )
+              : FittedBox(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: torrent.progress,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF4285F4),
+                        ),
+                        strokeWidth: 4,
+                      ),
+                      Center(
+                        child: IconButton(
+                          onPressed: () async {
+                            torrent.status == TorrentStatus.stopped
+                                ? await torrent.start()
+                                : await torrent.stop();
+                            await torrentsModel.fetchTorrents();
+                          },
+                          icon: torrent.status == TorrentStatus.stopped
+                              ? const Icon(Icons.play_arrow)
+                              : const Icon(Icons.pause),
+                          tooltip: torrent.status == TorrentStatus.stopped
+                              ? localizations.resume
+                              : localizations.pause,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  torrent.name,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        trailing: (!isMobileSize(context))
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              TorrentHealthBadge(torrent: torrent),
+            ],
+          ),
+          trailing: (!isMobileSize(context))
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
                       tooltip: localizations.play,
                       onPressed: () {
                         AdServiceProvider.instance.showInterstitialIfReady();
                         showDeviceSheet(
-                            context,
-                            torrent.name,
-                            TorrentDetailsModalSheet(
-                              id: torrent.id,
-                              initialTab: 0,
-                              showOnlyPlayableFiles: true,
-                            ));
+                          context,
+                          torrent.name,
+                          TorrentDetailsModalSheet(
+                            id: torrent.id,
+                            initialTab: 0,
+                            showOnlyPlayableFiles: true,
+                          ),
+                        );
                       },
-                      icon: const Icon(
-                        Icons.play_circle_outlined,
-                      )),
-                  IconButton(
+                      icon: const Icon(Icons.play_circle_outlined),
+                    ),
+                    IconButton(
                       tooltip: localizations.share,
                       onPressed: () => shareLink(context, torrent.magnetLink),
-                      icon: const Icon(
-                        Icons.share,
-                      )),
-                  if (isDesktop())
-                    IconButton(
+                      icon: const Icon(Icons.share),
+                    ),
+                    if (isDesktop())
+                      IconButton(
                         tooltip: localizations.openFolder,
                         onPressed: () => torrent.openFolder(context),
-                        icon: const Icon(
-                          Icons.folder_outlined,
-                        )),
-                  IconButton(
+                        icon: const Icon(Icons.folder_outlined),
+                      ),
+                    IconButton(
                       tooltip: localizations.remove,
                       onPressed: () => showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return RemoveTorrentDialog(torrent: torrent);
-                          }),
-                      icon: const Icon(
-                        Icons.delete_outline,
-                      )),
-                ],
-              )
-            : null,
-
-        subtitle: Row(children: [
-          Expanded(
-              child: TorrentStatusText(
-            torrent: torrent,
-            percent: percent,
-          )),
-          Expanded(
-            child: Text(prettyBytes(torrent.size.toDouble()),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  overflow: TextOverflow.ellipsis,
-                )),
-          ),
-          Expanded(
-            child: torrent.progress != 1
-                ? Row(children: [
+                        context: context,
+                        builder: (BuildContext context) {
+                          return RemoveTorrentDialog(torrent: torrent);
+                        },
+                      ),
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
+                )
+              : null,
+          subtitle: Row(
+            children: [
+              Expanded(
+                child: TorrentStatusText(torrent: torrent, percent: percent),
+              ),
+              Expanded(
+                child: Text(
+                  prettyBytes(torrent.size.toDouble()),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: torrent.progress != 1
+                    ? Row(
+                        children: [
+                          const Icon(
+                            Icons.arrow_circle_down,
+                            size: 16,
+                            color: Colors.lightGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              overflow: TextOverflow.ellipsis,
+                              '${prettyBytes(torrent.rateDownload.toDouble())}/s',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : const SizedBox(width: 0),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
                     const Icon(
-                      Icons.arrow_circle_down,
+                      Icons.arrow_circle_up,
                       size: 16,
-                      color: Colors.lightGreen,
+                      color: Color(0xFF4285F4),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                          overflow: TextOverflow.ellipsis,
-                          '${prettyBytes(torrent.rateDownload.toDouble())}/s',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 12)),
+                        overflow: TextOverflow.ellipsis,
+                        '${prettyBytes(torrent.rateUpload.toDouble())}/s',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                  ])
-                : const SizedBox(
-                    width: 0,
-                  ),
-          ),
-          Expanded(
-            child: Row(children: [
-              const Icon(
-                Icons.arrow_circle_up,
-                size: 16,
-                color: Color(0xFF4285F4),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                    overflow: TextOverflow.ellipsis,
-                    '${prettyBytes(torrent.rateUpload.toDouble())}/s',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 12)),
-              )
-            ]),
+            ],
           ),
-        ]),
-        // trailing:
-      );
-    });
+        );
+      },
+    );
   }
 }

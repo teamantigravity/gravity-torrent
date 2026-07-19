@@ -6,8 +6,10 @@ class TorrentGetRequest {
 
   TorrentGetRequest({required this.arguments});
 
-  Map<String, dynamic> toJson() =>
-      {'method': method, 'arguments': arguments.toJson()};
+  Map<String, dynamic> toJson() => {
+        'method': method,
+        'arguments': arguments.toJson(),
+      };
 }
 
 class TorrentGetRequestArguments {
@@ -37,9 +39,9 @@ class TorrentGetRequestArguments {
           TorrentField.speedLimitUpEnabled => "upload_limited",
           TorrentField.speedLimitDown => "download_limit",
           TorrentField.speedLimitUp => "upload_limit",
-          _ => field.name
+          _ => field.name,
         };
-      }).toList()
+      }).toList(),
     };
 
     if (ids != null) {

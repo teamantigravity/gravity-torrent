@@ -18,11 +18,12 @@ class AudioTrackSelectorDialog extends StatefulWidget {
   final List<AudioTrack> tracks;
   final Function(AudioTrack) onTrackSelected;
   final String currentValue;
-  const AudioTrackSelectorDialog(
-      {super.key,
-      required this.onTrackSelected,
-      required this.currentValue,
-      required this.tracks});
+  const AudioTrackSelectorDialog({
+    super.key,
+    required this.onTrackSelected,
+    required this.currentValue,
+    required this.tracks,
+  });
 
   @override
   State<AudioTrackSelectorDialog> createState() =>
@@ -40,13 +41,14 @@ class _AudioTrackSelectorDialogState extends State<AudioTrackSelectorDialog> {
           children: <Widget>[
             ...widget.tracks.map((track) {
               return RadioListTile(
-                  title: Text(getTitle(track)),
-                  value: track.id,
-                  groupValue: widget.currentValue,
-                  onChanged: (t) {
-                    widget.onTrackSelected(track);
-                    Navigator.of(context).pop();
-                  });
+                title: Text(getTitle(track)),
+                value: track.id,
+                groupValue: widget.currentValue,
+                onChanged: (t) {
+                  widget.onTrackSelected(track);
+                  Navigator.of(context).pop();
+                },
+              );
             }),
           ],
         ),

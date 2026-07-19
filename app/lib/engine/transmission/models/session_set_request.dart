@@ -4,8 +4,10 @@ class SessionSetRequest {
 
   SessionSetRequest({required this.arguments});
 
-  Map<String, dynamic> toJson() =>
-      {'method': method, 'arguments': arguments.toJson()};
+  Map<String, dynamic> toJson() => {
+        'method': method,
+        'arguments': arguments.toJson(),
+      };
 }
 
 class SessionSetRequestArguments {
@@ -42,33 +44,34 @@ class SessionSetRequestArguments {
   final bool? idleSeedingLimitEnabled;
   final int? idleSeedingLimit;
 
-  SessionSetRequestArguments(
-      {this.downloadDir,
-      this.downloadQueueEnabled,
-      this.downloadQueueSize,
-      this.peerPort,
-      this.speedLimitDownEnabled,
-      this.speedLimitUpEnabled,
-      this.speedLimitDown,
-      this.speedLimitUp,
-      this.seedRatioLimit,
-      this.seedRatioLimited,
-      this.encryption,
-      this.blocklistEnabled,
-      this.blocklistUrl,
-      this.dhtEnabled,
-      this.pexEnabled,
-      this.lpdEnabled,
-      this.utpEnabled,
-      this.altSpeedEnabled,
-      this.altSpeedDown,
-      this.altSpeedUp,
-      this.altSpeedTimeEnabled,
-      this.altSpeedTimeBegin,
-      this.altSpeedTimeEnd,
-      this.altSpeedTimeDay,
-      this.idleSeedingLimitEnabled,
-      this.idleSeedingLimit});
+  SessionSetRequestArguments({
+    this.downloadDir,
+    this.downloadQueueEnabled,
+    this.downloadQueueSize,
+    this.peerPort,
+    this.speedLimitDownEnabled,
+    this.speedLimitUpEnabled,
+    this.speedLimitDown,
+    this.speedLimitUp,
+    this.seedRatioLimit,
+    this.seedRatioLimited,
+    this.encryption,
+    this.blocklistEnabled,
+    this.blocklistUrl,
+    this.dhtEnabled,
+    this.pexEnabled,
+    this.lpdEnabled,
+    this.utpEnabled,
+    this.altSpeedEnabled,
+    this.altSpeedDown,
+    this.altSpeedUp,
+    this.altSpeedTimeEnabled,
+    this.altSpeedTimeBegin,
+    this.altSpeedTimeEnd,
+    this.altSpeedTimeDay,
+    this.idleSeedingLimitEnabled,
+    this.idleSeedingLimit,
+  });
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};

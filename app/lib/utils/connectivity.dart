@@ -9,26 +9,30 @@ late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 startConnectivityCheck(BuildContext context) {
   ScaffoldFeatureController? snackBar;
 
-  _connectivitySubscription = Connectivity()
-      .onConnectivityChanged
-      .listen((List<ConnectivityResult> result) {
+  _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+    List<ConnectivityResult> result,
+  ) {
     if (!context.mounted) return;
 
     if (result.contains(ConnectivityResult.none)) {
-      snackBar = ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        showCloseIcon: true,
-        content: Text('Network unavailable.'),
-        backgroundColor: Colors.orange,
-        duration: Duration(days: 365), // Ideally, unlimited duration
-      ));
+      snackBar = ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          showCloseIcon: true,
+          content: Text('Network unavailable.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(days: 365), // Ideally, unlimited duration
+        ),
+      );
     } else {
       // Close previous snackbar
       if (snackBar != null) {
         snackBar?.close();
-        snackBar = ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('You are back online'),
-          backgroundColor: Colors.lightGreen,
-        ));
+        snackBar = ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You are back online'),
+            backgroundColor: Colors.lightGreen,
+          ),
+        );
       }
     }
   });

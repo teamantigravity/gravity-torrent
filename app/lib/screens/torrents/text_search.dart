@@ -17,8 +17,9 @@ class _TextSearchState extends State<TextSearch> {
   @override
   void initState() {
     super.initState();
-    _filterController
-        .addListener(() => widget.onChange(_filterController.text));
+    _filterController.addListener(
+      () => widget.onChange(_filterController.text),
+    );
   }
 
   @override
@@ -29,9 +30,7 @@ class _TextSearchState extends State<TextSearch> {
 
   @override
   Widget build(BuildContext context) {
-    return ExpandableSearchFormField(
-      controller: _filterController,
-    );
+    return ExpandableSearchFormField(controller: _filterController);
   }
 }
 

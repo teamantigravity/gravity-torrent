@@ -67,7 +67,7 @@ class AppModel extends ChangeNotifier {
     await SharedPrefsStorage.setBool('termsOfUseAccepted', value);
   }
 
-  void setcheckForUpdate(bool value) async {
+  void setCheckForUpdate(bool value) async {
     checkForUpdate = value;
     notifyListeners();
     await SharedPrefsStorage.setBool('checkForUpdate', value);
@@ -84,12 +84,13 @@ class AppModel extends ChangeNotifier {
     await SharedPrefsStorage.setString('locale', value);
   }
 
-  void quitGracefully() async {
+  Future<void> quitGracefully() async {
+    await stopServices();
     await engine.shutdown();
-    quit();
+    await quit();
   }
 
-  void quit() async {
+  Future<void> quit() async {
     if (isDesktop()) {
       await closeTray();
       // See https://github.com/leanflutter/window_manager/issues/478

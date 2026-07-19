@@ -17,9 +17,9 @@ void closeApp([BuildContext? context]) async {
   if (isDesktop()) {
     bool isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
-      appModel.quitGracefully();
+      await appModel.quitGracefully();
     }
   } else {
-    appModel.quitGracefully();
+    await appModel.quitGracefully();
   }
 }

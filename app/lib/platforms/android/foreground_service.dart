@@ -7,18 +7,21 @@ FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 const androidNotificationDetails = AndroidNotificationDetails(
-    'foreground_service_channel', 'Foreground Service Channel',
-    channelDescription:
-        'This channel is used for foreground service notifications.',
-    importance: Importance.low,
-    silent: true,
-    ongoing: true,
-    actions: [
-      AndroidNotificationAction('exit', 'Exit', showsUserInterface: true)
-    ]);
+  'foreground_service_channel',
+  'Foreground Service Channel',
+  channelDescription:
+      'This channel is used for foreground service notifications.',
+  importance: Importance.low,
+  silent: true,
+  ongoing: true,
+  actions: [
+    AndroidNotificationAction('exit', 'Exit', showsUserInterface: true),
+  ],
+);
 
 void _onDidReceiveNotificationResponse(
-    NotificationResponse notificationResponse) async {
+  NotificationResponse notificationResponse,
+) async {
   if (notificationResponse.actionId == 'exit') {
     rootNavigatorKey.currentState?.maybePop();
   }
@@ -32,10 +35,13 @@ createForegroundService() async {
       ?.requestNotificationsPermission();
 
   const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('ic_stat_name'));
+    android: AndroidInitializationSettings('ic_stat_name'),
+  );
 
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-      onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse);
+  await flutterLocalNotificationsPlugin.initialize(
+    settings: initializationSettings,
+    onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
+  );
 
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
@@ -45,7 +51,7 @@ createForegroundService() async {
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
-      ?.deleteNotificationChannel('foreground_service_channel');
+      ?.deleteNotificationChannel(channelId: 'foreground_service_channel');
 
   await _startOrUpdateForegroundService('Running in the background...');
 }
@@ -57,14 +63,15 @@ stopForegroundService() async {
       ?.stopForegroundService();
 }
 
-_startOrUpdateForegroundService(
-  String body,
-) async {
+_startOrUpdateForegroundService(String body) async {
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
       ?.startForegroundService(
-          foregroundNotificationId, 'Gravity Torrent', body,
-          notificationDetails: androidNotificationDetails,
-          startType: AndroidServiceStartType.startRedeliverIntent);
+        id: foregroundNotificationId,
+        title: 'Gravity Torrent',
+        body: body,
+        notificationDetails: androidNotificationDetails,
+        startType: AndroidServiceStartType.startRedeliverIntent,
+      );
 }

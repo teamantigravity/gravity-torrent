@@ -2,15 +2,19 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gravity_torrent/dialogs/add_torrent.dart';
 import 'package:gravity_torrent/dialogs/confirm_exit.dart';
 import 'package:gravity_torrent/dialogs/quitting.dart';
 import 'package:gravity_torrent/dialogs/terms_of_use.dart';
 import 'package:gravity_torrent/dialogs/update_available.dart';
 import 'package:gravity_torrent/models/app.dart';
-import 'package:gravity_torrent/navigation/navigation.dart';
+import 'package:gravity_torrent/models/feature_flags.dart';
+import 'package:gravity_torrent/ui/adaptive/adaptive_navigation.dart';
 import 'package:gravity_torrent/platforms/desktop/tray.dart';
+import 'package:gravity_torrent/services/shortcuts_service.dart';
 import 'package:gravity_torrent/utils/app_links.dart';
 import 'package:gravity_torrent/utils/connectivity.dart';
 import 'package:gravity_torrent/utils/device.dart';
@@ -34,6 +38,8 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
   bool isTermsOfUseDialogDisplayed = false;
   bool hasShownUpdateDialog = false;
   bool showQuittingDialog = false;
+  AppModel? _appModel;
+  bool _postLoadChecksDone = false;
 
   @override
   void initState() {
@@ -47,7 +53,48 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       startConnectivityCheck(context);
       initTray(context);
       _initAppLinks();
+      _initShortcuts();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_appModel == null) {
+      _appModel = context.read<AppModel>();
+      _appModel!.addListener(_onAppModelChanged);
+      _onAppModelChanged();
+    }
+  }
+
+  void _onAppModelChanged() {
+    if (!mounted) return;
+    final appModel = _appModel!;
+    if (appModel.loaded && !_postLoadChecksDone) {
+      _postLoadChecksDone = true;
+      _openTermsOfUseDialog(appModel);
+      _checkForUpdate();
+    }
+    if (appModel.quitting && !showQuittingDialog) {
+      _openQuittingDialog(appModel);
+    }
+  }
+
+  void _initShortcuts() {
+    final flags = Provider.of<FeatureFlagsModel>(context, listen: false);
+
+    ShortcutsService.initialize(
+      onAddTorrent: () {
+        if (!mounted) return;
+        _openAddTorrentDialog(null, null);
+      },
+      onOpenTorrents: () {
+        if (!mounted) return;
+        if (context.mounted) context.go('/torrents');
+      },
+    );
+
+    ShortcutsService.setEnabled(flags.enableShortcuts);
   }
 
   @override
@@ -55,6 +102,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     _appLinksSubscription?.cancel();
     stopConnectivityCheck();
     windowManager.removeListener(this);
+    _appModel?.removeListener(_onAppModelChanged);
     super.dispose();
   }
 
@@ -92,7 +140,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
         _handleUri(uri);
       },
       onError: (Object e) {
-        debugPrint('app_links stream error: $e');
+        if (kDebugMode) debugPrint('app_links stream error: $e');
       },
     );
     _appLinks.getInitialLink().then((uri) {
@@ -100,7 +148,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
         _handleUri(uri);
       }
     }).catchError((Object e) {
-      debugPrint('getInitialLink error: $e');
+      if (kDebugMode) debugPrint('getInitialLink error: $e');
     });
   }
 
@@ -125,7 +173,9 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
         if (isFile && mounted) {
           _openAddTorrentDialog(null, uriString);
         }
-      }).catchError((Object _) {/* not a file path, ignore */});
+      }).catchError((Object _) {
+        /* not a file path, ignore */
+      });
     }
   }
 
@@ -145,15 +195,18 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       hasShownUpdateDialog = true;
 
       showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return UpdateAvailableDialog(latestVersion: latestVersion);
-          });
+        context: context,
+        builder: (BuildContext context) {
+          return UpdateAvailableDialog(latestVersion: latestVersion);
+        },
+      );
     });
   }
 
   _openAddTorrentDialog(
-      String? initialMagnetLink, String? initialContentPath) async {
+    String? initialMagnetLink,
+    String? initialContentPath,
+  ) async {
     if (!await checkAndRequestStoragePermissions(context)) return;
     if (!mounted) return;
 
@@ -163,13 +216,14 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     }
 
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AddTorrentDialog(
-            initialMagnetLink: initialMagnetLink,
-            initialContentPath: initialContentPath,
-          );
-        });
+      context: context,
+      builder: (BuildContext context) {
+        return AddTorrentDialog(
+          initialMagnetLink: initialMagnetLink,
+          initialContentPath: initialContentPath,
+        );
+      },
+    );
   }
 
   _openTermsOfUseDialog(AppModel appModel) {
@@ -181,11 +235,12 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return const TermsOfUseDialog();
-            });
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const TermsOfUseDialog();
+          },
+        );
       });
     }
   }
@@ -196,38 +251,36 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return const QuittingDialog();
-            });
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const QuittingDialog();
+          },
+        );
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppModel>(builder: (context, appModel, child) {
-      if (appModel.loaded) {
-        _openTermsOfUseDialog(appModel);
-        _checkForUpdate();
-      }
-
-      if (appModel.quitting && !showQuittingDialog) {
-        _openQuittingDialog(appModel);
-      }
-
-      return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (a, b) => _onWillPopApp(context),
-          child: Navigation(child: widget.child));
-    });
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPopApp(context);
+        if (shouldPop && context.mounted) {
+          await Provider.of<AppModel>(context, listen: false).quitGracefully();
+        }
+      },
+      child: AdaptiveNavigation(child: widget.child),
+    );
   }
 }
 
 Future<bool> _onWillPopApp(BuildContext context) async {
-  return await showDialog(
-    context: context,
-    builder: (context) => const ConfirmExit(),
-  );
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => const ConfirmExit(),
+      ) ??
+      false;
 }

@@ -32,7 +32,7 @@ void main() {
         false,
         false,
         false,
-        false
+        false,
       ];
 
       expect(convertBitfieldToBoolList(bitfield, pieceCount), equals(expected));
@@ -65,7 +65,7 @@ void main() {
         true,
         false,
         true,
-        false
+        false,
       ];
 
       expect(convertBitfieldToBoolList(bitfield, pieceCount), equals(expected));
@@ -83,12 +83,14 @@ void main() {
         true,
         true,
         true,
-        false
+        false,
       ];
 
       expect(convertBitfieldToBoolList(bitfield, pieceCount), equals(expected));
       expect(
-          convertBitfieldToBoolList(bitfield, pieceCount).length, pieceCount);
+        convertBitfieldToBoolList(bitfield, pieceCount).length,
+        pieceCount,
+      );
     });
   });
 }

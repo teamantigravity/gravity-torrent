@@ -8,8 +8,9 @@ class SubtitlesLoadingDialog extends StatelessWidget {
     return const AlertDialog(
       title: Text('Loading Subtitles...'),
       content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Center(child: CircularProgressIndicator())]),
+        mainAxisSize: MainAxisSize.min,
+        children: [Center(child: CircularProgressIndicator())],
+      ),
     );
   }
 }

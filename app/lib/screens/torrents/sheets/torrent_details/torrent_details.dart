@@ -23,16 +23,19 @@ class TorrentDetailsModalSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TorrentsModel>(builder: (context, torrentsModel, child) {
-      final torrent = torrentsModel.torrents
-          .firstWhereOrNull((element) => element.id == id);
-      if (torrent == null) return const SizedBox.shrink();
-      return TorrentDetailsModalSheetContent(
-        torrent: torrent,
-        initialTab: initialTab,
-        showOnlyPlayableFiles: showOnlyPlayableFiles,
-      );
-    });
+    return Consumer<TorrentsModel>(
+      builder: (context, torrentsModel, child) {
+        final torrent = torrentsModel.torrents.firstWhereOrNull(
+          (element) => element.id == id,
+        );
+        if (torrent == null) return const SizedBox.shrink();
+        return TorrentDetailsModalSheetContent(
+          torrent: torrent,
+          initialTab: initialTab,
+          showOnlyPlayableFiles: showOnlyPlayableFiles,
+        );
+      },
+    );
   }
 }
 
@@ -57,31 +60,33 @@ class TorrentDetailsModalSheetContent extends StatelessWidget {
       initialIndex: initialTab,
       child: Expanded(
         child: Material(
-          child: Column(children: [
-            TabBar(
-              tabs: [
-                Tab(text: localizations.files),
-                Tab(text: localizations.tags),
-                Tab(text: localizations.controls),
-                Tab(text: localizations.details),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  FilesTab(
-                    torrent: torrent,
-                    location: torrent.location,
-                    showOnlyPlayable: showOnlyPlayableFiles,
-                  ),
-                  TagsTab(torrent: torrent),
-                  TorrentControlsTab(torrent: torrent),
-                  DetailsTab(torrent: torrent)
+          child: Column(
+            children: [
+              TabBar(
+                tabs: [
+                  Tab(text: localizations.files),
+                  Tab(text: localizations.tags),
+                  Tab(text: localizations.controls),
+                  Tab(text: localizations.details),
                 ],
               ),
-            ),
-          ]),
+              Expanded(
+                child: TabBarView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    FilesTab(
+                      torrent: torrent,
+                      location: torrent.location,
+                      showOnlyPlayable: showOnlyPlayableFiles,
+                    ),
+                    TagsTab(torrent: torrent),
+                    TorrentControlsTab(torrent: torrent),
+                    DetailsTab(torrent: torrent),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -5,6 +5,7 @@ import 'package:content_resolver/content_resolver.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/session.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/utils/app_links.dart';
@@ -16,8 +17,11 @@ class AddTorrentDialog extends StatefulWidget {
   final String? initialMagnetLink;
   final String? initialContentPath;
 
-  const AddTorrentDialog(
-      {super.key, this.initialMagnetLink, this.initialContentPath});
+  const AddTorrentDialog({
+    super.key,
+    this.initialMagnetLink,
+    this.initialContentPath,
+  });
 
   @override
   State<AddTorrentDialog> createState() => _AddTorrentDialogState();
@@ -63,8 +67,9 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         // From a .torrent file
         if (_filename!.startsWith('content:')) {
           // Android
-          final Content content =
-              await ContentResolver.resolveContent(_filename!);
+          final Content content = await ContentResolver.resolveContent(
+            _filename!,
+          );
           metainfo = base64Encode(content.data);
         } else {
           final file = File(_filename!);
@@ -88,30 +93,41 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         }
       }
 
-      final status = await Provider.of<TorrentsModel>(context, listen: false)
-          .addTorrent(magnet, metainfo, pickedDownloadDir);
+      final localizations = AppLocalizations.of(context)!;
+      final status = await Provider.of<TorrentsModel>(
+        context,
+        listen: false,
+      ).addTorrent(magnet, metainfo, pickedDownloadDir);
 
       if (!mounted) return;
 
       if (status == TorrentAddedResponse.duplicated) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Torrent already added.'),
-          backgroundColor: Colors.lightGreen,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.torrentAlreadyAdded),
+            backgroundColor: Colors.lightGreen,
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Torrent added.'),
-          backgroundColor: Colors.lightGreen,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.torrentAdded),
+            backgroundColor: Colors.lightGreen,
+          ),
+        );
         // Show an interstitial ad occasionally when a torrent is added successfully
         AdServiceProvider.instance.showInterstitialIfReady();
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Invalid torrent.'),
-        backgroundColor: Colors.orange,
-      ));
+      final localizations = AppLocalizations.of(context)!;
+      final message =
+          (e is TorrentAddError && e.message != null && e.message!.isNotEmpty)
+              ? e.message!
+              : localizations.invalidTorrent;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.orange),
+      );
     }
 
     if (!mounted) return;
@@ -119,20 +135,22 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
   }
 
   void _handleSelectTorrentFile(context) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-        allowMultiple: false,
-        type: FileType.custom,
-        allowedExtensions: ['torrent']);
-    if (result == null || result.files.first.path == null) return;
+    final file = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['torrent'],
+    );
+    if (file?.path == null) return;
 
     setState(() {
-      _filename = result.files.first.path;
+      _filename = file!.path;
     });
   }
 
   void _handlePickDirectory() async {
-    String? selectedDirectory = await FilePicker.platform
-        .getDirectoryPath(dialogTitle: 'Download directory picker');
+    final localizations = AppLocalizations.of(context)!;
+    String? selectedDirectory = await FilePicker.getDirectoryPath(
+      dialogTitle: localizations.downloadDirectoryPickerTitle,
+    );
 
     if (selectedDirectory == null) return;
     setState(() {
@@ -141,13 +159,14 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
   }
 
   Widget _buildTorrentLinkInput() {
+    final localizations = AppLocalizations.of(context)!;
     return TextFormField(
       enabled: _filename == null || _filename!.isEmpty,
       controller: _torrentLinkController,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.link),
-        hintText: 'magnet:// or https://',
-        label: const Text('Torrent link'),
+        hintText: localizations.torrentLinkHint,
+        label: Text(localizations.torrentLinkLabel),
         suffixIcon: _torrentLinkController.text.isNotEmpty
             ? IconButton(
                 onPressed: () => _torrentLinkController.clear(),
@@ -159,24 +178,24 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
   }
 
   Widget _buildFileInput(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
           child: FilledButton(
-              onPressed: _torrentLink.isEmpty
-                  ? () => _handleSelectTorrentFile(context)
-                  : null,
-              child: Text(
-                _filename != null ? _filename! : 'Select .torrent file',
-                overflow: TextOverflow.ellipsis,
-              )),
+            onPressed: _torrentLink.isEmpty
+                ? () => _handleSelectTorrentFile(context)
+                : null,
+            child: Text(
+              _filename != null ? _filename! : localizations.selectTorrentFile,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ),
         if (_filename != null)
           Row(
             children: [
-              const SizedBox(
-                width: 8,
-              ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: () {
                   setState(() {
@@ -186,18 +205,25 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
                 icon: const Icon(Icons.clear),
               ),
             ],
-          )
+          ),
       ],
     );
   }
 
   _buildInputsSeparator() {
-    return const Column(
-        children: [SizedBox(height: 16), Text('Or'), SizedBox(height: 16)]);
+    final localizations = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        Text(localizations.addTorrentOr),
+        const SizedBox(height: 16),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     var downloadDir = pickedDownloadDir ??
         Provider.of<SessionModel>(context, listen: true).session?.downloadDir ??
         '';
@@ -209,7 +235,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
     var isValid = effectiveLink != null && effectiveLink.isNotEmpty;
 
     return AlertDialog(
-      title: const Text('Add a torrent'),
+      title: Text(localizations.addTorrentTitle),
       content: SizedBox(
         width: 480,
         child: Form(
@@ -224,25 +250,26 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
               if (!isMobile())
                 Row(
                   children: [
-                    const Text('Destination:'),
+                    Text(localizations.addTorrentDestination),
                     const SizedBox(width: 16),
                     Expanded(
                       child: TextButton(
-                          onPressed: _handlePickDirectory,
-                          child: Text(
-                            downloadDir,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                    )
+                        onPressed: _handlePickDirectory,
+                        child: Text(
+                          downloadDir,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ],
-                )
+                ),
             ],
           ),
         ),
       ),
       actions: <Widget>[
         TextButton(
-          child: const Text('Cancel'),
+          child: Text(localizations.cancel),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -255,7 +282,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
                   }
                 }
               : null,
-          child: const Text('Download'),
+          child: Text(localizations.download),
         ),
       ],
     );

@@ -30,8 +30,16 @@ jobs:
           cache: true
       - name: Install dependencies
         run: |
+          # Use the Azure-hosted mirror in the same VPC as the runner; canonical
+          # ports.ubuntu.com is frequently unreachable from ubuntu-24.04-arm.
+          sudo sed -i 's|ports.ubuntu.com|azure.ports.ubuntu.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list
+          sudo tee /etc/apt/apt.conf.d/99retries <<'EOF'
+          Acquire::Retries "5";
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          EOF
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+          sudo apt-get install -y --no-install-recommends ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev libsecret-1-dev libglib2.0-dev
       - name: Cache pub packages
         uses: actions/cache@v4
         with:
@@ -53,7 +61,7 @@ jobs:
           7z a ~/artifacts/release.zip ./build/linux/x64/release/bundle/*
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-linux
+          name: Gravity Torrent-linux
           path: ~/artifacts/
 
   linux-arm64:
@@ -72,8 +80,16 @@ jobs:
           cache: true
       - name: Install dependencies
         run: |
+          # Use the Azure-hosted mirror in the same VPC as the runner; canonical
+          # ports.ubuntu.com is frequently unreachable from ubuntu-24.04-arm.
+          sudo sed -i 's|ports.ubuntu.com|azure.ports.ubuntu.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/*.list
+          sudo tee /etc/apt/apt.conf.d/99retries <<'EOF'
+          Acquire::Retries "5";
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          EOF
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev
+          sudo apt-get install -y --no-install-recommends ninja-build libgtk-3-dev libcurl4-openssl-dev libmpv-dev mpv libayatana-appindicator3-dev libsecret-1-dev libglib2.0-dev
       - name: Cache pub packages
         uses: actions/cache@v4
         with:
@@ -95,7 +111,7 @@ jobs:
           7z a ~/artifacts/release.zip ./build/linux/arm64/release/bundle/*
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-linux-arm64
+          name: Gravity Torrent-linux-arm64
           path: ~/artifacts/
 
   windows:
@@ -184,7 +200,7 @@ jobs:
           mv build/windows/x64/runner/Release/*.msix ../artifacts/
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-windows
+          name: Gravity Torrent-windows
           path: artifacts
 
   macos:
@@ -236,28 +252,30 @@ jobs:
       - name: Create .dmg
         run: |
           cd build/macos/Build/Products/Release/
-          mv *.app GravityTorrent.app
+          if [ ! -d "Gravity Torrent.app" ]; then
+            mv *.app "Gravity Torrent.app"
+          fi
           create-dmg \
             --volname "Application Installer" \
             --window-pos 200 120 \
             --window-size 800 400 \
             --icon-size 100 \
-            --icon "GravityTorrent.app" 200 190 \
-            --hide-extension "GravityTorrent.app" \
+            --icon "Gravity Torrent.app" 200 190 \
+            --hide-extension "Gravity Torrent.app" \
             --app-drop-link 600 185 \
-            GravityTorrent.dmg ./GravityTorrent.app
+            "Gravity Torrent.dmg" "Gravity Torrent.app"
 
       - name: Prepare artifacts
         run: |
           mkdir ~/artifacts
           mv build/macos/Build/Products/Release/*.dmg ~/artifacts/
           mkdir -p build/macos/Build/Products/Release/release
-          cp -r build/macos/Build/Products/Release/GravityTorrent.app build/macos/Build/Products/Release/release/
+          cp -r "build/macos/Build/Products/Release/Gravity Torrent.app" "build/macos/Build/Products/Release/release/"
           ditto -c -k build/macos/Build/Products/Release/release ~/artifacts/release.app.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-macos
+          name: Gravity Torrent-macos
           path: ~/artifacts/
 
   android:
@@ -308,7 +326,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build libsecret-1-dev libglib2.0-dev
 
       - name: Inject AdMob Secrets
         run: |
@@ -344,11 +362,11 @@ jobs:
           cp ./build/app/outputs/bundle/release/*.aab ~/artifacts-aab/
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-android-apk
+          name: Gravity Torrent-android-apk
           path: ~/artifacts-apk/
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-android-aab
+          name: Gravity Torrent-android-aab
           path: ~/artifacts-aab/
 
   ios:
@@ -356,7 +374,7 @@ jobs:
     env:
       # Do not target simulator
       TARGET_IOS_DEVICE: true
-      IPHONEOS_DEPLOYMENT_TARGET: 12 # Should be same as defined in /app/ios/Runner.
+      IPHONEOS_DEPLOYMENT_TARGET: 15.5 # Should be same as defined in /app/ios/Runner.
     defaults:
       run:
         working-directory: ./app
@@ -389,6 +407,10 @@ jobs:
           key: ${{ runner.os }}-ios-pub-${{ hashFiles('app/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-ios-pub-
+      - name: Patch device_info_plus iOS
+        run: |
+          flutter pub get
+          perl -pi -e 's/\[info isiOSAppOnVision\]/NO/g' "$HOME/.pub-cache/hosted/pub.dev/device_info_plus-13.2.0/ios/device_info_plus/Sources/device_info_plus/FPPDeviceInfoPlusPlugin.m"
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2.14
         with:
@@ -403,11 +425,11 @@ jobs:
           mkdir -p build/ios/Payload
           cp -r build/ios/iphoneos/*.app build/ios/Payload/
           cd build/ios
-          zip -qr GravityTorrent.ipa Payload
-          mv GravityTorrent.ipa ~/artifacts/
+          zip -qr "Gravity Torrent.ipa" Payload
+          mv "Gravity Torrent.ipa" ~/artifacts/
       - uses: actions/upload-artifact@v4
         with:
-          name: GravityTorrent-ios
+          name: Gravity Torrent-ios
           path: ~/artifacts/
 
   release:
@@ -422,24 +444,24 @@ jobs:
 
       - name: Desktop
         run: |
-          mv GravityTorrent-linux/release.zip GravityTorrent-${{ github.ref_name }}-linux-x64.zip
-          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-${{ github.ref_name }}-linux-arm64.zip
-          mv GravityTorrent-windows/*.msix GravityTorrent-${{ github.ref_name }}-windows-x64.msix
-          mv GravityTorrent-windows/*.exe GravityTorrent-${{ github.ref_name }}-windows-x64.exe
-          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.app.zip
-          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-${{ github.ref_name }}-macos.dmg
+          mv "Gravity Torrent-linux"/release.zip "Gravity Torrent-${{ github.ref_name }}-linux-x64.zip"
+          mv "Gravity Torrent-linux-arm64"/release.zip "Gravity Torrent-${{ github.ref_name }}-linux-arm64.zip"
+          mv "Gravity Torrent-windows"/*.msix "Gravity Torrent-${{ github.ref_name }}-windows-x64.msix"
+          mv "Gravity Torrent-windows"/*.exe "Gravity Torrent-${{ github.ref_name }}-windows-x64.exe"
+          mv "Gravity Torrent-macos"/release.app.zip ${{ github.workspace }}/"Gravity Torrent-${{ github.ref_name }}-macos.app.zip"
+          mv "Gravity Torrent-macos"/*.dmg ${{ github.workspace }}/"Gravity Torrent-${{ github.ref_name }}-macos.dmg"
       - name: Mobile
         run: |
-          mv GravityTorrent-android-apk/*.apk GravityTorrent-${{ github.ref_name }}-android.apk
-          mv GravityTorrent-android-aab/*.aab GravityTorrent-${{ github.ref_name }}-android.aab
+          mv "Gravity Torrent-android-apk"/*.apk "Gravity Torrent-${{ github.ref_name }}-android.apk"
+          mv "Gravity Torrent-android-aab"/*.aab "Gravity Torrent-${{ github.ref_name }}-android.aab"
           # iOS is best-effort (not in this job's needs); never block the release on it.
-          mv GravityTorrent-ios/*.ipa GravityTorrent-${{ github.ref_name }}-ios.ipa 2>/dev/null || echo "iOS artifact not present; skipping."
+          mv "Gravity Torrent-ios"/*.ipa "Gravity Torrent-${{ github.ref_name }}-ios.ipa" 2>/dev/null || echo "iOS artifact not present; skipping."
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          files: GravityTorrent-*
+          files: 'Gravity Torrent-*'
 
   continuous-release:
     if: github.ref == 'refs/heads/main'
@@ -453,22 +475,22 @@ jobs:
 
       - name: Desktop
         run: |
-          mv GravityTorrent-linux/release.zip GravityTorrent-latest-successful-build-linux-x64.zip
-          mv GravityTorrent-linux-arm64/release.zip GravityTorrent-latest-successful-build-linux-arm64.zip
-          mv GravityTorrent-windows/*.msix GravityTorrent-latest-successful-build-windows-x64.msix
-          mv GravityTorrent-windows/*.exe GravityTorrent-latest-successful-build-windows-x64.exe
-          mv GravityTorrent-macos/release.app.zip ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.app.zip
-          mv GravityTorrent-macos/*.dmg ${{ github.workspace }}/GravityTorrent-latest-successful-build-macos.dmg
+          mv "Gravity Torrent-linux"/release.zip "Gravity Torrent-latest-successful-build-linux-x64.zip"
+          mv "Gravity Torrent-linux-arm64"/release.zip "Gravity Torrent-latest-successful-build-linux-arm64.zip"
+          mv "Gravity Torrent-windows"/*.msix "Gravity Torrent-latest-successful-build-windows-x64.msix"
+          mv "Gravity Torrent-windows"/*.exe "Gravity Torrent-latest-successful-build-windows-x64.exe"
+          mv "Gravity Torrent-macos"/release.app.zip ${{ github.workspace }}/"Gravity Torrent-latest-successful-build-macos.app.zip"
+          mv "Gravity Torrent-macos"/*.dmg ${{ github.workspace }}/"Gravity Torrent-latest-successful-build-macos.dmg"
       - name: Mobile
         run: |
-          mv GravityTorrent-android-apk/*.apk GravityTorrent-latest-successful-build-android.apk
-          mv GravityTorrent-android-aab/*.aab GravityTorrent-latest-successful-build-android.aab
+          mv "Gravity Torrent-android-apk"/*.apk "Gravity Torrent-latest-successful-build-android.apk"
+          mv "Gravity Torrent-android-aab"/*.aab "Gravity Torrent-latest-successful-build-android.aab"
           # iOS is best-effort (not in this job's needs); never block the rolling release on it.
-          mv GravityTorrent-ios/*.ipa GravityTorrent-latest-successful-build-ios.ipa 2>/dev/null || echo "iOS artifact not present; skipping."
+          mv "Gravity Torrent-ios"/*.ipa "Gravity Torrent-latest-successful-build-ios.ipa" 2>/dev/null || echo "iOS artifact not present; skipping."
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-successful-build
           make_latest: true
-          files: GravityTorrent-*
+          files: 'Gravity Torrent-*'

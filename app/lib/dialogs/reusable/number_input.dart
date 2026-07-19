@@ -6,11 +6,12 @@ class NumberInputDialog extends StatefulWidget {
   final int currentValue;
   final String title;
 
-  const NumberInputDialog(
-      {super.key,
-      required this.onSave,
-      required this.currentValue,
-      required this.title});
+  const NumberInputDialog({
+    super.key,
+    required this.onSave,
+    required this.currentValue,
+    required this.title,
+  });
 
   @override
   State<NumberInputDialog> createState() => _NumberInputDialogState();
@@ -24,7 +25,8 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
   void initState() {
     super.initState();
     number = TextEditingController.fromValue(
-        TextEditingValue(text: widget.currentValue.toString()));
+      TextEditingValue(text: widget.currentValue.toString()),
+    );
   }
 
   @override
@@ -54,9 +56,7 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
               controller: number,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Enter a number',
-              ),
+              decoration: const InputDecoration(labelText: 'Enter a number'),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter a number';
@@ -77,10 +77,7 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
             Navigator.of(context).pop();
           },
         ),
-        TextButton(
-          onPressed: handleSave,
-          child: const Text('Save'),
-        ),
+        TextButton(onPressed: handleSave, child: const Text('Save')),
       ],
     );
   }

@@ -8,8 +8,11 @@ class EncryptionSelector extends StatelessWidget {
   final EncryptionMode currentValue;
   final ValueChanged<EncryptionMode> onChanged;
 
-  const EncryptionSelector(
-      {super.key, required this.currentValue, required this.onChanged});
+  const EncryptionSelector({
+    super.key,
+    required this.currentValue,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,23 +22,26 @@ class EncryptionSelector extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         RadioListTile<EncryptionMode>(
-            title: Text(localizations.encryptionPreferred),
-            subtitle: Text(localizations.encryptionPreferredDescription),
-            value: EncryptionMode.preferred,
-            groupValue: currentValue,
-            onChanged: _handle),
+          title: Text(localizations.encryptionPreferred),
+          subtitle: Text(localizations.encryptionPreferredDescription),
+          value: EncryptionMode.preferred,
+          groupValue: currentValue,
+          onChanged: _handle,
+        ),
         RadioListTile<EncryptionMode>(
-            title: Text(localizations.encryptionRequired),
-            subtitle: Text(localizations.encryptionRequiredDescription),
-            value: EncryptionMode.required,
-            groupValue: currentValue,
-            onChanged: _handle),
+          title: Text(localizations.encryptionRequired),
+          subtitle: Text(localizations.encryptionRequiredDescription),
+          value: EncryptionMode.required,
+          groupValue: currentValue,
+          onChanged: _handle,
+        ),
         RadioListTile<EncryptionMode>(
-            title: Text(localizations.encryptionTolerated),
-            subtitle: Text(localizations.encryptionToleratedDescription),
-            value: EncryptionMode.tolerated,
-            groupValue: currentValue,
-            onChanged: _handle),
+          title: Text(localizations.encryptionTolerated),
+          subtitle: Text(localizations.encryptionToleratedDescription),
+          value: EncryptionMode.tolerated,
+          groupValue: currentValue,
+          onChanged: _handle,
+        ),
       ],
     );
   }

@@ -7,13 +7,12 @@ import 'package:provider/provider.dart';
 class RemoveTorrentsDialog extends StatelessWidget {
   final List<Torrent> torrents;
 
-  const RemoveTorrentsDialog({
-    super.key,
-    required this.torrents,
-  });
+  const RemoveTorrentsDialog({super.key, required this.torrents});
 
   Future<void> _removeTorrents(
-      TorrentsModel torrentsModel, bool withData) async {
+    TorrentsModel torrentsModel,
+    bool withData,
+  ) async {
     final torrentIds = torrents.map((t) => t.id).toList();
     // Model captured before popping so the refresh runs regardless of context.
     await torrentsModel.removeAllTorrents(torrentIds, withData);

@@ -11,8 +11,10 @@ class TagsTab extends StatelessWidget {
   const TagsTab({super.key, required this.torrent});
 
   _handleAddLabel(BuildContext context, String label) async {
-    TorrentBase torrentUpdate =
-        TorrentBase(id: torrent.id, labels: [...torrent.labels ?? [], label]);
+    TorrentBase torrentUpdate = TorrentBase(
+      id: torrent.id,
+      labels: [...torrent.labels ?? [], label],
+    );
     await torrent.update(torrentUpdate);
     if (context.mounted) {
       _refreshTorrents(context);
@@ -21,10 +23,11 @@ class TagsTab extends StatelessWidget {
 
   _handleSelectLabel(BuildContext context, String label, bool selected) async {
     var torrentUpdate = TorrentBase(
-        id: torrent.id,
-        labels: selected
-            ? [...?torrent.labels, label]
-            : torrent.labels?.where((l) => l != label).toList());
+      id: torrent.id,
+      labels: selected
+          ? [...?torrent.labels, label]
+          : torrent.labels?.where((l) => l != label).toList(),
+    );
 
     await torrent.update(torrentUpdate);
 
@@ -42,34 +45,37 @@ class TagsTab extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
 
     return Consumer<TorrentsModel>(
-        builder: (context, torrentsModel, child) => ListView(
-              padding: const EdgeInsets.all(12),
-              children: <Widget>[
-                Wrap(
-                  spacing: 8.0, // gap between adjacent chips
-                  runSpacing: 4.0,
-                  children: [
-                    ...torrentsModel.labels.map((String label) => FilterChip(
-                          label: Text(label),
-                          selected: torrent.labels?.contains(label) ?? false,
-                          onSelected: (bool selected) =>
-                              _handleSelectLabel(context, label, selected),
-                        )),
-                    ActionChip(
-                      avatar: const Icon(Icons.add),
-                      label: Text(localizations.add),
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext dialogContext) =>
-                                AddTagDialog(
-                                    onAddTag: (tag) =>
-                                        _handleAddLabel(context, tag)));
-                      },
-                    )
-                  ],
-                )
-              ],
-            ));
+      builder: (context, torrentsModel, child) => ListView(
+        padding: const EdgeInsets.all(12),
+        children: <Widget>[
+          Wrap(
+            spacing: 8.0, // gap between adjacent chips
+            runSpacing: 4.0,
+            children: [
+              ...torrentsModel.labels.map(
+                (String label) => FilterChip(
+                  label: Text(label),
+                  selected: torrent.labels?.contains(label) ?? false,
+                  onSelected: (bool selected) =>
+                      _handleSelectLabel(context, label, selected),
+                ),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.add),
+                label: Text(localizations.add),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) => AddTagDialog(
+                      onAddTag: (tag) => _handleAddLabel(context, tag),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
