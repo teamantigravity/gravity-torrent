@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:gravity_torrent/constants/locales.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/app_lock_service.dart';
+import 'package:gravity_torrent/services/battery_service.dart';
+import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/dialogs/reusable/number_input.dart';
 import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/main.dart';
@@ -715,6 +717,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: Text(localizations.rssFeeds),
                         onTap: () => context.push('/rss'),
                       ),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.wifi),
+                      title: const Text('WiFi Only Mode'),
+                      subtitle: _featureSubtitle('enableWifiOnly', flags),
+                      value: flags.enableWifiOnly,
+                      onChanged: (v) => flags.setEnableWifiOnly(v),
+                    ),
+                    if (flags.enableWifiOnly)
+                      SwitchListTile(
+                        contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                        title: const Text('VPN Kill Switch'),
+                        subtitle: const Text('Pause downloads if IP address changes'),
+                        value: WifiGuardService.instance.mode == WifiGuardMode.vpnKillSwitch,
+                        onChanged: (v) {
+                          WifiGuardService.instance.setMode(
+                            v ? WifiGuardMode.vpnKillSwitch : WifiGuardMode.wifiOnly,
+                          );
+                          setState(() {});
+                        },
+                      ),
+                    if (isMobile()) ...[
+                      SwitchListTile(
+                        secondary: const Icon(Icons.battery_saver),
+                        title: const Text('Battery Saver Mode'),
+                        subtitle: _featureSubtitle('enableBatterySaver', flags),
+                        value: flags.enableBatterySaver,
+                        onChanged: (v) => flags.setEnableBatterySaver(v),
+                      ),
+                      if (flags.enableBatterySaver)
+                        ListTile(
+                          contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                          title: const Text('Battery Threshold'),
+                          subtitle: Text('${BatteryService.instance.threshold}%'),
+                          onTap: () {
+                            showDialog<void>(
+                              context: context,
+                              builder: (context) => NumberInputDialog(
+                                title: 'Battery Threshold (%)',
+                                currentValue: BatteryService.instance.threshold,
+                                onSave: (val) {
+                                  BatteryService.instance.setThreshold(val);
+                                  setState(() {});
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                    ListTile(
+                      leading: const Icon(Icons.settings_backup_restore_rounded),
+                      title: const Text('Backup & Restore Settings'),
+                      onTap: () => context.push('/backup'),
+                    ),
                   ],
                   ListTile(
                     onTap: showResetTorrentsSettingsDialog,

@@ -116,11 +116,15 @@ showNotification({
   );
 }
 
-showCompletedNotification(String name, {int? id}) async {
+showCompletedNotification(String name, {int? id, Duration? duration}) async {
+  String body = name;
+  if (duration != null) {
+    body += '\nCompleted in ${duration.inMinutes}m ${duration.inSeconds % 60}s';
+  }
   await showNotification(
     id: id ?? _completedNotificationId,
     title: 'Download completed',
-    body: name,
+    body: body,
     payload: 'completed',
     notificationsDetailsType:
         NotificationsDetailsTypes.downloadsCompletedAndroidNotificationDetails,

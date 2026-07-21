@@ -3,15 +3,24 @@ import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:duration/duration.dart';
+import 'package:gravity_torrent/ui/torrent_speed_chart.dart';
+import 'package:gravity_torrent/services/speed_history_service.dart';
+import 'package:gravity_torrent/services/seed_ratio_service.dart';
 
-class DetailsTab extends StatelessWidget {
+class DetailsTab extends StatefulWidget {
   final Torrent torrent;
 
   const DetailsTab({super.key, required this.torrent});
 
   @override
+  State<DetailsTab> createState() => _DetailsTabState();
+}
+
+class _DetailsTabState extends State<DetailsTab> {
+  @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final torrent = widget.torrent;
 
     double ratio = torrent.downloadedEver > 0
         ? torrent.uploadedEver / torrent.downloadedEver
@@ -33,8 +42,16 @@ class DetailsTab extends StatelessWidget {
         ? localizations.privateTorrent
         : localizations.publicTorrent;
 
+    final speeds = SpeedHistoryService.instance.getHistory(torrent.id);
+    final ratioGoal = SeedRatioService.instance.getGoal(torrent.id);
+
     return ListView(
       children: <Widget>[
+        if (speeds.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TorrentSpeedChart(speeds: speeds),
+          ),
         ListTile(
           title: Text(localizations.error),
           subtitle: Text(
@@ -59,6 +76,48 @@ class DetailsTab extends StatelessWidget {
         ListTile(
           title: Text(localizations.ratio),
           subtitle: Text(ratio.toString()),
+        ),
+        ListTile(
+          title: const Text('Seed Ratio Goal'), // Using literal as there's no localization provided for this yet
+          subtitle: Text(ratioGoal != null ? ratioGoal.toString() : 'Not set'),
+          trailing: const Icon(Icons.edit),
+          onTap: () async {
+            String? newGoal = await showDialog<String>(
+              context: context,
+              builder: (context) {
+                final controller = TextEditingController(text: ratioGoal?.toString() ?? '');
+                return AlertDialog(
+                  title: const Text('Set Seed Ratio Goal'),
+                  content: TextField(
+                    controller: controller,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(hintText: 'e.g. 1.5'),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, controller.text),
+                      child: const Text('Save'),
+                    ),
+                  ],
+                );
+              },
+            );
+
+            if (newGoal != null && mounted) {
+              final val = double.tryParse(newGoal);
+              if (val != null) {
+                await SeedRatioService.instance.setGoal(torrent.id, val);
+                setState(() {});
+              } else if (newGoal.isEmpty) {
+                await SeedRatioService.instance.removeGoal(torrent.id);
+                setState(() {});
+              }
+            }
+          },
         ),
         ListTile(
           title: Text(localizations.peersConnected),

@@ -12,6 +12,7 @@ import 'package:gravity_torrent/utils/app_links.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:provider/provider.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AddTorrentDialog extends StatefulWidget {
   final String? initialMagnetLink;
@@ -91,6 +92,59 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         if (magnet == null || magnet.isEmpty) {
           throw TorrentAddError();
         }
+      }
+
+
+
+      String? downloadDirToCheck = pickedDownloadDir ?? Provider.of<SessionModel>(context, listen: false).session?.downloadDir;
+      if (downloadDirToCheck == null || downloadDirToCheck.isEmpty) {
+        try {
+          final dir = await getApplicationDocumentsDirectory();
+          downloadDirToCheck = dir.path;
+        } catch (_) {}
+      }
+
+      int freeSpace = 0;
+      if (downloadDirToCheck != null) {
+        try {
+          if (Platform.isWindows && downloadDirToCheck.length >= 2) {
+            final drive = downloadDirToCheck.substring(0, 2);
+            final result = await Process.run('wmic', ['logicaldisk', 'where', 'deviceid="$drive"', 'get', 'freespace']);
+            final lines = result.stdout.toString().split('\n');
+            if (lines.length > 1) {
+              freeSpace = int.tryParse(lines[1].trim()) ?? 0;
+            }
+          } else if (Platform.isLinux || Platform.isMacOS) {
+            final result = await Process.run('df', ['-k', downloadDirToCheck]);
+            final lines = result.stdout.toString().split('\n');
+            if (lines.length > 1) {
+              final parts = lines[1].trim().split(RegExp(r'\s+'));
+              if (parts.length > 3) {
+                freeSpace = (int.tryParse(parts[3]) ?? 0) * 1024;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      int predictedSize = 500 * 1024 * 1024; // Fallback dummy size
+      if (metainfo != null) {
+        predictedSize = metainfo.length * 1000;
+      }
+
+      if (freeSpace > 0 && freeSpace < predictedSize) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Low Storage Warning'),
+            content: const Text('Free space may be insufficient for this torrent. Proceed anyway?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
+            ],
+          ),
+        );
+        if (proceed != true) return;
       }
 
       final localizations = AppLocalizations.of(context)!;

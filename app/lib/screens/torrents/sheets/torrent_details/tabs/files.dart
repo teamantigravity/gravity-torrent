@@ -7,6 +7,7 @@ import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:mime/mime.dart';
@@ -190,6 +191,36 @@ class _FilesTabState extends State<FilesTab> {
                         },
                         icon: const Icon(Icons.play_circle_outlined),
                         tooltip: localizations.play,
+                      ),
+                    if (completed)
+                      PopupMenuButton<String>(
+                        onSelected: (value) async {
+                          final filePath = path.join(widget.location, file.name);
+                          if (value == 'open') {
+                            _openFile(file.name);
+                          } else if (value == 'share') {
+                            await Share.shareXFiles([XFile(filePath)]);
+                          } else if (value == 'play_in_app') {
+                            debugPrint('Play in app: $filePath (TODO: StreamingServer URL)');
+                          }
+                        },
+                        itemBuilder: (context) {
+                          return [
+                            const PopupMenuItem(
+                              value: 'open',
+                              child: Text('Open externally'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'share',
+                              child: Text('Share'),
+                            ),
+                            if (lookupMimeType(file.name)?.startsWith('video/') == true)
+                              const PopupMenuItem(
+                                value: 'play_in_app',
+                                child: Text('Play in app'),
+                              ),
+                          ];
+                        },
                       ),
                     Checkbox(
                       value: file.wanted,

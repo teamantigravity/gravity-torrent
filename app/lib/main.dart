@@ -33,7 +33,9 @@ import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/services/remote_control_service.dart';
 import 'package:gravity_torrent/services/rss_service.dart';
 import 'package:gravity_torrent/services/scheduler_service.dart';
-
+import 'package:gravity_torrent/services/wifi_guard_service.dart';
+import 'package:gravity_torrent/services/battery_service.dart';
+import 'package:gravity_torrent/services/seed_ratio_service.dart';
 ColorScheme _buildColorScheme(Brightness brightness, ColorScheme? dynamic) {
   return dynamic ??
       ColorScheme.fromSeed(
@@ -70,6 +72,28 @@ Engine engine = TransmissionEngine();
 /// Should be called after the engine is initialized and migrations have run.
 Future<void> startServices(FeatureFlagsModel flags) async {
   HapticService.setEnabled(flags.enableHaptic);
+
+  try {
+    await WifiGuardService.instance.load();
+    await WifiGuardService.instance.setEnabled(flags.enableWifiOnly);
+  } catch (e) {
+    if (kDebugMode) debugPrint('WifiGuardService init failed: $e');
+  }
+
+  try {
+    await SeedRatioService.instance.load();
+  } catch (e) {
+    if (kDebugMode) debugPrint('SeedRatioService init failed: $e');
+  }
+
+  try {
+    if (isMobile()) {
+      await BatteryService.instance.load();
+      await BatteryService.instance.setEnabled(flags.enableBatterySaver);
+    }
+  } catch (e) {
+    if (kDebugMode) debugPrint('BatteryService init failed: $e');
+  }
 
   try {
     await SchedulerService.instance.load();
@@ -112,6 +136,11 @@ Future<void> startServices(FeatureFlagsModel flags) async {
 Future<void> stopServices() async {
   SchedulerService.instance.dispose();
   RssService.instance.stopPolling();
+  WifiGuardService.instance.dispose();
+  SeedRatioService.instance.dispose();
+  if (isMobile()) {
+    BatteryService.instance.dispose();
+  }
   await RemoteControlService.instance.stop();
 }
 

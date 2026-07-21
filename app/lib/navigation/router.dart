@@ -10,6 +10,8 @@ import 'package:gravity_torrent/screens/sota/rss_screen.dart';
 import 'package:gravity_torrent/screens/sota/scheduler_screen.dart';
 import 'package:gravity_torrent/screens/settings/upgrade_page.dart';
 import 'package:gravity_torrent/screens/torrents/torrents.dart';
+import 'package:gravity_torrent/screens/sota/backup_screen.dart';
+import 'package:gravity_torrent/screens/sota/player_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -71,6 +73,17 @@ final router = GoRouter(
     GoRoute(
       path: '/upgrade',
       builder: (context, state) => const UpgradePage(),
+    ),
+    GoRoute(
+      path: '/backup',
+      builder: (context, state) => const BackupScreen(),
+    ),
+    GoRoute(
+      path: '/player',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, String>;
+        return PlayerScreen(url: extra['url']!, title: extra['title']!);
+      },
     ),
   ],
 );

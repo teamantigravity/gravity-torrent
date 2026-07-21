@@ -11,6 +11,8 @@ import 'package:gravity_torrent/services/analytics_service.dart';
 import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/notifications.dart';
+import 'package:gravity_torrent/services/seed_ratio_service.dart';
+import 'package:gravity_torrent/services/speed_history_service.dart';
 
 const refreshIntervalSeconds = 5;
 
@@ -266,9 +268,11 @@ class TorrentsModel extends ChangeNotifier {
         for (final torrent in fetched) {
           final diff = now.difference(torrent.doneDate).inSeconds;
           if (diff >= 0 && diff < refreshIntervalSeconds) {
+            final duration = torrent.addedDate.year > 2000 ? torrent.doneDate.difference(torrent.addedDate) : null;
             await showCompletedNotification(
               torrent.name,
               id: torrent.id + 1000,
+              duration: duration,
             );
           }
         }
@@ -350,6 +354,12 @@ class TorrentsModel extends ChangeNotifier {
           downloadedBytes: totalDownloaded,
           uploadedBytes: totalUploaded,
         );
+      }
+
+      await SeedRatioService.instance.checkAndStop(torrents);
+
+      for (final t in torrents) {
+        SpeedHistoryService.instance.record(t.id, t.rateDownload.toDouble());
       }
 
       processDisplayedTorrents();

@@ -9,6 +9,8 @@ import 'package:gravity_torrent/services/remote_control_service.dart';
 import 'package:gravity_torrent/services/rss_service.dart';
 import 'package:gravity_torrent/services/scheduler_service.dart';
 import 'package:gravity_torrent/services/shortcuts_service.dart';
+import 'package:gravity_torrent/services/wifi_guard_service.dart';
+import 'package:gravity_torrent/services/battery_service.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// Persistent, user-controllable feature flags for SOTA cross-platform
@@ -30,6 +32,8 @@ class FeatureFlagsModel extends ChangeNotifier {
   bool _enableScheduler = false;
   bool _enableQuota = false;
   bool _enableRssAutoDownload = false;
+  bool _enableWifiOnly = false;
+  bool _enableBatterySaver = false;
   bool loaded = false;
   bool _disposed = false;
   late final Future<void> _initialization;
@@ -66,6 +70,8 @@ class FeatureFlagsModel extends ChangeNotifier {
   bool get enableQuota => _isEnabled('enableQuota', _enableQuota);
   bool get enableRssAutoDownload =>
       _isEnabled('enableRssAutoDownload', _enableRssAutoDownload);
+  bool get enableWifiOnly => _isEnabled('enableWifiOnly', _enableWifiOnly);
+  bool get enableBatterySaver => _isEnabled('enableBatterySaver', _enableBatterySaver);
 
   /// True when the remote config explicitly disables this feature.
   bool isRemotelyDisabled(String key) =>
@@ -92,6 +98,8 @@ class FeatureFlagsModel extends ChangeNotifier {
     _enableQuota = await SharedPrefsStorage.getBool('enableQuota') ?? false;
     _enableRssAutoDownload =
         await SharedPrefsStorage.getBool('enableRssAutoDownload') ?? false;
+    _enableWifiOnly = await SharedPrefsStorage.getBool('enableWifiOnly') ?? false;
+    _enableBatterySaver = await SharedPrefsStorage.getBool('enableBatterySaver') ?? false;
 
     await RemoteConfigService.instance.refresh();
     HapticService.setEnabled(enableHaptic);
@@ -213,6 +221,34 @@ class FeatureFlagsModel extends ChangeNotifier {
           .setEnabled(_effective('enableRssAutoDownload', value))
           .catchError((e) {
         if (kDebugMode) debugPrint('RssService toggle failed: $e');
+        return null;
+      }),
+    );
+  }
+
+  Future<void> setEnableWifiOnly(bool value) async {
+    _enableWifiOnly = value;
+    await SharedPrefsStorage.setBool('enableWifiOnly', value);
+    if (!_disposed) notifyListeners();
+    unawaited(
+      WifiGuardService.instance
+          .setEnabled(_effective('enableWifiOnly', value))
+          .catchError((e) {
+        if (kDebugMode) debugPrint('WifiGuardService toggle failed: $e');
+        return null;
+      }),
+    );
+  }
+
+  Future<void> setEnableBatterySaver(bool value) async {
+    _enableBatterySaver = value;
+    await SharedPrefsStorage.setBool('enableBatterySaver', value);
+    if (!_disposed) notifyListeners();
+    unawaited(
+      BatteryService.instance
+          .setEnabled(_effective('enableBatterySaver', value))
+          .catchError((e) {
+        if (kDebugMode) debugPrint('BatteryService toggle failed: $e');
         return null;
       }),
     );
