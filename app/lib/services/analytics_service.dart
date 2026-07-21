@@ -126,8 +126,19 @@ class AnalyticsService {
     _lastRawDownloaded = downloadedBytes;
     _lastRawUploaded = uploadedBytes;
 
+    // Keep only the last [_maxDays] days
+    final excess = _history.length - _maxDays;
+    bool trimmed = false;
+    if (excess > 0) {
+      _history.removeRange(0, excess);
+      trimmed = true;
+    }
+
     // Skip writing if both deltas are zero to avoid spurious entries.
-    if (deltaDown == 0 && deltaUp == 0) return;
+    if (deltaDown == 0 && deltaUp == 0) {
+      if (trimmed) await save();
+      return;
+    }
 
     final existing = _history.where((s) => s.day == key).toList();
     if (existing.isNotEmpty) {
@@ -146,12 +157,6 @@ class AnalyticsService {
           uploadedBytes: deltaUp,
         ),
       );
-    }
-
-    // Keep only the last [_maxDays] days
-    final excess = _history.length - _maxDays;
-    if (excess > 0) {
-      _history.removeRange(0, excess);
     }
 
     await save();
