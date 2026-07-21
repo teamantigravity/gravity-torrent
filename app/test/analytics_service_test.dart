@@ -62,6 +62,10 @@ void main() {
 
     test('today returns the current day bucket', () async {
       await AnalyticsService.instance.recordTotals(
+        downloadedBytes: 0,
+        uploadedBytes: 0,
+      );
+      await AnalyticsService.instance.recordTotals(
         downloadedBytes: 100,
         uploadedBytes: 50,
       );
@@ -92,6 +96,10 @@ void main() {
     });
 
     test('getLastDays returns all history when count >= length', () async {
+      await AnalyticsService.instance.recordTotals(
+        downloadedBytes: 0,
+        uploadedBytes: 0,
+      );
       await AnalyticsService.instance.recordTotals(
         downloadedBytes: 100,
         uploadedBytes: 50,
@@ -125,6 +133,10 @@ void main() {
 
     test('handles counter reset by treating the new total as fresh', () async {
       await AnalyticsService.instance.recordTotals(
+        downloadedBytes: 0,
+        uploadedBytes: 0,
+      );
+      await AnalyticsService.instance.recordTotals(
         downloadedBytes: 100,
         uploadedBytes: 50,
       );
@@ -141,6 +153,10 @@ void main() {
     });
 
     test('merges multiple samples for the same day', () async {
+      await AnalyticsService.instance.recordTotals(
+        downloadedBytes: 0,
+        uploadedBytes: 0,
+      );
       await AnalyticsService.instance.recordTotals(
         downloadedBytes: 100,
         uploadedBytes: 50,
