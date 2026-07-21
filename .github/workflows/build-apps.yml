@@ -26,7 +26,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: app/pubspec.yaml
           cache: true
       - name: Install dependencies
         run: |
@@ -76,7 +75,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: master # channel stable does not support arm64 for now
-          flutter-version-file: app/pubspec.yaml
           cache: true
       - name: Install dependencies
         run: |
@@ -137,7 +135,6 @@ jobs:
         uses: subosito/flutter-action@v2.18.0
         with:
           channel: stable
-          flutter-version-file: app/pubspec.yaml
           cache: true
       - name: Set up sccache
         uses: hendrikmuhs/ccache-action@v1.2.14
@@ -230,7 +227,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: app/pubspec.yaml
           cache: true
 
       - name: Cache pub packages
@@ -322,7 +318,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: app/pubspec.yaml
           cache: true
       - name: Install dependencies
         run: |
@@ -393,7 +388,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: app/pubspec.yaml
           cache: true
       - name: Inject AdMob Secrets
         run: |
