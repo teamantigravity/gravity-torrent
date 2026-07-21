@@ -131,7 +131,7 @@ void main() {
     test('reports ok, warning, and exceeded based on monthly usage', () async {
       await QuotaService.instance.setEnabled(true);
       await QuotaService.instance.setQuota(100);
-      
+
       AnalyticsService.instance.reset();
       await AnalyticsService.instance.recordTotals(
         downloadedBytes: 0,
