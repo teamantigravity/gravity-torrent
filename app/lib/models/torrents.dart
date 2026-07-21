@@ -48,6 +48,7 @@ class TorrentsModel extends ChangeNotifier {
   bool reverseSort = true;
   Filters filters = Filters(labels: {});
   Timer? _timer;
+  Timer? _searchDebounceTimer;
   bool _isFetching = false; // mutex to prevent concurrent fetches
   bool _disposed = false;
 
@@ -83,6 +84,7 @@ class TorrentsModel extends ChangeNotifier {
     _disposed = true;
     _timer?.cancel();
     _timer = null;
+    _searchDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -289,7 +291,6 @@ class TorrentsModel extends ChangeNotifier {
 
       // Enforce monthly bandwidth quota by pausing active torrents
       if (_featureFlags?.enableQuota ?? false) {
-        await QuotaService.instance.load();
         final quotaStatus = QuotaService.instance.status;
         if (quotaStatus == QuotaStatus.exceeded) {
           final activeIds = fetched
@@ -387,7 +388,11 @@ class TorrentsModel extends ChangeNotifier {
 
   void setFilterText(String value) {
     filterText = value;
-    processDisplayedTorrents();
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(
+      const Duration(milliseconds: 200),
+      processDisplayedTorrents,
+    );
   }
 
   Future<void> setSort(Sort value, bool reverse) async {

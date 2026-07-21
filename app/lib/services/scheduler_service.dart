@@ -177,7 +177,9 @@ class SchedulerService {
         // Pause active torrents and remember them
         for (final torrent in torrents) {
           if (torrent.status == TorrentStatus.downloading ||
-              torrent.status == TorrentStatus.seeding) {
+              torrent.status == TorrentStatus.seeding ||
+              torrent.status == TorrentStatus.queuedToDownload ||
+              torrent.status == TorrentStatus.queuedToSeed) {
             await engine.pauseTorrent(torrent.id);
             _pausedByScheduler.add(torrent.id);
           }
@@ -192,12 +194,20 @@ class SchedulerService {
     if (_pausedByScheduler.isEmpty) return;
     try {
       final engine = getIt<Engine>();
+      final torrents = await engine.fetchTorrents();
+      final existingIds = {for (final t in torrents) t.id};
       for (final id in _pausedByScheduler) {
-        await engine.resumeTorrent(id);
+        if (!existingIds.contains(id)) continue;
+        try {
+          await engine.resumeTorrent(id);
+        } catch (e) {
+          if (kDebugMode) debugPrint('SchedulerService failed to resume torrent $id: $e');
+        }
       }
-      _pausedByScheduler.clear();
     } catch (e) {
       if (kDebugMode) debugPrint('SchedulerService _resumeAll error: $e');
+    } finally {
+      _pausedByScheduler.clear();
     }
   }
 

@@ -17,6 +17,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   String _address = '';
   String _token = '';
   String _qr = '';
+  bool _tokenVisible = false;
 
   @override
   void initState() {
@@ -87,9 +88,14 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                 children: [
                   Flexible(
                     child: SelectableText(
-                      'Token: $_token',
+                      'Token: ${_tokenVisible ? _token : '•' * 16}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                  ),
+                  IconButton(
+                    icon: Icon(_tokenVisible ? Icons.visibility_off : Icons.visibility, size: 16),
+                    tooltip: _tokenVisible ? 'Hide token' : 'Show token',
+                    onPressed: () => setState(() => _tokenVisible = !_tokenVisible),
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, size: 16),

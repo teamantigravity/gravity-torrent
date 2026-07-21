@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
@@ -145,6 +146,7 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
                     child: TextField(
                       controller: _pinController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       maxLength: 8,
                       obscureText: true,
                       decoration: InputDecoration(

@@ -181,6 +181,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
 
   /// Ignore updates on mobile devices & depending on user prefs
   _checkForUpdate() async {
+    if (!isDesktop()) return;
     if (hasShownUpdateDialog) return;
 
     var appModel = Provider.of<AppModel>(context, listen: false);

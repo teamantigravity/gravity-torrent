@@ -74,7 +74,7 @@ class _Navigation extends State<Navigation> {
   static int _calculateNavigationRailSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
 
-    if (location == '/settings') {
+    if (location == '/settings' || location.startsWith('/settings/')) {
       return 1;
     }
 

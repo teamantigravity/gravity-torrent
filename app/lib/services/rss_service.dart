@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -72,7 +73,9 @@ class RssService {
     final rawSeen = await SharedPrefsStorage.getString(_seenKey);
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
-        _seenLinks = Set<String>.from(jsonDecode(rawSeen) as List<dynamic>);
+        _seenLinks = LinkedHashSet<String>.from(
+          (jsonDecode(rawSeen) as List<dynamic>).cast<String>(),
+        );
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('Failed to load seen links: $e\n$s');
@@ -188,7 +191,7 @@ class RssService {
 
     // Prune seen links to last 1000 to avoid unbounded growth
     if (_seenLinks.length > 1000) {
-      _seenLinks = _seenLinks.skip(_seenLinks.length - 1000).toSet();
+      _seenLinks = LinkedHashSet<String>.from(_seenLinks.skip(_seenLinks.length - 1000));
     }
 
     await _saveSeen();

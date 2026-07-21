@@ -80,7 +80,12 @@ class StreamingServer {
   }
 
   Future<String> getAddress() async {
-    await _serverReadyCompleter.future;
+    await _serverReadyCompleter.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => throw StateError(
+        'StreamingServer: timed out waiting for server to start',
+      ),
+    );
     final server = _server;
     if (server == null) {
       throw StateError('Streaming server is not running');
@@ -147,6 +152,7 @@ class StreamingServer {
     CancelableCompleter cancelableCompleter,
   ) async {
     if (kDebugMode) debugPrint('streaming_server: _sendFullFile');
+    request.response.statusCode = HttpStatus.ok;
     final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
     request.response.headers.contentType = ContentType.parse(mimeType);
     request.response.headers.contentLength = fileSize;

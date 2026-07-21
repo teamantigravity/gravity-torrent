@@ -73,6 +73,13 @@ class _RssScreenState extends State<RssScreen> {
             onPressed: () async {
               final url = urlController.text.trim();
               if (url.isEmpty) return;
+              final uri = Uri.tryParse(url);
+              if (uri == null || !uri.hasAbsolutePath || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a valid HTTP/HTTPS URL')),
+                );
+                return;
+              }
               final feed = RssFeed(
                 url: url,
                 keyword: keywordController.text.trim(),
@@ -175,7 +182,7 @@ class _RssScreenState extends State<RssScreen> {
                           itemBuilder: (context, index) {
                             final feed = _feeds[index];
                             return Dismissible(
-                              key: Key('rss_$index'),
+                              key: Key(feed.url),
                               direction: DismissDirection.endToStart,
                               background: Container(
                                 color: Theme.of(context).colorScheme.error,
@@ -187,7 +194,9 @@ class _RssScreenState extends State<RssScreen> {
                                 ),
                               ),
                               onDismissed: (_) async {
-                                await RssService.instance.removeFeedAt(index);
+                                if (index >= 0 && index < _feeds.length) {
+                                  await RssService.instance.removeFeedAt(index);
+                                }
                                 await _load();
                               },
                               child: SwitchListTile(

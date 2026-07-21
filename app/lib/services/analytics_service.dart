@@ -52,11 +52,15 @@ class AnalyticsService {
 
   List<DataUsageSnapshot> _history = [];
   bool _loaded = false;
+  int _lastRawDownloaded = -1;
+  int _lastRawUploaded = -1;
 
   @visibleForTesting
   void reset() {
     _loaded = false;
     _history = [];
+    _lastRawDownloaded = -1;
+    _lastRawUploaded = -1;
   }
 
   Future<void> load() async {
@@ -88,6 +92,7 @@ class AnalyticsService {
       }
       _history = [];
     }
+    _history.sort((a, b) => a.day.compareTo(b.day));
     _loaded = true;
   }
 
@@ -106,22 +111,23 @@ class AnalyticsService {
     final today = DateTime.now();
     final key = DateTime(today.year, today.month, today.day);
 
-    final previous = _history.isNotEmpty
-        ? _history.lastWhere(
-            (s) => !s.day.isAfter(key),
-            orElse: () => _history.first,
-          )
-        : null;
-    final deltaDown = previous == null
-        ? downloadedBytes
-        : downloadedBytes >= previous.downloadedBytes
-            ? downloadedBytes - previous.downloadedBytes
-            : downloadedBytes; // counter reset — treat as fresh
-    final deltaUp = previous == null
-        ? uploadedBytes
-        : uploadedBytes >= previous.uploadedBytes
-            ? uploadedBytes - previous.uploadedBytes
-            : uploadedBytes; // counter reset
+    // Compute deltas using the last raw cumulative values, not the history bucket.
+    final deltaDown = _lastRawDownloaded < 0
+        ? 0  // First ever call — don't count existing downloads as "new"
+        : downloadedBytes >= _lastRawDownloaded
+            ? downloadedBytes - _lastRawDownloaded
+            : downloadedBytes; // counter reset after engine restart
+    final deltaUp = _lastRawUploaded < 0
+        ? 0
+        : uploadedBytes >= _lastRawUploaded
+            ? uploadedBytes - _lastRawUploaded
+            : uploadedBytes;
+
+    _lastRawDownloaded = downloadedBytes;
+    _lastRawUploaded = uploadedBytes;
+
+    // Skip writing if both deltas are zero to avoid spurious entries.
+    if (deltaDown == 0 && deltaUp == 0) return;
 
     final existing = _history.where((s) => s.day == key).toList();
     if (existing.isNotEmpty) {

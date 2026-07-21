@@ -147,6 +147,18 @@ class RemoteControlService {
     final path = request.url.path;
     final method = request.method;
 
+    // Handle CORS preflight
+    if (method == 'OPTIONS') {
+      return Response.ok(
+        '',
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        },
+      );
+    }
+
     if (path == 'health' && method == 'GET') {
       return _jsonResponse({
         'ok': isRunning,
@@ -265,7 +277,10 @@ class RemoteControlService {
   Response _jsonResponse(Map<String, dynamic> body) {
     return Response.ok(
       jsonEncode(body),
-      headers: {'content-type': 'application/json'},
+      headers: {
+        'content-type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
     );
   }
 
