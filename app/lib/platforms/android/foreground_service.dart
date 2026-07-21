@@ -24,8 +24,8 @@ const androidNotificationDetails = AndroidNotificationDetails(
 );
 
 Future<void> createForegroundService() async {
-  final androidPlugin = flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
+  final androidPlugin =
+      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
   // Request runtime notifications permissions (Android 13+)
@@ -78,7 +78,8 @@ Future<void> updateForegroundServiceNotification({
 }) async {
   if (!_foregroundServiceStarted) {
     if (kDebugMode) {
-      debugPrint('Foreground service not running; skipping notification update.');
+      debugPrint(
+          'Foreground service not running; skipping notification update.');
     }
     return;
   }

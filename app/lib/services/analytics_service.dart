@@ -113,12 +113,12 @@ class AnalyticsService {
           )
         : null;
     final deltaDown = previous == null
-        ? 0
+        ? downloadedBytes
         : downloadedBytes >= previous.downloadedBytes
             ? downloadedBytes - previous.downloadedBytes
             : downloadedBytes; // counter reset — treat as fresh
     final deltaUp = previous == null
-        ? 0
+        ? uploadedBytes
         : uploadedBytes >= previous.uploadedBytes
             ? uploadedBytes - previous.uploadedBytes
             : uploadedBytes; // counter reset

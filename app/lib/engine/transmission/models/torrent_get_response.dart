@@ -8,10 +8,10 @@ class TorrentGetResponse {
 
   TorrentGetResponse.fromJson(Map<String, dynamic> json)
       : arguments = TorrentGetResponseArguments.fromJson(
-            json['arguments'] is Map
-                ? json['arguments'] as Map<String, dynamic>
-                : const {},
-          ),
+          json['arguments'] is Map
+              ? json['arguments'] as Map<String, dynamic>
+              : const {},
+        ),
         result = json['result'] as String? ?? '';
 }
 

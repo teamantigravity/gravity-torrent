@@ -6,7 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
-import 'package:gravity_torrent/platforms/android/foreground_service.dart' as foreground;
+import 'package:gravity_torrent/platforms/android/foreground_service.dart'
+    as foreground;
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
@@ -16,7 +17,8 @@ enum NotificationsDetailsTypes { downloadsCompletedAndroidNotificationDetails }
 const _completedNotificationId = 0;
 // Keep the progress notification separate from the Android foreground service notification.
 const _progressNotificationId = 2;
-const _pendingNotificationActionKey = 'gravity_torrent_pending_notification_action';
+const _pendingNotificationActionKey =
+    'gravity_torrent_pending_notification_action';
 
 const downloadsCompletedAndroidNotificationDetails = AndroidNotificationDetails(
   'downloads_completed',

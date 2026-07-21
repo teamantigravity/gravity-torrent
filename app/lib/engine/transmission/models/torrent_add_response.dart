@@ -6,10 +6,10 @@ class TorrentAddResponse {
 
   TorrentAddResponse.fromJson(Map<String, dynamic> json)
       : arguments = TorrentAddResponseArguments.fromJson(
-            json['arguments'] is Map
-                ? json['arguments'] as Map<String, dynamic>
-                : const {},
-          ),
+          json['arguments'] is Map
+              ? json['arguments'] as Map<String, dynamic>
+              : const {},
+        ),
         result = json['result'] as String? ?? '';
 }
 

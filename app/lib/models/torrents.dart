@@ -223,9 +223,8 @@ class TorrentsModel extends ChangeNotifier {
 
       // Update the persistent Android foreground service notification with live
       // progress and speed on every refresh.
-      final downloading = fetched
-          .where((t) => t.status == TorrentStatus.downloading)
-          .toList();
+      final downloading =
+          fetched.where((t) => t.status == TorrentStatus.downloading).toList();
 
       if (downloading.isNotEmpty) {
         final totalProgress =

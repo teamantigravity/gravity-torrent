@@ -8,10 +8,10 @@ class SessionGetResponse {
 
   SessionGetResponse.fromJson(Map<String, dynamic> json)
       : arguments = SessionGetResponseArguments.fromJson(
-            json['arguments'] is Map
-                ? json['arguments'] as Map<String, dynamic>
-                : const {},
-          ),
+          json['arguments'] is Map
+              ? json['arguments'] as Map<String, dynamic>
+              : const {},
+        ),
         result = json['result'] as String? ?? '';
 }
 
@@ -69,7 +69,8 @@ class SessionGetResponseArguments {
         utpEnabled = _cast<bool>(json['utp-enabled']),
         seedRatioLimit = _cast<num>(json['seedRatioLimit'])?.toDouble(),
         seedRatioLimited = _cast<bool>(json['seedRatioLimited']),
-        idleSeedingLimitEnabled = _cast<bool>(json['idle-seeding-limit-enabled']),
+        idleSeedingLimitEnabled =
+            _cast<bool>(json['idle-seeding-limit-enabled']),
         idleSeedingLimit = _cast<num>(json['idle-seeding-limit'])?.toInt(),
         altSpeedEnabled = _cast<bool>(json['alt-speed-enabled']),
         altSpeedDown = _cast<num>(json['alt-speed-down'])?.toInt(),
