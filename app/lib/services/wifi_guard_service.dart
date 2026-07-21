@@ -116,7 +116,7 @@ class WifiGuardService {
           if (kDebugMode) {
             debugPrint(
               'WifiGuardService: interface change detected '
-              '${_lastIpAddresses} -> $currentIps',
+              '$_lastIpAddresses -> $currentIps',
             );
           }
           await _pauseAll();

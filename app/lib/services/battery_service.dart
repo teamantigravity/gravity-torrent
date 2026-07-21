@@ -130,8 +130,9 @@ class BatteryService {
         );
       }
     } catch (e) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('BatteryService _restoreNormalSpeed error: $e');
+      }
     }
   }
 

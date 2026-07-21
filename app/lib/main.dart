@@ -138,7 +138,6 @@ Future<void> stopServices() async {
   SchedulerService.instance.dispose();
   RssService.instance.stopPolling();
   WifiGuardService.instance.dispose();
-  SeedRatioService.instance.dispose();
   if (isMobile()) {
     BatteryService.instance.dispose();
   }

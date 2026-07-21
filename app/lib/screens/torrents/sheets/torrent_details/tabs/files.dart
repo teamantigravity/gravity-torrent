@@ -200,6 +200,7 @@ class _FilesTabState extends State<FilesTab> {
                           if (value == 'open') {
                             _openFile(file.name);
                           } else if (value == 'share') {
+                            // ignore: deprecated_member_use
                             await Share.shareXFiles([XFile(filePath)]);
                           } else if (value == 'play_in_app') {
                             debugPrint(

@@ -268,8 +268,10 @@ class TorrentsModel extends ChangeNotifier {
         for (final torrent in fetched) {
           final diff = now.difference(torrent.doneDate).inSeconds;
           if (diff >= 0 && diff < refreshIntervalSeconds) {
-            final duration = torrent.addedDate.year > 2000
-                ? torrent.doneDate.difference(torrent.addedDate)
+            final addedDate =
+                DateTime.fromMillisecondsSinceEpoch(torrent.addedDate * 1000);
+            final duration = addedDate.year > 2000
+                ? torrent.doneDate.difference(addedDate)
                 : null;
             await showCompletedNotification(
               torrent.name,

@@ -43,7 +43,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _import() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['json'],
       dialogTitle: 'Select backup file',

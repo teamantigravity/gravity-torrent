@@ -201,8 +201,9 @@ class SchedulerService {
         try {
           await engine.resumeTorrent(id);
         } catch (e) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('SchedulerService failed to resume torrent $id: $e');
+          }
         }
       }
     } catch (e) {
