@@ -72,7 +72,8 @@ class AppLockService {
       if (!await _localAuth.isDeviceSupported()) return false;
       final available = await _localAuth.getAvailableBiometrics();
       return available.isNotEmpty;
-    } on LocalAuthException catch (_) {
+    } on LocalAuthException catch (e) {
+      if (kDebugMode) debugPrint('AppLockService biometrics not available: $e');
       return false;
     } catch (e) {
       if (kDebugMode) debugPrint('AppLockService canUseBiometrics error: $e');
@@ -139,7 +140,16 @@ class AppLockService {
     final salt = parts[0];
     final hash = parts[1];
     final bytes = utf8.encode(salt + pin);
-    return sha256.convert(bytes).toString() == hash;
+    return _constantTimeCompare(sha256.convert(bytes).toString(), hash);
+  }
+
+  bool _constantTimeCompare(String a, String b) {
+    if (a.length != b.length) return false;
+    var result = 0;
+    for (var i = 0; i < a.length; i++) {
+      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    return result == 0;
   }
 
   String _generateSalt() {

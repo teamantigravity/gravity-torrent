@@ -74,16 +74,21 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   @override
   void dispose() {
     _disposed = true;
-    unawaited(widget.torrent.stopStreaming());
-    // Detach from the platform media session before disposing
-    MediaKitAudioHandler.instance?.setPlayer(null);
-    player?.stop();
-    player?.dispose();
-    if (server != null) unawaited(server!.stop());
-    if (subsServer != null) unawaited(subsServer!.stop());
-    // leave immersive mode
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    unawaited(_disposePlayer());
     super.dispose();
+  }
+
+  Future<void> _disposePlayer() async {
+    await widget.torrent.stopStreaming();
+    // Stop playback and detach from the platform media session before
+    // disposing the native player.
+    await player?.stop();
+    await MediaKitAudioHandler.instance?.setPlayer(null);
+    await player?.dispose();
+    await server?.stop();
+    await subsServer?.stop();
+    // leave immersive mode
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   void initPlayer() async {

@@ -25,7 +25,7 @@ class RssFeed {
       };
 
   factory RssFeed.fromJson(Map<String, dynamic> json) => RssFeed(
-        url: json['url'] as String,
+        url: (json['url'] as String?) ?? '',
         keyword: (json['keyword'] as String?) ?? '',
         enabled: (json['enabled'] as bool?) ?? true,
       );
@@ -62,7 +62,10 @@ class RssService {
         _feeds = list
             .map((e) => RssFeed.fromJson(e as Map<String, dynamic>))
             .toList();
-      } catch (_) {
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('Failed to load RSS feeds: $e\n$s');
+        }
         _feeds = [];
       }
     }
@@ -70,7 +73,10 @@ class RssService {
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
         _seenLinks = Set<String>.from(jsonDecode(rawSeen) as List<dynamic>);
-      } catch (_) {
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('Failed to load seen links: $e\n$s');
+        }
         _seenLinks = {};
       }
     }

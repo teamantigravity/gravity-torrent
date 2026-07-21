@@ -258,6 +258,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
     switch (state) {
       case AppLifecycleState.resumed:
         if (kDebugMode) debugPrint("Application resumed");
+        unawaited(processPendingNotificationAction());
         break;
 
       case AppLifecycleState.inactive:

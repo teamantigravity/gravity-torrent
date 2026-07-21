@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
@@ -67,7 +68,10 @@ class _UpgradePageState extends State<UpgradePage> {
     setState(() => _purchasing = true);
     try {
       await _purchase.buyRemoveAds();
-    } catch (_) {
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Buy remove ads failed: $e\n$s');
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.purchaseFailed)),
@@ -80,19 +84,33 @@ class _UpgradePageState extends State<UpgradePage> {
 
   Future<void> _restore() async {
     setState(() => _loading = true);
-    await _purchase.restorePurchases();
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    setState(() {
-      _loading = false;
-      _alreadyOwned = AdServiceProvider.instance.isAdFree;
-    });
-    if (_alreadyOwned) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.adsRemovedThankYou),
-        ),
-      );
+    try {
+      await _purchase.restorePurchases();
+      await Future<void>.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _alreadyOwned = AdServiceProvider.instance.isAdFree;
+      });
+      if (_alreadyOwned && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.adsRemovedThankYou),
+          ),
+        );
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Restore purchases failed: $e\n$s');
+      }
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.purchaseFailed),
+          ),
+        );
+      }
     }
   }
 

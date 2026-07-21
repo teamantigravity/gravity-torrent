@@ -1,16 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/platforms/android/foreground_service.dart' as foreground;
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 enum NotificationsDetailsTypes { downloadsCompletedAndroidNotificationDetails }
 
 const _completedNotificationId = 0;
-const _progressNotificationId = 1;
+// Keep the progress notification separate from the Android foreground service notification.
+const _progressNotificationId = 2;
+const _pendingNotificationActionKey = 'gravity_torrent_pending_notification_action';
 
 const downloadsCompletedAndroidNotificationDetails = AndroidNotificationDetails(
   'downloads_completed',
@@ -19,29 +25,8 @@ const downloadsCompletedAndroidNotificationDetails = AndroidNotificationDetails(
       'This channel is used for downloads completed notifications.',
 );
 
-AndroidNotificationDetails _buildProgressAndroidNotificationDetails(
-  int progress,
-) =>
-    AndroidNotificationDetails(
-      'downloads_progress',
-      'Downloads in progress',
-      channelDescription:
-          'This channel is used for downloads progress notifications.',
-      importance: Importance.low,
-      priority: Priority.low,
-      onlyAlertOnce: true,
-      ongoing: true,
-      showProgress: true,
-      maxProgress: 100,
-      progress: progress,
-      actions: const <AndroidNotificationAction>[
-        AndroidNotificationAction('pause_all', 'Pause all'),
-        AndroidNotificationAction('resume_all', 'Resume all'),
-      ],
-    );
-
-FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+FlutterLocalNotificationsPlugin get flutterLocalNotificationsPlugin =>
+    foreground.flutterLocalNotificationsPlugin;
 
 _removeNotificationChannels() async {
   await flutterLocalNotificationsPlugin
@@ -140,20 +125,42 @@ showCompletedNotification(String name, {int? id}) async {
   );
 }
 
+/// Updates the Android foreground service notification with the current
+/// download progress and speed. On other platforms this is a no-op.
+Future<void> updateForegroundNotification({
+  required int progress,
+  required int count,
+  int? rateDownBytes,
+}) async {
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    await foreground.updateForegroundServiceNotification(
+      progress: progress,
+      count: count,
+      rateDownBytes: rateDownBytes,
+    );
+  }
+}
+
 showDownloadProgressNotification({
   required int progress,
   required int count,
   int? rateDownBytes,
 }) async {
+  // On Android the persistent foreground service notification already shows
+  // progress and speed, so avoid posting a duplicate notification.
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return;
+  }
+
   final buffer = StringBuffer();
   buffer.write('$count download${count == 1 ? '' : 's'} in progress');
-  if (rateDownBytes != null && rateDownBytes > 0) {
-    buffer
-        .write(' · ${(rateDownBytes / (1024 * 1024)).toStringAsFixed(1)} MB/s');
+  if (count > 0) {
+    buffer.write(
+      ' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s',
+    );
   }
 
   final NotificationDetails notificationDetails = NotificationDetails(
-    android: _buildProgressAndroidNotificationDetails(progress),
     iOS: const DarwinNotificationDetails(
       categoryIdentifier: 'download_progress',
     ),
@@ -172,6 +179,10 @@ showDownloadProgressNotification({
 }
 
 Future<void> cancelDownloadProgressNotification() async {
+  // The progress notification is only used on non-Android platforms.
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return;
+  }
   await flutterLocalNotificationsPlugin.cancel(id: _progressNotificationId);
 }
 
@@ -179,14 +190,37 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
   final actionId = response.actionId ?? response.payload;
   if (actionId == null) return;
 
+  // Body taps just open the app; no action needs to be handled here.
+  if (actionId == 'progress' || actionId == 'completed') {
+    return;
+  }
+
   if (!getIt.isRegistered<Engine>()) {
     if (kDebugMode) {
-      debugPrint('Engine not registered, ignoring notification action');
+      debugPrint(
+        'Engine not registered, queueing notification action: $actionId',
+      );
     }
+    await _storePendingNotificationAction(actionId);
     return;
   }
 
   final engine = getIt<Engine>();
+  await _executeNotificationAction(actionId, engine);
+}
+
+Future<void> _storePendingNotificationAction(String actionId) async {
+  await SharedPrefsStorage.setString(_pendingNotificationActionKey, actionId);
+}
+
+Future<void> _executeNotificationAction(String actionId, Engine engine) async {
+  if (actionId == 'exit') {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await foreground.stopForegroundService();
+    }
+    await SystemNavigator.pop();
+    return;
+  }
 
   try {
     final torrents = await engine.fetchTorrents();
@@ -198,18 +232,40 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
             await engine.pauseTorrent(torrent.id);
           }
         }
+        break;
       case 'resume_all':
         for (final torrent in torrents) {
           if (torrent.status == TorrentStatus.stopped) {
             await engine.resumeTorrent(torrent.id);
           }
         }
+        break;
       default:
         break;
     }
   } catch (e) {
     if (kDebugMode) debugPrint('Notification action failed: $e');
   }
+}
+
+/// Processes a notification action that was queued while the engine was not
+/// available (e.g. in the background notification isolate).
+Future<void> processPendingNotificationAction() async {
+  final actionId = await SharedPrefsStorage.getString(
+    _pendingNotificationActionKey,
+  );
+  if (actionId == null || actionId.isEmpty) return;
+  await SharedPrefsStorage.remove(_pendingNotificationActionKey);
+
+  if (!getIt.isRegistered<Engine>()) {
+    if (kDebugMode) {
+      debugPrint('Engine still not registered, cannot process pending action');
+    }
+    return;
+  }
+
+  final engine = getIt<Engine>();
+  await _executeNotificationAction(actionId, engine);
 }
 
 void onForegroundNotificationResponse(NotificationResponse response) {

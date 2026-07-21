@@ -221,34 +221,54 @@ class TorrentsModel extends ChangeNotifier {
       final DateTime now = DateTime.now();
       final List<Torrent> fetched = await engine.fetchTorrents();
 
-      // Display smart notifications for completed and in-progress downloads
-      if (_featureFlags?.useEnhancedNotifications ?? true) {
-        final downloading = fetched
-            .where((t) => t.status == TorrentStatus.downloading)
-            .toList();
+      // Update the persistent Android foreground service notification with live
+      // progress and speed on every refresh.
+      final downloading = fetched
+          .where((t) => t.status == TorrentStatus.downloading)
+          .toList();
 
-        if (downloading.isNotEmpty) {
-          final totalProgress =
-              downloading.fold<double>(0, (sum, t) => sum + t.progress) /
-                  downloading.length;
-          final rateDown = downloading.fold<int>(
-            0,
-            (sum, t) => sum + t.rateDownload,
-          );
+      if (downloading.isNotEmpty) {
+        final totalProgress =
+            downloading.fold<double>(0, (sum, t) => sum + t.progress) /
+                downloading.length;
+        final rateDown = downloading.fold<int>(
+          0,
+          (sum, t) => sum + t.rateDownload,
+        );
+        await updateForegroundNotification(
+          progress: (totalProgress * 100).toInt(),
+          count: downloading.length,
+          rateDownBytes: rateDown,
+        );
+
+        if (_featureFlags?.useEnhancedNotifications ?? true) {
           await showDownloadProgressNotification(
             progress: (totalProgress * 100).toInt(),
             count: downloading.length,
             rateDownBytes: rateDown,
           );
-        } else {
+        }
+      } else {
+        await updateForegroundNotification(
+          progress: 0,
+          count: 0,
+          rateDownBytes: 0,
+        );
+
+        if (_featureFlags?.useEnhancedNotifications ?? true) {
           await cancelDownloadProgressNotification();
         }
+      }
 
-        // Display notification for torrents completed during last refresh
+      // Display notification for torrents completed during last refresh
+      if (_featureFlags?.useEnhancedNotifications ?? true) {
         for (final torrent in fetched) {
           final diff = now.difference(torrent.doneDate).inSeconds;
           if (diff >= 0 && diff < refreshIntervalSeconds) {
-            showCompletedNotification(torrent.name, id: torrent.id + 1000);
+            await showCompletedNotification(
+              torrent.name,
+              id: torrent.id + 1000,
+            );
           }
         }
       }

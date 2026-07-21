@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
@@ -126,7 +127,10 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
           ),
         );
       }
-    } catch (_) {
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to toggle sequential download: $e\n$s');
+      }
       if (mounted) {
         setState(() => _sequential = !value);
         ScaffoldMessenger.of(
@@ -138,12 +142,27 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
 
   Future<void> _togglePause() async {
     final torrent = widget.torrent;
-    if (torrent.status == TorrentStatus.stopped) {
-      torrent.start();
-    } else {
-      await torrent.stop();
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _saving = true);
+    try {
+      if (torrent.status == TorrentStatus.stopped) {
+        await torrent.start();
+      } else {
+        await torrent.stop();
+      }
+      if (mounted) await context.read<TorrentsModel>().fetchTorrents();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    if (mounted) await context.read<TorrentsModel>().fetchTorrents();
   }
 
   @override

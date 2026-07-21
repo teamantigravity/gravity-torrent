@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
-late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
 // listen to network changes
 startConnectivityCheck(BuildContext context) {
+  _connectivitySubscription?.cancel();
   ScaffoldFeatureController? snackBar;
 
   _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
@@ -39,5 +40,6 @@ startConnectivityCheck(BuildContext context) {
 }
 
 stopConnectivityCheck() {
-  _connectivitySubscription.cancel();
+  _connectivitySubscription?.cancel();
+  _connectivitySubscription = null;
 }

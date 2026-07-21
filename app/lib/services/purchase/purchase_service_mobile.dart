@@ -35,7 +35,10 @@ class PurchaseServiceMobile implements PurchaseService {
     if (!isStoreSupported) return false;
     try {
       return await _iap.isAvailable();
-    } catch (_) {
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('In-app purchase availability check failed: $e\n$s');
+      }
       return false;
     }
   }

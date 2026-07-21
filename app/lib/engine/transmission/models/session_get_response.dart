@@ -1,3 +1,5 @@
+T? _cast<T>(dynamic value) => value is T ? value : null;
+
 class SessionGetResponse {
   final SessionGetResponseArguments arguments;
   final String result;
@@ -5,8 +7,12 @@ class SessionGetResponse {
   SessionGetResponse(this.arguments, this.result);
 
   SessionGetResponse.fromJson(Map<String, dynamic> json)
-      : arguments = SessionGetResponseArguments.fromJson(json['arguments']),
-        result = json['result'] as String;
+      : arguments = SessionGetResponseArguments.fromJson(
+            json['arguments'] is Map
+                ? json['arguments'] as Map<String, dynamic>
+                : const {},
+          ),
+        result = json['result'] as String? ?? '';
 }
 
 class SessionGetResponseArguments {
@@ -45,31 +51,31 @@ class SessionGetResponseArguments {
   final int? altSpeedTimeDay;
 
   SessionGetResponseArguments.fromJson(Map<String, dynamic> json)
-      : downloadDir = json['download-dir'],
-        downloadQueueEnabled = json['download-queue-enabled'],
-        downloadQueueSize = json['download-queue-size'],
-        peerPort = json['peer-port'],
-        speedLimitDownEnabled = json['speed-limit-down-enabled'],
-        speedLimitUpEnabled = json['speed-limit-up-enabled'],
-        speedLimitDown = (json['speed-limit-down'] as num?)?.toInt(),
-        speedLimitUp = (json['speed-limit-up'] as num?)?.toInt(),
-        encryption = json['encryption'],
-        blocklistEnabled = json['blocklist-enabled'],
-        blocklistUrl = json['blocklist-url'],
-        blocklistSize = (json['blocklist-size'] as num?)?.toInt(),
-        dhtEnabled = json['dht-enabled'],
-        pexEnabled = json['pex-enabled'],
-        lpdEnabled = json['lpd-enabled'],
-        utpEnabled = json['utp-enabled'],
-        seedRatioLimit = (json['seedRatioLimit'] as num?)?.toDouble(),
-        seedRatioLimited = json['seedRatioLimited'],
-        idleSeedingLimitEnabled = json['idle-seeding-limit-enabled'],
-        idleSeedingLimit = (json['idle-seeding-limit'] as num?)?.toInt(),
-        altSpeedEnabled = json['alt-speed-enabled'],
-        altSpeedDown = (json['alt-speed-down'] as num?)?.toInt(),
-        altSpeedUp = (json['alt-speed-up'] as num?)?.toInt(),
-        altSpeedTimeEnabled = json['alt-speed-time-enabled'],
-        altSpeedTimeBegin = (json['alt-speed-time-begin'] as num?)?.toInt(),
-        altSpeedTimeEnd = (json['alt-speed-time-end'] as num?)?.toInt(),
-        altSpeedTimeDay = (json['alt-speed-time-day'] as num?)?.toInt();
+      : downloadDir = _cast<String>(json['download-dir']),
+        downloadQueueEnabled = _cast<bool>(json['download-queue-enabled']),
+        downloadQueueSize = _cast<num>(json['download-queue-size'])?.toInt(),
+        peerPort = _cast<num>(json['peer-port'])?.toInt(),
+        speedLimitDownEnabled = _cast<bool>(json['speed-limit-down-enabled']),
+        speedLimitUpEnabled = _cast<bool>(json['speed-limit-up-enabled']),
+        speedLimitDown = _cast<num>(json['speed-limit-down'])?.toInt(),
+        speedLimitUp = _cast<num>(json['speed-limit-up'])?.toInt(),
+        encryption = _cast<String>(json['encryption']),
+        blocklistEnabled = _cast<bool>(json['blocklist-enabled']),
+        blocklistUrl = _cast<String>(json['blocklist-url']),
+        blocklistSize = _cast<num>(json['blocklist-size'])?.toInt(),
+        dhtEnabled = _cast<bool>(json['dht-enabled']),
+        pexEnabled = _cast<bool>(json['pex-enabled']),
+        lpdEnabled = _cast<bool>(json['lpd-enabled']),
+        utpEnabled = _cast<bool>(json['utp-enabled']),
+        seedRatioLimit = _cast<num>(json['seedRatioLimit'])?.toDouble(),
+        seedRatioLimited = _cast<bool>(json['seedRatioLimited']),
+        idleSeedingLimitEnabled = _cast<bool>(json['idle-seeding-limit-enabled']),
+        idleSeedingLimit = _cast<num>(json['idle-seeding-limit'])?.toInt(),
+        altSpeedEnabled = _cast<bool>(json['alt-speed-enabled']),
+        altSpeedDown = _cast<num>(json['alt-speed-down'])?.toInt(),
+        altSpeedUp = _cast<num>(json['alt-speed-up'])?.toInt(),
+        altSpeedTimeEnabled = _cast<bool>(json['alt-speed-time-enabled']),
+        altSpeedTimeBegin = _cast<num>(json['alt-speed-time-begin'])?.toInt(),
+        altSpeedTimeEnd = _cast<num>(json['alt-speed-time-end'])?.toInt(),
+        altSpeedTimeDay = _cast<num>(json['alt-speed-time-day'])?.toInt();
 }

@@ -21,12 +21,21 @@ class DataUsageSnapshot {
         'uploadedBytes': uploadedBytes,
       };
 
-  factory DataUsageSnapshot.fromJson(Map<String, dynamic> json) =>
-      DataUsageSnapshot(
-        day: DateTime.parse(json['day'] as String),
-        downloadedBytes: (json['downloadedBytes'] as num).toInt(),
-        uploadedBytes: (json['uploadedBytes'] as num).toInt(),
-      );
+  factory DataUsageSnapshot.fromJson(Map<String, dynamic> json) {
+    final dayRaw = json['day'];
+    if (dayRaw is! String) {
+      throw FormatException('Missing or invalid day');
+    }
+    final day = DateTime.tryParse(dayRaw);
+    if (day == null) {
+      throw FormatException('Invalid day: $dayRaw');
+    }
+    return DataUsageSnapshot(
+      day: day,
+      downloadedBytes: (json['downloadedBytes'] as num?)?.toInt() ?? 0,
+      uploadedBytes: (json['uploadedBytes'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 /// On-device data-usage analytics.
@@ -55,12 +64,28 @@ class AnalyticsService {
     try {
       final raw = await SharedPrefsStorage.getString(_storageKey);
       if (raw != null && raw.isNotEmpty) {
-        final list = jsonDecode(raw) as List<dynamic>;
-        _history = list
-            .map((e) => DataUsageSnapshot.fromJson(e as Map<String, dynamic>))
-            .toList();
+        final decoded = jsonDecode(raw);
+        if (decoded is List<dynamic>) {
+          _history = decoded
+              .whereType<Map<String, dynamic>>()
+              .map((e) {
+                try {
+                  return DataUsageSnapshot.fromJson(e);
+                } catch (e, s) {
+                  if (kDebugMode) {
+                    debugPrint('Skipping invalid analytics snapshot: $e\n$s');
+                  }
+                  return null;
+                }
+              })
+              .whereType<DataUsageSnapshot>()
+              .toList();
+        }
       }
-    } catch (e) {
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load analytics history: $e\n$s');
+      }
       _history = [];
     }
     _loaded = true;
@@ -81,14 +106,19 @@ class AnalyticsService {
     final today = DateTime.now();
     final key = DateTime(today.year, today.month, today.day);
 
-    final previous = _history.isNotEmpty ? _history.last : null;
+    final previous = _history.isNotEmpty
+        ? _history.lastWhere(
+            (s) => !s.day.isAfter(key),
+            orElse: () => _history.first,
+          )
+        : null;
     final deltaDown = previous == null
-        ? downloadedBytes
+        ? 0
         : downloadedBytes >= previous.downloadedBytes
             ? downloadedBytes - previous.downloadedBytes
             : downloadedBytes; // counter reset — treat as fresh
     final deltaUp = previous == null
-        ? uploadedBytes
+        ? 0
         : uploadedBytes >= previous.uploadedBytes
             ? uploadedBytes - previous.uploadedBytes
             : uploadedBytes; // counter reset

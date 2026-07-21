@@ -70,7 +70,10 @@ Version? _tryParseVersion(String tag) {
   final normalized = tag.startsWith('v') ? tag.substring(1) : tag;
   try {
     return Version.parse(normalized);
-  } catch (_) {
+  } catch (e, s) {
+    if (kDebugMode) {
+      debugPrint('Failed to parse version tag $tag: $e\n$s');
+    }
     return null;
   }
 }

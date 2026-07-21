@@ -35,14 +35,14 @@ class ScheduleWindow {
 
   factory ScheduleWindow.fromJson(Map<String, dynamic> json) => ScheduleWindow(
         start: ScheduleTime(
-          hour: json['startHour'] as int,
-          minute: json['startMinute'] as int,
+          hour: (json['startHour'] as num?)?.toInt() ?? 0,
+          minute: (json['startMinute'] as num?)?.toInt() ?? 0,
         ),
         end: ScheduleTime(
-          hour: json['endHour'] as int,
-          minute: json['endMinute'] as int,
+          hour: (json['endHour'] as num?)?.toInt() ?? 0,
+          minute: (json['endMinute'] as num?)?.toInt() ?? 0,
         ),
-        dayBitmask: (json['dayBitmask'] as int?) ?? 127,
+        dayBitmask: (json['dayBitmask'] as num?)?.toInt() ?? 127,
       );
 
   /// Returns true if [now] falls within this window.
@@ -98,8 +98,10 @@ class SchedulerService {
         _window = ScheduleWindow.fromJson(
           jsonDecode(raw) as Map<String, dynamic>,
         );
-      } catch (_) {
-        // use default
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('Failed to load scheduler window: $e\n$s');
+        }
       }
     }
     _loaded = true;

@@ -29,16 +29,38 @@ class RemoveTorrentDialog extends StatelessWidget {
       actions: [
         TextButton(
           child: const Text('Delete files & torrent'),
-          onPressed: () {
-            _removeTorrent(torrentsModel, true);
-            Navigator.pop(context);
+          onPressed: () async {
+            try {
+              await _removeTorrent(torrentsModel, true);
+              if (context.mounted) Navigator.of(context).pop();
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Could not remove torrent: $e'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
           },
         ),
         TextButton(
           child: const Text('Remove torrent only'),
-          onPressed: () {
-            _removeTorrent(torrentsModel, false);
-            Navigator.pop(context);
+          onPressed: () async {
+            try {
+              await _removeTorrent(torrentsModel, false);
+              if (context.mounted) Navigator.of(context).pop();
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Could not remove torrent: $e'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
           },
         ),
       ],

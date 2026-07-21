@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/utils/bitfield.dart';
 
@@ -161,7 +162,10 @@ class TransmissionTorrentModel {
           try {
             return convertBitfieldToBoolList(
                 base64Decode(raw as String), count);
-          } catch (_) {
+          } catch (e, s) {
+            if (kDebugMode) {
+              debugPrint('Failed to decode torrent bitfield: $e\n$s');
+            }
             return List<bool>.filled(count, false);
           }
         })(),
