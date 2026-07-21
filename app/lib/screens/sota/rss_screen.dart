@@ -74,9 +74,12 @@ class _RssScreenState extends State<RssScreen> {
               final url = urlController.text.trim();
               if (url.isEmpty) return;
               final uri = Uri.tryParse(url);
-              if (uri == null || !uri.hasAbsolutePath || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+              if (uri == null ||
+                  !uri.hasAbsolutePath ||
+                  (!url.startsWith('http://') && !url.startsWith('https://'))) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid HTTP/HTTPS URL')),
+                  const SnackBar(
+                      content: Text('Please enter a valid HTTP/HTTPS URL')),
                 );
                 return;
               }

@@ -79,9 +79,8 @@ class WifiGuardService {
     _unsubscribe();
     // Seed initial IP list for kill-switch comparison.
     _currentIpAddresses().then((ips) => _lastIpAddresses = ips);
-    _connectivitySub = Connectivity()
-        .onConnectivityChanged
-        .listen(_onConnectivityChanged);
+    _connectivitySub =
+        Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
   }
 
   void _unsubscribe() {

@@ -93,9 +93,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(_tokenVisible ? Icons.visibility_off : Icons.visibility, size: 16),
+                    icon: Icon(
+                        _tokenVisible ? Icons.visibility_off : Icons.visibility,
+                        size: 16),
                     tooltip: _tokenVisible ? 'Hide token' : 'Show token',
-                    onPressed: () => setState(() => _tokenVisible = !_tokenVisible),
+                    onPressed: () =>
+                        setState(() => _tokenVisible = !_tokenVisible),
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, size: 16),

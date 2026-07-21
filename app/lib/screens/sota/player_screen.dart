@@ -136,18 +136,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 colors: [Color(0xCC000000), Colors.transparent],
               ),
             ),
-            padding: const EdgeInsets.all(16) +
-                MediaQuery.of(context).padding,
+            padding: const EdgeInsets.all(16) + MediaQuery.of(context).padding,
             child: StreamBuilder(
               stream: _player.stream.position,
               builder: (context, posSnapshot) {
                 return StreamBuilder(
                   stream: _player.stream.duration,
                   builder: (context, durSnapshot) {
-                    final position =
-                        posSnapshot.data ?? Duration.zero;
-                    final duration =
-                        durSnapshot.data ?? Duration.zero;
+                    final position = posSnapshot.data ?? Duration.zero;
+                    final duration = durSnapshot.data ?? Duration.zero;
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -189,9 +186,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                 onChanged: (v) {
                                   _player.seek(
                                     Duration(
-                                      milliseconds: (v *
-                                              duration.inMilliseconds)
-                                          .toInt(),
+                                      milliseconds:
+                                          (v * duration.inMilliseconds).toInt(),
                                     ),
                                   );
                                 },

@@ -36,6 +36,7 @@ import 'package:gravity_torrent/services/scheduler_service.dart';
 import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/services/battery_service.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
+
 ColorScheme _buildColorScheme(Brightness brightness, ColorScheme? dynamic) {
   return dynamic ??
       ColorScheme.fromSeed(

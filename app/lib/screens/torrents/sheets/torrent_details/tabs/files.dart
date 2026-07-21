@@ -195,13 +195,15 @@ class _FilesTabState extends State<FilesTab> {
                     if (completed)
                       PopupMenuButton<String>(
                         onSelected: (value) async {
-                          final filePath = path.join(widget.location, file.name);
+                          final filePath =
+                              path.join(widget.location, file.name);
                           if (value == 'open') {
                             _openFile(file.name);
                           } else if (value == 'share') {
                             await Share.shareXFiles([XFile(filePath)]);
                           } else if (value == 'play_in_app') {
-                            debugPrint('Play in app: $filePath (TODO: StreamingServer URL)');
+                            debugPrint(
+                                'Play in app: $filePath (TODO: StreamingServer URL)');
                           }
                         },
                         itemBuilder: (context) {
@@ -214,7 +216,9 @@ class _FilesTabState extends State<FilesTab> {
                               value: 'share',
                               child: Text('Share'),
                             ),
-                            if (lookupMimeType(file.name)?.startsWith('video/') == true)
+                            if (lookupMimeType(file.name)
+                                    ?.startsWith('video/') ==
+                                true)
                               const PopupMenuItem(
                                 value: 'play_in_app',
                                 child: Text('Play in app'),

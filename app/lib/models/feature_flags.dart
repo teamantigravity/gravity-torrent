@@ -71,7 +71,8 @@ class FeatureFlagsModel extends ChangeNotifier {
   bool get enableRssAutoDownload =>
       _isEnabled('enableRssAutoDownload', _enableRssAutoDownload);
   bool get enableWifiOnly => _isEnabled('enableWifiOnly', _enableWifiOnly);
-  bool get enableBatterySaver => _isEnabled('enableBatterySaver', _enableBatterySaver);
+  bool get enableBatterySaver =>
+      _isEnabled('enableBatterySaver', _enableBatterySaver);
 
   /// True when the remote config explicitly disables this feature.
   bool isRemotelyDisabled(String key) =>
@@ -98,8 +99,10 @@ class FeatureFlagsModel extends ChangeNotifier {
     _enableQuota = await SharedPrefsStorage.getBool('enableQuota') ?? false;
     _enableRssAutoDownload =
         await SharedPrefsStorage.getBool('enableRssAutoDownload') ?? false;
-    _enableWifiOnly = await SharedPrefsStorage.getBool('enableWifiOnly') ?? false;
-    _enableBatterySaver = await SharedPrefsStorage.getBool('enableBatterySaver') ?? false;
+    _enableWifiOnly =
+        await SharedPrefsStorage.getBool('enableWifiOnly') ?? false;
+    _enableBatterySaver =
+        await SharedPrefsStorage.getBool('enableBatterySaver') ?? false;
 
     await RemoteConfigService.instance.refresh();
     HapticService.setEnabled(enableHaptic);

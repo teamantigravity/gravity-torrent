@@ -189,16 +189,21 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                     ),
                   ),
                   if (_enabled) ...[
-                    if (_startHour * 60 + _startMinute == _endHour * 60 + _endMinute) ...[
+                    if (_startHour * 60 + _startMinute ==
+                        _endHour * 60 + _endMinute) ...[
                       const SizedBox(height: 8),
                       Chip(
-                        avatar: Icon(Icons.warning_amber_rounded, color: colorScheme.error),
-                        label: const Text('Start and end time are the same — no downloads will run'),
+                        avatar: Icon(Icons.warning_amber_rounded,
+                            color: colorScheme.error),
+                        label: const Text(
+                            'Start and end time are the same — no downloads will run'),
                       ),
-                    ] else if ((_startHour * 60 + _startMinute) >= (_endHour * 60 + _endMinute)) ...[
+                    ] else if ((_startHour * 60 + _startMinute) >=
+                        (_endHour * 60 + _endMinute)) ...[
                       const SizedBox(height: 8),
                       Chip(
-                        avatar: Icon(Icons.info_outline, color: colorScheme.primary),
+                        avatar: Icon(Icons.info_outline,
+                            color: colorScheme.primary),
                         label: const Text('Schedule wraps past midnight'),
                       ),
                     ],

@@ -212,47 +212,50 @@ class _BackupScreenState extends State<BackupScreen> {
                 ),
               ),
             ),
-            if (_busy) ...
-              [
-                const SizedBox(height: 24),
-                const Center(child: CircularProgressIndicator()),
-              ],
-            if (_statusMessage != null) ...
-              [
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _isError
-                        ? colorScheme.errorContainer
-                        : colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isError ? Icons.error : Icons.check_circle,
-                        color: _isError
-                            ? colorScheme.error
-                            : colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(_statusMessage!)),
-                    ],
-                  ),
+            if (_busy) ...[
+              const SizedBox(height: 24),
+              const Center(child: CircularProgressIndicator()),
+            ],
+            if (_statusMessage != null) ...[
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _isError
+                      ? colorScheme.errorContainer
+                      : colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Icon(
+                      _isError ? Icons.error : Icons.check_circle,
+                      color: _isError ? colorScheme.error : colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(_statusMessage!)),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 32),
             Text(
               'What is included in the backup',
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            const _IncludedItem(icon: Icons.toggle_on, label: 'Feature toggles (WiFi-only, scheduler, quota, RSS, etc.)'),
-            const _IncludedItem(icon: Icons.schedule, label: 'Download schedule windows'),
-            const _IncludedItem(icon: Icons.data_saver_on, label: 'Monthly bandwidth quota settings'),
+            const _IncludedItem(
+                icon: Icons.toggle_on,
+                label:
+                    'Feature toggles (WiFi-only, scheduler, quota, RSS, etc.)'),
+            const _IncludedItem(
+                icon: Icons.schedule, label: 'Download schedule windows'),
+            const _IncludedItem(
+                icon: Icons.data_saver_on,
+                label: 'Monthly bandwidth quota settings'),
             const _IncludedItem(icon: Icons.rss_feed, label: 'RSS feed URLs'),
-            const _IncludedItem(icon: Icons.palette, label: 'Theme and language preferences'),
+            const _IncludedItem(
+                icon: Icons.palette, label: 'Theme and language preferences'),
             const SizedBox(height: 8),
             Text(
               'Not included: torrent files, downloaded content, or PIN codes.',

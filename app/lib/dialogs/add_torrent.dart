@@ -94,9 +94,10 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         }
       }
 
-
-
-      String? downloadDirToCheck = pickedDownloadDir ?? Provider.of<SessionModel>(context, listen: false).session?.downloadDir;
+      String? downloadDirToCheck = pickedDownloadDir ??
+          Provider.of<SessionModel>(context, listen: false)
+              .session
+              ?.downloadDir;
       if (downloadDirToCheck == null || downloadDirToCheck.isEmpty) {
         try {
           final dir = await getApplicationDocumentsDirectory();
@@ -109,7 +110,13 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         try {
           if (Platform.isWindows && downloadDirToCheck.length >= 2) {
             final drive = downloadDirToCheck.substring(0, 2);
-            final result = await Process.run('wmic', ['logicaldisk', 'where', 'deviceid="$drive"', 'get', 'freespace']);
+            final result = await Process.run('wmic', [
+              'logicaldisk',
+              'where',
+              'deviceid="$drive"',
+              'get',
+              'freespace'
+            ]);
             final lines = result.stdout.toString().split('\n');
             if (lines.length > 1) {
               freeSpace = int.tryParse(lines[1].trim()) ?? 0;
@@ -137,10 +144,15 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Low Storage Warning'),
-            content: const Text('Free space may be insufficient for this torrent. Proceed anyway?'),
+            content: const Text(
+                'Free space may be insufficient for this torrent. Proceed anyway?'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Proceed')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Proceed')),
             ],
           ),
         );

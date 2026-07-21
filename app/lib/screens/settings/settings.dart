@@ -726,13 +726,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     if (flags.enableWifiOnly)
                       SwitchListTile(
-                        contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                        contentPadding:
+                            const EdgeInsets.only(left: 72, right: 16),
                         title: const Text('VPN Kill Switch'),
-                        subtitle: const Text('Pause downloads if IP address changes'),
-                        value: WifiGuardService.instance.mode == WifiGuardMode.vpnKillSwitch,
+                        subtitle:
+                            const Text('Pause downloads if IP address changes'),
+                        value: WifiGuardService.instance.mode ==
+                            WifiGuardMode.vpnKillSwitch,
                         onChanged: (v) {
                           WifiGuardService.instance.setMode(
-                            v ? WifiGuardMode.vpnKillSwitch : WifiGuardMode.wifiOnly,
+                            v
+                                ? WifiGuardMode.vpnKillSwitch
+                                : WifiGuardMode.wifiOnly,
                           );
                           setState(() {});
                         },
@@ -747,9 +752,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       if (flags.enableBatterySaver)
                         ListTile(
-                          contentPadding: const EdgeInsets.only(left: 72, right: 16),
+                          contentPadding:
+                              const EdgeInsets.only(left: 72, right: 16),
                           title: const Text('Battery Threshold'),
-                          subtitle: Text('${BatteryService.instance.threshold}%'),
+                          subtitle:
+                              Text('${BatteryService.instance.threshold}%'),
                           onTap: () {
                             showDialog<void>(
                               context: context,
@@ -766,7 +773,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                     ],
                     ListTile(
-                      leading: const Icon(Icons.settings_backup_restore_rounded),
+                      leading:
+                          const Icon(Icons.settings_backup_restore_rounded),
                       title: const Text('Backup & Restore Settings'),
                       onTap: () => context.push('/backup'),
                     ),

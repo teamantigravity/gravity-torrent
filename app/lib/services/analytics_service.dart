@@ -113,7 +113,7 @@ class AnalyticsService {
 
     // Compute deltas using the last raw cumulative values, not the history bucket.
     final deltaDown = _lastRawDownloaded < 0
-        ? 0  // First ever call — don't count existing downloads as "new"
+        ? 0 // First ever call — don't count existing downloads as "new"
         : downloadedBytes >= _lastRawDownloaded
             ? downloadedBytes - _lastRawDownloaded
             : downloadedBytes; // counter reset after engine restart

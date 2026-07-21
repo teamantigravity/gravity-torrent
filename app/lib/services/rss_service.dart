@@ -191,7 +191,8 @@ class RssService {
 
     // Prune seen links to last 1000 to avoid unbounded growth
     if (_seenLinks.length > 1000) {
-      _seenLinks = LinkedHashSet<String>.from(_seenLinks.skip(_seenLinks.length - 1000));
+      _seenLinks =
+          LinkedHashSet<String>.from(_seenLinks.skip(_seenLinks.length - 1000));
     }
 
     await _saveSeen();

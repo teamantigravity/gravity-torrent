@@ -34,7 +34,7 @@ class BatteryService {
     if (_loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     _threshold = (await SharedPrefsStorage.getString(_thresholdKey)
-                .then((s) => s != null ? int.tryParse(s) : null)) ??
+            .then((s) => s != null ? int.tryParse(s) : null)) ??
         20;
     _loaded = true;
     if (_enabled) _subscribe();
@@ -81,8 +81,8 @@ class BatteryService {
     try {
       final level = await _battery.batteryLevel;
       final state = await _battery.batteryState;
-      final isCharging = state == BatteryState.charging ||
-          state == BatteryState.full;
+      final isCharging =
+          state == BatteryState.charging || state == BatteryState.full;
 
       if (isCharging) {
         if (_throttledByBattery) await _restoreNormalSpeed();
@@ -130,7 +130,8 @@ class BatteryService {
         );
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('BatteryService _restoreNormalSpeed error: $e');
+      if (kDebugMode)
+        debugPrint('BatteryService _restoreNormalSpeed error: $e');
     }
   }
 
