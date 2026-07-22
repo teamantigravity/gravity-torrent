@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- USE_FINGERPRINT is the pre-Android 10 equivalent required by local_auth on older devices -->
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" android:maxSdkVersion="28" />
 
     <!--
         To stay compatible with Android <= 10, we request WRITE_EXTERNAL_STORAGE,

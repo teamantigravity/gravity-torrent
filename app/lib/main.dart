@@ -274,18 +274,24 @@ class GravityTorrentApp extends StatefulWidget {
 }
 
 class _GravityTorrentAppState extends State<GravityTorrentApp>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, WindowListener {
   bool _unlocked = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (isDesktop()) {
+      windowManager.addListener(this);
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (isDesktop()) {
+      windowManager.removeListener(this);
+    }
     super.dispose();
   }
 
@@ -308,14 +314,20 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
         break;
 
       case AppLifecycleState.hidden:
-        break;
-
       case AppLifecycleState.paused:
+        if (_unlocked) setState(() => _unlocked = false);
         break;
 
       case AppLifecycleState.detached:
         unawaited(_shutdownServices());
         break;
+    }
+  }
+
+  @override
+  void onWindowClose() {
+    if (mounted && _unlocked) {
+      setState(() => _unlocked = false);
     }
   }
 
@@ -332,10 +344,14 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
         return Consumer<FeatureFlagsModel>(
           builder: (context, flags, child) {
-            final shouldLock = flags.enableAppLock &&
+            final isLockEnabled = flags.enableAppLock &&
                 AppLockService.instance.enabled &&
-                AppLockService.instance.hasPin &&
-                !_unlocked;
+                AppLockService.instance.hasPin;
+            final shouldLock = isLockEnabled && !_unlocked;
+
+            if (!isLockEnabled) {
+              _unlocked = false;
+            }
 
             return DynamicColorBuilder(
               builder: (lightDynamic, darkDynamic) {
