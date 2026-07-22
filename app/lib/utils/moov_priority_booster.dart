@@ -24,12 +24,9 @@ class MoovPriorityBooster {
       final pieceSize = torrent.pieceSize;
       if (pieceSize <= 0) return;
 
-      // 2. Calculate start piece and end piece for this file
-      final fileStartByte = file.offset;
-      final fileEndByte = file.offset + file.length - 1;
-
-      final startPiece = (fileStartByte / pieceSize).floor();
-      final endPiece = (fileEndByte / pieceSize).floor();
+      // 2. Start piece and end piece for this file are directly available on the File model
+      final startPiece = file.beginPiece;
+      final endPiece = file.endPiece;
       final totalPieces = endPiece - startPiece + 1;
 
       if (totalPieces <= 0) return;
