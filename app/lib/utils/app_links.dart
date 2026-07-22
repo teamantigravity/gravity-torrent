@@ -11,7 +11,7 @@ final appUri = const String.fromEnvironment('APP_URL').isNotEmpty
     ? const String.fromEnvironment('APP_URL')
     : 'http://localhost:3000/';
 
-createAppLink(String link) {
+String createAppLink(String link) {
   Uri uri = Uri(fragment: Uri(queryParameters: {'magnet': link}).toString());
   String fragmentString = encodeToBase64(
     uri.toString().substring(2),
@@ -30,15 +30,16 @@ String? getTorrentLink(String appLink) {
   }
 
   try {
-    String fragment = decodeBase64(appLink.substring(hashIndex + 1));
+    final rawFragment = appLink.substring(hashIndex + 1);
+    String fragment = decodeBase64(Uri.decodeComponent(rawFragment));
     Uri uri = Uri(query: fragment);
     return uri.queryParameters['magnet'];
-  } on FormatException {
+  } catch (_) {
     return null;
   }
 }
 
-isAppLink(String appLink) {
+bool isAppLink(String appLink) {
   return appLink.startsWith(appUri);
 }
 

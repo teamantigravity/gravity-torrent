@@ -52,15 +52,15 @@ class AnalyticsService {
 
   List<DataUsageSnapshot> _history = [];
   bool _loaded = false;
-  int _lastRawDownloaded = -1;
-  int _lastRawUploaded = -1;
+  Map<int, int> _lastDownloadedByTorrent = {};
+  Map<int, int> _lastUploadedByTorrent = {};
 
   @visibleForTesting
   void reset() {
     _loaded = false;
     _history = [];
-    _lastRawDownloaded = -1;
-    _lastRawUploaded = -1;
+    _lastDownloadedByTorrent = {};
+    _lastUploadedByTorrent = {};
   }
 
   Future<void> load() async {
@@ -71,10 +71,12 @@ class AnalyticsService {
         final decoded = jsonDecode(raw);
         if (decoded is List<dynamic>) {
           _history = decoded
-              .whereType<Map<String, dynamic>>()
+              .whereType<Map>()
               .map((e) {
                 try {
-                  return DataUsageSnapshot.fromJson(e);
+                  return DataUsageSnapshot.fromJson(
+                    Map<String, dynamic>.from(e),
+                  );
                 } catch (e, s) {
                   if (kDebugMode) {
                     debugPrint('Skipping invalid analytics snapshot: $e\n$s');
@@ -103,28 +105,45 @@ class AnalyticsService {
 
   /// Record the latest cumulative totals. The delta since the last sample is
   /// added to today's bucket.
-  Future<void> recordTotals({
-    required int downloadedBytes,
-    required int uploadedBytes,
-  }) async {
+  Future<void> recordTorrentStats(List<dynamic> torrents) async {
     await load();
     final today = DateTime.now();
     final key = DateTime(today.year, today.month, today.day);
 
-    // Compute deltas using the last raw cumulative values, not the history bucket.
-    final deltaDown = _lastRawDownloaded < 0
-        ? 0 // First ever call — don't count existing downloads as "new"
-        : downloadedBytes >= _lastRawDownloaded
-            ? downloadedBytes - _lastRawDownloaded
-            : downloadedBytes; // counter reset after engine restart
-    final deltaUp = _lastRawUploaded < 0
-        ? 0
-        : uploadedBytes >= _lastRawUploaded
-            ? uploadedBytes - _lastRawUploaded
-            : uploadedBytes;
+    int deltaDown = 0;
+    int deltaUp = 0;
 
-    _lastRawDownloaded = downloadedBytes;
-    _lastRawUploaded = uploadedBytes;
+    for (final t in torrents) {
+      final id = t.id as int;
+      final down = t.downloadedEver as int;
+      final up = t.uploadedEver as int;
+
+      final lastD = _lastDownloadedByTorrent[id];
+      final lastU = _lastUploadedByTorrent[id];
+
+      if (lastD == null) {
+        // First time seeing this torrent this session, don't count existing
+      } else if (down >= lastD) {
+        deltaDown += down - lastD;
+      } else {
+        deltaDown += down;
+      }
+
+      if (lastU == null) {
+        // First time seeing this torrent
+      } else if (up >= lastU) {
+        deltaUp += up - lastU;
+      } else {
+        deltaUp += up;
+      }
+
+      _lastDownloadedByTorrent[id] = down;
+      _lastUploadedByTorrent[id] = up;
+    }
+
+    final currentIds = torrents.map((t) => t.id as int).toSet();
+    _lastDownloadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
+    _lastUploadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
 
     // Keep only the last [_maxDays] days
     final excess = _history.length - _maxDays;

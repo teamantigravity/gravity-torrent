@@ -61,7 +61,8 @@ class RssService {
       try {
         final list = jsonDecode(rawFeeds) as List<dynamic>;
         _feeds = list
-            .map((e) => RssFeed.fromJson(e as Map<String, dynamic>))
+            .whereType<Map>()
+            .map((e) => RssFeed.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       } catch (e, s) {
         if (kDebugMode) {
@@ -73,8 +74,9 @@ class RssService {
     final rawSeen = await SharedPrefsStorage.getString(_seenKey);
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
+        final list = jsonDecode(rawSeen) as List<dynamic>;
         _seenLinks = LinkedHashSet<String>.from(
-          (jsonDecode(rawSeen) as List<dynamic>).cast<String>(),
+          list.map((e) => e.toString()),
         );
       } catch (e, s) {
         if (kDebugMode) {
@@ -230,6 +232,10 @@ class RssService {
           if (kDebugMode) {
             debugPrint('RssService: quota exceeded, skipping $link');
           }
+          _seenLinks.remove(link);
+          continue;
+        }
+        if (!getIt.isRegistered<Engine>()) {
           _seenLinks.remove(link);
           continue;
         }

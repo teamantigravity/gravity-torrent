@@ -160,7 +160,9 @@ class _FilesTabState extends State<FilesTab> {
             itemBuilder: (context, index) {
               var file = displayedFiles[index];
 
-              var percent = (file.bytesCompleted / file.length * 100).floor();
+              var percent = file.length > 0
+                  ? (file.bytesCompleted / file.length * 100).floor()
+                  : 100;
 
               var completed = file.bytesCompleted == file.length;
 

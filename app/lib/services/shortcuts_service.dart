@@ -56,5 +56,5 @@ class ShortcutsService {
   }
 
   static bool isDesktop() =>
-      Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 }

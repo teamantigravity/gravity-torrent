@@ -4,11 +4,11 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+ScaffoldFeatureController? _activeSnackBarController;
 
 // listen to network changes
-startConnectivityCheck(BuildContext context) {
+void startConnectivityCheck(BuildContext context) {
   _connectivitySubscription?.cancel();
-  ScaffoldFeatureController? snackBar;
 
   _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
     List<ConnectivityResult> result,
@@ -16,7 +16,8 @@ startConnectivityCheck(BuildContext context) {
     if (!context.mounted) return;
 
     if (result.contains(ConnectivityResult.none)) {
-      snackBar = ScaffoldMessenger.of(context).showSnackBar(
+      _activeSnackBarController?.close();
+      _activeSnackBarController = ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           showCloseIcon: true,
           content: Text('Network unavailable.'),
@@ -26,9 +27,9 @@ startConnectivityCheck(BuildContext context) {
       );
     } else {
       // Close previous snackbar
-      if (snackBar != null) {
-        snackBar?.close();
-        snackBar = ScaffoldMessenger.of(context).showSnackBar(
+      if (_activeSnackBarController != null) {
+        _activeSnackBarController?.close();
+        _activeSnackBarController = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('You are back online'),
             backgroundColor: Colors.lightGreen,
@@ -39,7 +40,9 @@ startConnectivityCheck(BuildContext context) {
   });
 }
 
-stopConnectivityCheck() {
+void stopConnectivityCheck() {
   _connectivitySubscription?.cancel();
   _connectivitySubscription = null;
+  _activeSnackBarController?.close();
+  _activeSnackBarController = null;
 }

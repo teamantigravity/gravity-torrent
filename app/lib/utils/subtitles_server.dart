@@ -16,18 +16,25 @@ class SubtitlesServer {
   SubtitlesServer({required this.torrent});
 
   Future<void> start() async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    _server = server;
-    if (_stopped) {
-      await server.close(force: true);
-      return;
-    }
-    if (!_serverReadyCompleter.isCompleted) {
-      _serverReadyCompleter.complete();
-    }
+    try {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      _server = server;
+      if (_stopped) {
+        await server.close(force: true);
+        return;
+      }
+      if (!_serverReadyCompleter.isCompleted) {
+        _serverReadyCompleter.complete();
+      }
 
-    await for (final HttpRequest request in server) {
-      await handleRequest(request);
+      await for (final HttpRequest request in server) {
+        handleRequest(request);
+      }
+    } catch (e) {
+      if (!_serverReadyCompleter.isCompleted) {
+        _serverReadyCompleter.completeError(e);
+      }
+      rethrow;
     }
   }
 
@@ -38,7 +45,12 @@ class SubtitlesServer {
   }
 
   Future<String> getAddress() async {
-    await _serverReadyCompleter.future;
+    await _serverReadyCompleter.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => throw StateError(
+        'SubtitlesServer: timed out waiting for server to start',
+      ),
+    );
     final server = _server;
     if (server == null) {
       throw StateError('Subtitles server is not running');

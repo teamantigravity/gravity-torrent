@@ -37,9 +37,9 @@ class MoovPriorityBooster {
       final tailPieceCount = (totalPieces * 0.01).ceil().clamp(2, 20);
 
       final headerEndPiece =
-          (startPiece + headerPieceCount).clamp(startPiece, endPiece);
+          (startPiece + headerPieceCount - 1).clamp(startPiece, endPiece);
       final tailStartPiece =
-          (endPiece - tailPieceCount).clamp(startPiece, endPiece);
+          (endPiece - tailPieceCount + 1).clamp(startPiece, endPiece);
 
       if (kDebugMode) {
         debugPrint(

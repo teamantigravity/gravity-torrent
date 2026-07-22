@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/feature_flags.dart';
@@ -81,13 +80,9 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
     final flags = Provider.of<FeatureFlagsModel>(context, listen: false);
     await flags.setEnableAppLock(value);
 
-    if (!value) {
-      try {
-        await AppLockService.instance.clearPin();
-      } catch (e) {
-        if (kDebugMode) debugPrint('Failed to clear PIN: $e');
-      }
-    }
+    // Note: we intentionally keep the PIN in secure storage when the lock is
+    // disabled. The hash is inert without the lock being active, and preserving
+    // it lets the user re-enable lock without having to set a new PIN each time.
 
     if (mounted) setState(() {});
   }

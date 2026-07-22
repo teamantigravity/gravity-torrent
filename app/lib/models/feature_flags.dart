@@ -80,39 +80,49 @@ class FeatureFlagsModel extends ChangeNotifier {
       RemoteConfigService.instance.featureFlags[key] == false;
 
   Future<void> _load() async {
-    _useDynamicColor =
-        await SharedPrefsStorage.getBool('useDynamicColor') ?? true;
-    _useEnhancedNotifications =
-        await SharedPrefsStorage.getBool('useEnhancedNotifications') ?? true;
-    _usePipBackgroundAudio =
-        await SharedPrefsStorage.getBool('usePipBackgroundAudio') ?? true;
-    _enableRemoteControl =
-        await SharedPrefsStorage.getBool('enableRemoteControl') ?? false;
-    _enableAnalytics =
-        await SharedPrefsStorage.getBool('enableAnalytics') ?? false;
-    _enableAppLock = await SharedPrefsStorage.getBool('enableAppLock') ?? false;
-    _enableShortcuts =
-        await SharedPrefsStorage.getBool('enableShortcuts') ?? false;
-    _enableHaptic = await SharedPrefsStorage.getBool('enableHaptic') ?? false;
-    _enableScheduler =
-        await SharedPrefsStorage.getBool('enableScheduler') ?? false;
-    _enableQuota = await SharedPrefsStorage.getBool('enableQuota') ?? false;
-    _enableRssAutoDownload =
-        await SharedPrefsStorage.getBool('enableRssAutoDownload') ?? false;
-    _enableWifiOnly =
-        await SharedPrefsStorage.getBool('enableWifiOnly') ?? false;
-    _enableBatterySaver =
-        await SharedPrefsStorage.getBool('enableBatterySaver') ?? false;
-
-    await RemoteConfigService.instance.refresh();
-    HapticService.setEnabled(enableHaptic);
     try {
-      await AppLockService.instance.setEnabled(enableAppLock);
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('AppLockService sync failed: $e\n$st');
+      _useDynamicColor =
+          await SharedPrefsStorage.getBool('useDynamicColor') ?? true;
+      _useEnhancedNotifications =
+          await SharedPrefsStorage.getBool('useEnhancedNotifications') ?? true;
+      _usePipBackgroundAudio =
+          await SharedPrefsStorage.getBool('usePipBackgroundAudio') ?? true;
+      _enableRemoteControl =
+          await SharedPrefsStorage.getBool('enableRemoteControl') ?? false;
+      _enableAnalytics =
+          await SharedPrefsStorage.getBool('enableAnalytics') ?? false;
+      _enableAppLock = await SharedPrefsStorage.getBool('enableAppLock') ?? false;
+      _enableShortcuts =
+          await SharedPrefsStorage.getBool('enableShortcuts') ?? false;
+      _enableHaptic = await SharedPrefsStorage.getBool('enableHaptic') ?? false;
+      _enableScheduler =
+          await SharedPrefsStorage.getBool('enableScheduler') ?? false;
+      _enableQuota = await SharedPrefsStorage.getBool('enableQuota') ?? false;
+      _enableRssAutoDownload =
+          await SharedPrefsStorage.getBool('enableRssAutoDownload') ?? false;
+      _enableWifiOnly =
+          await SharedPrefsStorage.getBool('enableWifiOnly') ?? false;
+      _enableBatterySaver =
+          await SharedPrefsStorage.getBool('enableBatterySaver') ?? false;
+
+      try {
+        await RemoteConfigService.instance.refresh();
+      } catch (e) {
+        if (kDebugMode) debugPrint('RemoteConfigService refresh failed: $e');
+      }
+
+      HapticService.setEnabled(enableHaptic);
+      try {
+        await AppLockService.instance.setEnabled(enableAppLock);
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('AppLockService sync failed: $e\n$st');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('FeatureFlagsModel._load error: $e');
+    } finally {
+      loaded = true;
+      if (!_disposed) notifyListeners();
     }
-    loaded = true;
-    if (!_disposed) notifyListeners();
   }
 
   Future<void> setUseDynamicColor(bool value) async {

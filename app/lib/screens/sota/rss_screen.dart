@@ -198,10 +198,11 @@ class _RssScreenState extends State<RssScreen> {
                                 ),
                               ),
                               onDismissed: (_) async {
-                                if (index >= 0 && index < _feeds.length) {
-                                  await RssService.instance.removeFeedAt(index);
-                                }
-                                await _load();
+                                final feedToRemove = feed;
+                                setState(() {
+                                  _feeds.removeAt(index);
+                                });
+                                await RssService.instance.removeFeed(feedToRemove);
                               },
                               child: SwitchListTile(
                                 secondary: const Icon(Icons.rss_feed),

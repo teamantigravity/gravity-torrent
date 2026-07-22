@@ -99,7 +99,7 @@ class BackupService {
       throw FormatException('Invalid backup file: $e');
     }
 
-    final version = data['version'] as int?;
+    final version = (data['version'] as num?)?.toInt();
     if (version == null || version > _backupVersion) {
       throw FormatException(
         'Unsupported backup version: $version. '
@@ -107,7 +107,8 @@ class BackupService {
       );
     }
 
-    final settings = data['settings'] as Map<String, dynamic>? ?? {};
+    final settingsRaw = data['settings'];
+    final settings = settingsRaw is Map ? Map<String, dynamic>.from(settingsRaw) : <String, dynamic>{};
     final restored = <String>[];
 
     for (final entry in settings.entries) {

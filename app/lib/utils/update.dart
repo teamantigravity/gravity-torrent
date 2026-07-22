@@ -86,19 +86,26 @@ Future<bool> isDistributedFromAppStore() async {
   if (isDesktop()) {
     if (Platform.isWindows) {
       // Check if app is installed through Microsoft Store
-      final windowsStore = WindowsStoreApi();
-      final license = await windowsStore.getAppLicenseAsync();
-      return license.isActive;
+      try {
+        final windowsStore = WindowsStoreApi();
+        final license = await windowsStore.getAppLicenseAsync();
+        return license.isActive;
+      } catch (_) {
+        return false;
+      }
     }
 
     return isFlatpak();
   }
 
-  Source installationSource = await StoreChecker.getSource;
-
-  return switch (installationSource) {
-    Source.IS_INSTALLED_FROM_LOCAL_SOURCE => false,
-    Source.UNKNOWN => false,
-    _ => true,
-  };
+  try {
+    Source installationSource = await StoreChecker.getSource;
+    return switch (installationSource) {
+      Source.IS_INSTALLED_FROM_LOCAL_SOURCE => false,
+      Source.UNKNOWN => false,
+      _ => true,
+    };
+  } catch (_) {
+    return false;
+  }
 }

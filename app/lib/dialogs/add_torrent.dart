@@ -159,6 +159,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         if (proceed != true) return;
       }
 
+      if (!mounted) return;
       final localizations = AppLocalizations.of(context)!;
       final status = await Provider.of<TorrentsModel>(
         context,
@@ -184,6 +185,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         // Show an interstitial ad occasionally when a torrent is added successfully
         AdServiceProvider.instance.showInterstitialIfReady();
       }
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       final localizations = AppLocalizations.of(context)!;
@@ -195,9 +197,6 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         SnackBar(content: Text(message), backgroundColor: Colors.orange),
       );
     }
-
-    if (!mounted) return;
-    Navigator.of(context).pop();
   }
 
   void _handleSelectTorrentFile(context) async {
@@ -207,6 +206,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
     );
     if (file?.path == null) return;
 
+    if (!mounted) return;
     setState(() {
       _filename = file!.path;
     });
@@ -219,6 +219,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
     );
 
     if (selectedDirectory == null) return;
+    if (!mounted) return;
     setState(() {
       pickedDownloadDir = selectedDirectory;
     });

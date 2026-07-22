@@ -14,12 +14,5 @@ void closeApp([BuildContext? context]) async {
   torrentModel.stopTimer();
   appModel.setQuitting(true);
 
-  if (isDesktop()) {
-    bool isPreventClose = await windowManager.isPreventClose();
-    if (isPreventClose) {
-      await appModel.quitGracefully();
-    }
-  } else {
-    await appModel.quitGracefully();
-  }
+  await appModel.quitGracefully();
 }

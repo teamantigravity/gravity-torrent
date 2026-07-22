@@ -63,8 +63,22 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   StreamingServer? server;
   SubtitlesServer? subsServer;
   VideoController? controller;
-  bool _disposed = false;
-  final GlobalKey _videoComponentKey = GlobalKey();
+  BuildContext? _videoLoadingDialogContext;
+  BuildContext? _subsLoadingDialogContext;
+
+  void _closeVideoLoadingDialog() {
+    if (_videoLoadingDialogContext != null && _videoLoadingDialogContext!.mounted) {
+      Navigator.of(_videoLoadingDialogContext!).pop();
+      _videoLoadingDialogContext = null;
+    }
+  }
+
+  void _closeSubtitlesLoadingDialog() {
+    if (_subsLoadingDialogContext != null && _subsLoadingDialogContext!.mounted) {
+      Navigator.of(_subsLoadingDialogContext!).pop();
+      _subsLoadingDialogContext = null;
+    }
+  }
 
   @override
   void initState() {
@@ -82,16 +96,20 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   }
 
   Future<void> _disposePlayer() async {
-    await widget.torrent.stopStreaming();
-    // Stop playback and detach from the platform media session before
-    // disposing the native player.
-    await player?.stop();
-    await MediaKitAudioHandler.instance?.setPlayer(null);
-    await player?.dispose();
-    await server?.stop();
-    await subsServer?.stop();
-    // leave immersive mode
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    try {
+      await widget.torrent.stopStreaming();
+      // Stop playback and detach from the platform media session before
+      // disposing the native player.
+      await player?.stop();
+      await MediaKitAudioHandler.instance?.setPlayer(null);
+      await player?.dispose();
+      await server?.stop();
+      await subsServer?.stop();
+      // leave immersive mode
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error disposing player: $e');
+    }
   }
 
   void initPlayer() async {
@@ -119,11 +137,11 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       configuration: const VideoControllerConfiguration(),
     );
 
-    await (player!.platform as NativePlayer).setProperty(
-      'network-timeout',
-      '0',
-    );
-    await (player!.platform as NativePlayer).setProperty('cache', 'no');
+    if (player!.platform is NativePlayer) {
+      final nativePlayer = player!.platform as NativePlayer;
+      await nativePlayer.setProperty('network-timeout', '0');
+      await nativePlayer.setProperty('cache', 'no');
+    }
     if (_disposed) return;
 
     player!.stream.log.listen((log) {
@@ -146,22 +164,19 @@ class TorrentPlayerState extends State<TorrentPlayer> {
           cancelableCompleter: completer,
         );
       } catch (e) {
+        _closeVideoLoadingDialog();
         if (!mounted) return;
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Close the loading dialog and exit the player on other errors.
-        if (Navigator.canPop(context)) Navigator.pop(context);
+        // Exit the player on other errors.
         if (Navigator.canPop(context)) Navigator.pop(context);
         return;
       }
 
       if (!mounted) return;
 
-      // Check if we're still showing a dialog before popping
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      _closeVideoLoadingDialog();
 
       if (!mounted) return;
     }
@@ -186,22 +201,19 @@ class TorrentPlayerState extends State<TorrentPlayer> {
           cancelableCompleter: completer,
         );
       } catch (e) {
+        _closeSubtitlesLoadingDialog();
         if (!mounted) return;
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Close the loading dialog and exit the player on other errors.
-        if (Navigator.canPop(context)) Navigator.pop(context);
+        // Exit the player on other errors.
         if (Navigator.canPop(context)) Navigator.pop(context);
         return;
       }
 
       if (!mounted) return;
 
-      // Check if we're still showing a dialog before popping
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      _closeSubtitlesLoadingDialog();
 
       if (!mounted) return;
     }
@@ -261,25 +273,28 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Loading Video...'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Center(child: CircularProgressIndicator())],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              completer.operation.cancel();
-              Navigator.pop(context); // Close dialog
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context); // Exit player screen
-              }
-            },
-            child: const Text('Cancel'),
+      builder: (BuildContext dialogContext) {
+        _videoLoadingDialogContext = dialogContext;
+        return AlertDialog(
+          title: const Text('Loading Video...'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Center(child: CircularProgressIndicator())],
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                completer.operation.cancel();
+                _closeVideoLoadingDialog();
+                if (mounted && Navigator.canPop(context)) {
+                  Navigator.pop(context); // Exit player screen
+                }
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -287,25 +302,28 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Loading Subtitles...'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Center(child: CircularProgressIndicator())],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              completer.operation.cancel();
-              Navigator.pop(context); // Close dialog
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context); // Exit player screen
-              }
-            },
-            child: const Text('Cancel'),
+      builder: (BuildContext dialogContext) {
+        _subsLoadingDialogContext = dialogContext;
+        return AlertDialog(
+          title: const Text('Loading Subtitles...'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Center(child: CircularProgressIndicator())],
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                completer.operation.cancel();
+                _closeSubtitlesLoadingDialog();
+                if (mounted && Navigator.canPop(context)) {
+                  Navigator.pop(context); // Exit player screen
+                }
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
 

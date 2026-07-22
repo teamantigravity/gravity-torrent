@@ -9,9 +9,9 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     SecureStorage.enableTestMode();
-    AppLockService.instance.setEnabled(false);
+    await AppLockService.instance.setEnabled(false);
     await AppLockService.instance.clearPin();
-    AppLockService.instance.setEnabled(false);
+    await AppLockService.instance.setEnabled(false);
     await AppLockService.instance.load();
   });
 
@@ -63,6 +63,29 @@ void main() {
       await AppLockService.instance.setPin('1234');
       await AppLockService.instance.setEnabled(true);
       expect(await AppLockService.instance.authenticate(pin: '1234'), isTrue);
+    });
+
+    test('PIN hash is preserved when app lock is disabled', () async {
+      // Regression: disabling app lock used to clear the PIN, forcing the
+      // user to set a new one every time they re-enabled the feature.
+      await AppLockService.instance.setPin('4321');
+      expect(AppLockService.instance.hasPin, isTrue);
+
+      await AppLockService.instance.setEnabled(false);
+      // PIN must still be present in memory after disabling.
+      expect(AppLockService.instance.hasPin, isTrue);
+    });
+
+    test('re-enabling app lock after disable authenticates with original PIN', () async {
+      await AppLockService.instance.setPin('7777');
+      await AppLockService.instance.setEnabled(true);
+
+      // Simulate user disabling (no PIN erasure) then re-enabling.
+      await AppLockService.instance.setEnabled(false);
+      await AppLockService.instance.setEnabled(true);
+
+      expect(await AppLockService.instance.authenticate(pin: '7777'), isTrue);
+      expect(await AppLockService.instance.authenticate(pin: '0000'), isFalse);
     });
   });
 }

@@ -111,6 +111,7 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
 }
 
 Future<int> getAndroidSdkVersion() async {
+  if (!Platform.isAndroid) return 0;
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
   return androidInfo.version.sdkInt;

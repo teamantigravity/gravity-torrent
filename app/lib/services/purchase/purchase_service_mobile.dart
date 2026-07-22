@@ -8,16 +8,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PurchaseServiceMobile implements PurchaseService {
   PurchaseServiceMobile() {
-    _subscription = InAppPurchase.instance.purchaseStream.listen(
-      _onRawPurchases,
-    );
+    if (isStoreSupported) {
+      _subscription = InAppPurchase.instance.purchaseStream.listen(
+        _onRawPurchases,
+      );
+    }
   }
 
   static const _adFreeKey = 'gravity_torrent_ad_free';
   final InAppPurchase _iap = InAppPurchase.instance;
   // Keeps the store purchase listener alive for the app lifetime.
   // ignore: unused_field
-  late final StreamSubscription<List<PurchaseDetails>> _subscription;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
   final _updates = StreamController<List<PurchaseUpdate>>.broadcast();
 
   @override

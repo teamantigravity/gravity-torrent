@@ -145,8 +145,8 @@ abstract class Torrent extends TorrentBase {
 
     // Want subtitles and set them to high priority
     final externalSubtitles = getExternalSubtitles(file, this);
-    for (final (index, file) in files.indexed) {
-      if (externalSubtitles.firstWhereOrNull((f) => f.name == file.name) !=
+    for (final (index, torrentFile) in files.indexed) {
+      if (externalSubtitles.firstWhereOrNull((f) => f.name == torrentFile.name) !=
           null) {
         await toggleFileWanted(index, true);
         highPriorityFileIndices.add(index);
@@ -188,7 +188,7 @@ abstract class Torrent extends TorrentBase {
       // Torrent file names always use POSIX (forward-slash) separators, so
       // split with the POSIX context regardless of the host platform.
       var folderName = posix.split(files.first.name).first;
-      if (folderName == '.' || folderName.isEmpty) {
+      if (folderName == '.' || folderName.isEmpty || folderName == '/') {
         folderPath = location;
       } else {
         folderPath = normalize(join(location, folderName));

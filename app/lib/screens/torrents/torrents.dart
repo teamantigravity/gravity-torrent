@@ -151,6 +151,7 @@ class _TorrentScreen extends State<TorrentsScreen>
                                   },
                                 );
                               }
+                              if (!mounted) return;
                               _exitSelectionMode();
                             },
                       tooltip: localizations.remove,

@@ -156,6 +156,7 @@ class WifiGuardService {
 
   Future<void> _pauseAll() async {
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       for (final torrent in torrents) {
@@ -185,6 +186,10 @@ class WifiGuardService {
 
   Future<void> _resumeAll() async {
     if (_pausedByGuard.isEmpty) return;
+    if (!getIt.isRegistered<Engine>()) {
+      _pausedByGuard.clear();
+      return;
+    }
     try {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();

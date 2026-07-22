@@ -70,6 +70,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
       helpText: label,
     );
     if (picked != null) {
+      if (!mounted) return;
       onPicked(picked);
     }
   }

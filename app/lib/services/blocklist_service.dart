@@ -50,6 +50,7 @@ class BlocklistService {
     _enabled = enabled;
     await SharedPrefsStorage.setBool(_enabledKey, enabled);
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       final session = await engine.fetchSession();
       await session.update(SessionBase(
@@ -73,6 +74,7 @@ class BlocklistService {
   Future<int> updateNow() async {
     await load();
     if (_updating) return _rulesCount;
+    if (!getIt.isRegistered<Engine>()) return _rulesCount;
     _updating = true;
 
     try {

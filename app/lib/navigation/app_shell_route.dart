@@ -109,17 +109,8 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
   @override
   void onWindowClose() async {
     if (!mounted) return;
-    // Workaround to detect if current route is the player, and pop it
-    Navigator.of(context).popUntil((route) {
-      final currentRouteName = route.settings.name;
-      if (currentRouteName == 'player') {
-        // Remove route immediately to avoid concurrency issue,
-        // where player could still run while window is hidden
-        Navigator.removeRoute(context, route);
-      }
-
-      return true;
-    });
+    // Detect if current route is the player, and pop it
+    Navigator.of(context).popUntil((route) => route.settings.name != 'player');
 
     windowManager.hide();
   }
@@ -210,11 +201,6 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
   ) async {
     if (!await checkAndRequestStoragePermissions(context)) return;
     if (!mounted) return;
-
-    if (Navigator.canPop(context)) {
-      // Pop current dialog, if any
-      Navigator.pop(context);
-    }
 
     showDialog(
       context: context,

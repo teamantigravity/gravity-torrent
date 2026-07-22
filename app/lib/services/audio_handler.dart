@@ -65,7 +65,6 @@ class MediaKitAudioHandler extends BaseAudioHandler {
     _subscriptions.add(
       player.stream.position.listen((position) {
         _position = position;
-        _emitState();
       }),
     );
 

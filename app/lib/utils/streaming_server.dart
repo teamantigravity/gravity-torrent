@@ -34,42 +34,49 @@ class StreamingServer {
   });
 
   Future<void> start() async {
-    _file = File(filePath);
-    final address = allowNetworkAccess
-        ? InternetAddress.anyIPv4
-        : InternetAddress.loopbackIPv4;
-    final server = await HttpServer.bind(address, 0);
-    _server = server;
-    if (_stopped) {
-      // stop() was called before bind completed.
-      await server.close(force: true);
-      return;
-    }
-    if (!_serverReadyCompleter.isCompleted) {
-      _serverReadyCompleter.complete();
-    }
-    if (kDebugMode) {
-      debugPrint(
-        'streaming_server: starting streaming server on ${await getAddress()}',
-      );
-    }
-
-    await for (HttpRequest request in server) {
-      // Cancel the previous request
-      if (kDebugMode) {
-        debugPrint('streaming_server: cancel previous request...');
+    try {
+      _file = File(filePath);
+      final address = allowNetworkAccess
+          ? InternetAddress.anyIPv4
+          : InternetAddress.loopbackIPv4;
+      final server = await HttpServer.bind(address, 0);
+      _server = server;
+      if (_stopped) {
+        // stop() was called before bind completed.
+        await server.close(force: true);
+        return;
       }
-      await _cancelableOperation?.cancel();
-      final completer = CancelableCompleter();
+      if (!_serverReadyCompleter.isCompleted) {
+        _serverReadyCompleter.complete();
+      }
+      if (kDebugMode) {
+        debugPrint(
+          'streaming_server: starting streaming server on ${await getAddress()}',
+        );
+      }
 
-      // Create new cancelable request
-      _cancelableOperation = CancelableOperation.fromFuture(
-        _handleRequest(request, completer),
-        onCancel: () {
-          if (kDebugMode) debugPrint('Previous request cancelled.');
-          completer.operation.cancel();
-        },
-      );
+      await for (HttpRequest request in server) {
+        // Cancel the previous request
+        if (kDebugMode) {
+          debugPrint('streaming_server: cancel previous request...');
+        }
+        await _cancelableOperation?.cancel();
+        final completer = CancelableCompleter();
+
+        // Create new cancelable request
+        _cancelableOperation = CancelableOperation.fromFuture(
+          _handleRequest(request, completer),
+          onCancel: () {
+            if (kDebugMode) debugPrint('Previous request cancelled.');
+            completer.operation.cancel();
+          },
+        );
+      }
+    } catch (e) {
+      if (!_serverReadyCompleter.isCompleted) {
+        _serverReadyCompleter.completeError(e);
+      }
+      rethrow;
     }
   }
 
@@ -228,7 +235,17 @@ class StreamingServer {
       }
     }
 
-    if (start < 0 || start >= fileSize || start > end) {
+    if (start < 0 || start >= fileSize) {
+      request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+      request.response.headers.set('Content-Range', 'bytes */$fileSize');
+      return;
+    }
+
+    if (end >= fileSize) {
+      end = fileSize - 1;
+    }
+
+    if (start > end) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
       request.response.headers.set('Content-Range', 'bytes */$fileSize');
       return;
@@ -245,7 +262,7 @@ class StreamingServer {
       'bytes $start-$end/$fileSize',
     );
 
-    final piece = (start / torrent.pieceSize).floor();
+    final piece = torrentFile.beginPiece + (start / torrent.pieceSize).floor();
 
     if (kDebugMode) {
       debugPrint(
@@ -269,7 +286,7 @@ class StreamingServer {
     final neededPiecesCount = count ?? (bufferSize / torrent.pieceSize).ceil();
     final firstPiece = from ?? torrentFile.beginPiece;
     final lastPiece = torrentFile.endPiece;
-    for (int i = 0; i < neededPiecesCount && firstPiece + i < lastPiece; i++) {
+    for (int i = 0; i < neededPiecesCount && firstPiece + i <= lastPiece; i++) {
       neededPieces.add(firstPiece + i);
     }
 
@@ -327,7 +344,8 @@ class StreamingServer {
         currentEnd = end;
       }
 
-      final piece = (currentStart / torrent.pieceSize).floor();
+      final piece =
+          torrentFile.beginPiece + (currentStart / torrent.pieceSize).floor();
       await _waitForPieces(
         from: piece,
         cancelableCompleter: cancelableCompleter,

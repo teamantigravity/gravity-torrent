@@ -308,7 +308,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
   }
 
   void _updateLockState() {
-    final flags = Provider.of<FeatureFlagsModel>(context, listen: true);
+    final flags = Provider.of<FeatureFlagsModel>(context, listen: false);
     final isLockEnabled = flags.enableAppLock &&
         AppLockService.instance.enabled &&
         AppLockService.instance.hasPin;
@@ -317,8 +317,12 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
       _unlocked = false;
       _wasLocked = false;
     } else {
-      if (!_wasLocked && _unlocked) {
-        _unlocked = false;
+      if (!_wasLocked) {
+        // Lock just became active for the first time this session
+        // (e.g. user just finished setting up their PIN). Grant the
+        // current session access so the user isn't immediately locked
+        // out right after enabling the feature.
+        _unlocked = true;
       }
       _wasLocked = true;
     }

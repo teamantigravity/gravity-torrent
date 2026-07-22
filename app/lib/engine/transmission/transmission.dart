@@ -79,7 +79,8 @@ TransmissionTorrent createTransmissionTorrentFromJson(
     id: torrent.id,
     name: torrent.name,
     progress: torrent.sizeWhenDone > 0
-        ? (torrent.sizeWhenDone - torrent.leftUntilDone) / torrent.sizeWhenDone
+        ? ((torrent.sizeWhenDone - torrent.leftUntilDone) / torrent.sizeWhenDone)
+            .clamp(0.0, 1.0)
         : 0.0,
     status: torrent.status,
     size: torrent.totalSize,

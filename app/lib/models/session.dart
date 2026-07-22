@@ -33,9 +33,14 @@ class SessionModel extends ChangeNotifier {
 
   void _startSessionFetching() async {
     await fetchSession();
+    if (_disposed) return;
     _timer = Timer.periodic(
       const Duration(seconds: _sessionRefreshIntervalSeconds),
       (timer) {
+        if (_disposed) {
+          timer.cancel();
+          return;
+        }
         fetchSession();
       },
     );

@@ -30,29 +30,37 @@ class AppModel extends ChangeNotifier {
     super.dispose();
   }
 
-  _loadSettings() async {
-    // Load theme
-    final themeName =
-        await SharedPrefsStorage.getString('theme') ?? ThemeMode.system.name;
-    theme = ThemeMode.values.firstWhere(
-      (e) => e.name == themeName,
-      orElse: () => ThemeMode.system,
-    );
-    // Load terms of use status
-    termsOfUseAccepted =
-        await SharedPrefsStorage.getBool('termsOfUseAccepted') ??
-            termsOfUseAccepted;
-    // Load check for update value
-    checkForUpdate =
-        await SharedPrefsStorage.getBool('checkForUpdate') ?? checkForUpdate;
-    locale = await SharedPrefsStorage.getString('locale') ?? locale;
-    loaded = true;
+  Future<void> _loadSettings() async {
+    try {
+      // Load theme
+      final themeName =
+          await SharedPrefsStorage.getString('theme') ?? ThemeMode.system.name;
+      theme = ThemeMode.values.firstWhere(
+        (e) => e.name == themeName,
+        orElse: () => ThemeMode.system,
+      );
+      // Load terms of use status
+      termsOfUseAccepted =
+          await SharedPrefsStorage.getBool('termsOfUseAccepted') ??
+              termsOfUseAccepted;
+      // Load check for update value
+      checkForUpdate =
+          await SharedPrefsStorage.getBool('checkForUpdate') ?? checkForUpdate;
+      locale = await SharedPrefsStorage.getString('locale') ?? locale;
 
-    // Load app version
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    version = packageInfo.version;
-
-    if (!_disposed) notifyListeners();
+      // Load app version
+      try {
+        PackageInfo packageInfo = await PackageInfo.fromPlatform();
+        version = packageInfo.version;
+      } catch (e) {
+        if (kDebugMode) debugPrint('Failed to get package info: $e');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('AppModel._loadSettings error: $e');
+    } finally {
+      loaded = true;
+      if (!_disposed) notifyListeners();
+    }
   }
 
   void setTheme(ThemeMode value) async {
@@ -106,7 +114,7 @@ class AppModel extends ChangeNotifier {
       if (Platform.isAndroid) {
         await stopForegroundService();
       }
-      SystemNavigator.pop();
+      await SystemNavigator.pop();
     }
   }
 }

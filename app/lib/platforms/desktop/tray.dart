@@ -10,12 +10,17 @@ import 'package:gravity_torrent/utils/lifecycle.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+AppTrayListener? _trayListener;
+
 initTray(BuildContext context) async {
   if (!isDesktop()) return;
 
   try {
-    final listener = AppTrayListener(onExit: closeApp);
-    trayManager.addListener(listener);
+    if (_trayListener != null) {
+      trayManager.removeListener(_trayListener!);
+    }
+    _trayListener = AppTrayListener(onExit: closeApp);
+    trayManager.addListener(_trayListener!);
 
     if (Platform.isWindows) {
       await trayManager.setIcon('assets/tray_icon.ico');
@@ -62,8 +67,8 @@ class AppTrayListener extends TrayListener {
   void onTrayMenuItemClick(MenuItem menuItem) async {
     debugPrint('onTrayMenuItemClick ${menuItem.key}');
     if (menuItem.key == 'show_window') {
-      windowManager.show();
-      windowManager.focus();
+      await windowManager.show();
+      await windowManager.focus();
     } else if (menuItem.key == 'pause_all') {
       try {
         final engine = getIt<Engine>();
@@ -81,16 +86,16 @@ class AppTrayListener extends TrayListener {
         debugPrint('Tray resume_all error: $e');
       }
     } else if (menuItem.key == 'exit_app') {
-      windowManager.show();
-      windowManager.focus();
+      await windowManager.show();
+      await windowManager.focus();
       onExit();
     }
   }
 
   @override
-  void onTrayIconMouseDown() {
-    windowManager.show();
-    windowManager.focus();
+  void onTrayIconMouseDown() async {
+    await windowManager.show();
+    await windowManager.focus();
   }
 
   @override

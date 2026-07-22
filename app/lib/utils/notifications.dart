@@ -189,10 +189,11 @@ Future<void> cancelDownloadProgressNotification() async {
   if (defaultTargetPlatform == TargetPlatform.android) {
     return;
   }
-  await flutterLocalNotificationsPlugin.cancel(id: _progressNotificationId);
+  await flutterLocalNotificationsPlugin.cancel(_progressNotificationId);
 }
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {
+  WidgetsFlutterBinding.ensureInitialized();
   final actionId = response.actionId ?? response.payload;
   if (actionId == null) return;
 
@@ -280,5 +281,6 @@ void onForegroundNotificationResponse(NotificationResponse response) {
 
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) {
+  WidgetsFlutterBinding.ensureInitialized();
   unawaited(_handleNotificationResponse(response));
 }

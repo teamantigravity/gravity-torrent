@@ -172,7 +172,7 @@ Future<void> _waitForFileComplete({
 }) async {
   final file = torrent.files.firstWhereOrNull((f) => f.name == fileName);
   if (file == null) return;
-  final pieceCount = file.endPiece - file.beginPiece;
+  final pieceCount = file.endPiece - file.beginPiece + 1;
   await waitForPieces(
     torrent: torrent,
     file: file,

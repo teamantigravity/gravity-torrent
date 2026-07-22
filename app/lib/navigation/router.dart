@@ -80,9 +80,13 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/player',
+      name: 'player',
       builder: (context, state) {
-        final extra = state.extra as Map<String, String>;
-        return PlayerScreen(url: extra['url']!, title: extra['title']!);
+        final extra = state.extra is Map ? (state.extra as Map) : {};
+        return PlayerScreen(
+          url: extra['url']?.toString() ?? '',
+          title: extra['title']?.toString() ?? '',
+        );
       },
     ),
   ],

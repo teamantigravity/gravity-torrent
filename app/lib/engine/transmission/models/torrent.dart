@@ -55,11 +55,13 @@ class TransmissionTorrentFile {
   );
 
   TransmissionTorrentFile.fromJson(Map<String, dynamic> json)
-      : name = json['name'],
-        length = json['length'],
-        bytesCompleted = json['bytesCompleted'],
-        beginPiece = json['begin_piece'],
-        endPiece = json['end_piece'];
+      : name = json['name'] as String? ?? '',
+        length = (json['length'] as num?)?.toInt() ?? 0,
+        bytesCompleted = (json['bytesCompleted'] as num?)?.toInt() ?? 0,
+        beginPiece =
+            ((json['begin_piece'] ?? json['beginPiece']) as num?)?.toInt() ?? 0,
+        endPiece =
+            ((json['end_piece'] ?? json['endPiece']) as num?)?.toInt() ?? 0;
 }
 
 class TransmissionTorrentFileStats {
@@ -68,7 +70,7 @@ class TransmissionTorrentFileStats {
   TransmissionTorrentFileStats(this.wanted);
 
   TransmissionTorrentFileStats.fromJson(Map<String, dynamic> json)
-      : wanted = json['wanted'];
+      : wanted = json['wanted'] as bool? ?? true;
 }
 
 class TransmissionTorrentModel {
@@ -146,7 +148,13 @@ class TransmissionTorrentModel {
         percentDone = json['percentDone'] is int
             ? (json['percentDone'] as int).toDouble()
             : (json['percentDone'] as double? ?? 0.0),
-        status = TorrentStatus.values[json['status'] as int? ?? 0],
+        status = (() {
+          final s = json['status'] as int? ?? 0;
+          if (s >= 0 && s < TorrentStatus.values.length) {
+            return TorrentStatus.values[s];
+          }
+          return TorrentStatus.stopped;
+        })(),
         totalSize = json['totalSize'] as int? ?? 0,
         rateDownload = json['rateDownload'] as int? ?? 0,
         rateUpload = json['rateUpload'] as int? ?? 0,

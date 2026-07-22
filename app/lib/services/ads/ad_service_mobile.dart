@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// AdMob-backed implementation. Only active on Android/iOS when remote config allows.
 class AdServiceMobile with WidgetsBindingObserver implements AdService {
   bool _initialized = false;
+  bool _disposed = false;
   final ValueNotifier<bool> _adFreeNotifier = ValueNotifier<bool>(false);
   InterstitialAd? _interstitial;
   int _interstitialRetries = 0;
@@ -30,14 +31,14 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
   bool get isInitialized => _initialized;
 
   @override
-  bool get isAdFree => _adFreeNotifier.value;
+  bool get isAdFree => _disposed ? true : _adFreeNotifier.value;
 
   @override
   ValueNotifier<bool> get adFreeNotifier => _adFreeNotifier;
 
   @override
   bool get canShowAds {
-    if (!_platformSupported || !_initialized || _adFreeNotifier.value) {
+    if (_disposed || !_platformSupported || !_initialized || _adFreeNotifier.value) {
       return false;
     }
     if (!RemoteConfigService.instance.showAds) {
@@ -48,7 +49,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   Future<void> init() async {
-    if (!_platformSupported) {
+    if (_disposed || !_platformSupported) {
       _initialized = true;
       return;
     }
@@ -81,6 +82,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   Future<void> setAdFree(bool value) async {
+    if (_disposed) return;
     _adFreeNotifier.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_adFreeKey, value);
@@ -112,12 +114,16 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
   }
 
   void _preloadAppOpenAd() {
-    if (!canShowAds || _appOpenAd != null) return;
+    if (_disposed || !canShowAds || _appOpenAd != null) return;
     AppOpenAd.load(
       adUnitId: AdIds.appOpen,
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) {
+          if (_disposed) {
+            ad.dispose();
+            return;
+          }
           _appOpenAd = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdShowedFullScreenContent: (ad) {
@@ -148,12 +154,16 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
   }
 
   void _preloadInterstitial() {
-    if (!canShowAds || _interstitial != null) return;
+    if (_disposed || !canShowAds || _interstitial != null) return;
     InterstitialAd.load(
       adUnitId: AdIds.interstitial,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          if (_disposed) {
+            ad.dispose();
+            return;
+          }
           _interstitial = ad;
           _interstitialRetries = 0;
           ad.fullScreenContentCallback = FullScreenContentCallback(
@@ -172,9 +182,11 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
         onAdFailedToLoad: (_) {
           _interstitial = null;
           _interstitialRetries++;
-          if (_interstitialRetries < 6) {
+          if (!_disposed && _interstitialRetries < 6) {
             final delay = Duration(seconds: 1 << _interstitialRetries);
-            Future.delayed(delay, _preloadInterstitial);
+            Future.delayed(delay, () {
+              if (!_disposed) _preloadInterstitial();
+            });
           }
         },
       ),
@@ -183,6 +195,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   void dispose() {
+    _disposed = true;
     if (_observerAdded) {
       _observerAdded = false;
       WidgetsBinding.instance.removeObserver(this);
@@ -191,6 +204,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
     unawaited(_appOpenAd?.dispose());
     _interstitial = null;
     _appOpenAd = null;
+    _adFreeNotifier.dispose();
   }
 }
 
@@ -213,7 +227,9 @@ class _BannerAdHostState extends State<_BannerAdHost> {
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => setState(() => _loaded = true),
+        onAdLoaded: (_) {
+          if (mounted) setState(() => _loaded = true);
+        },
         onAdFailedToLoad: (ad, _) {
           ad.dispose();
           _banner = null;

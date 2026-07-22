@@ -72,7 +72,13 @@ class TorrentsModel extends ChangeNotifier {
     // Indefinitely refresh
     _timer = Timer.periodic(
       const Duration(seconds: refreshIntervalSeconds),
-      (timer) => fetchTorrents(),
+      (timer) {
+        if (_disposed) {
+          timer.cancel();
+          return;
+        }
+        fetchTorrents();
+      },
     );
   }
 
@@ -266,18 +272,20 @@ class TorrentsModel extends ChangeNotifier {
       // Display notification for torrents completed during last refresh
       if (_featureFlags?.useEnhancedNotifications ?? true) {
         for (final torrent in fetched) {
-          final diff = now.difference(torrent.doneDate).inSeconds;
-          if (diff >= 0 && diff < refreshIntervalSeconds) {
-            final addedDate =
-                DateTime.fromMillisecondsSinceEpoch(torrent.addedDate * 1000);
-            final duration = addedDate.year > 2000
-                ? torrent.doneDate.difference(addedDate)
-                : null;
-            await showCompletedNotification(
-              torrent.name,
-              id: torrent.id + 1000,
-              duration: duration,
-            );
+          if (torrent.progress >= 1.0 && torrent.doneDate.year > 1970) {
+            final diff = now.difference(torrent.doneDate).inSeconds;
+            if (diff >= 0 && diff < refreshIntervalSeconds) {
+              final addedDate =
+                  DateTime.fromMillisecondsSinceEpoch(torrent.addedDate * 1000);
+              final duration = addedDate.year > 2000
+                  ? torrent.doneDate.difference(addedDate)
+                  : null;
+              await showCompletedNotification(
+                torrent.name,
+                id: torrent.id + 1000,
+                duration: duration,
+              );
+            }
           }
         }
       }
@@ -346,18 +354,7 @@ class TorrentsModel extends ChangeNotifier {
 
       // Record data usage analytics for the dashboard
       if (_featureFlags?.enableAnalytics ?? false) {
-        final totalDownloaded = fetched.fold<int>(
-          0,
-          (sum, t) => sum + t.downloadedEver,
-        );
-        final totalUploaded = fetched.fold<int>(
-          0,
-          (sum, t) => sum + t.uploadedEver,
-        );
-        _safeRecordAnalytics(
-          downloadedBytes: totalDownloaded,
-          uploadedBytes: totalUploaded,
-        );
+        _safeRecordAnalytics(fetched);
       }
 
       await SeedRatioService.instance.checkAndStop(torrents);
@@ -384,16 +381,10 @@ class TorrentsModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _safeRecordAnalytics({
-    required int downloadedBytes,
-    required int uploadedBytes,
-  }) {
+  void _safeRecordAnalytics(List<Torrent> torrents) {
     unawaited(
       AnalyticsService.instance
-          .recordTotals(
-        downloadedBytes: downloadedBytes,
-        uploadedBytes: uploadedBytes,
-      )
+          .recordTorrentStats(torrents)
           .catchError((Object e, StackTrace s) {
         if (kDebugMode) debugPrint('Analytics error: $e\n$s');
       }),

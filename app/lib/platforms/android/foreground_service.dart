@@ -103,7 +103,7 @@ Future<void> updateForegroundServiceNotification({
     ongoing: true,
     showProgress: count > 0,
     maxProgress: 100,
-    progress: progress,
+    progress: progress.clamp(0, 100),
     actions: const <AndroidNotificationAction>[
       AndroidNotificationAction('pause_all', 'Pause all'),
       AndroidNotificationAction('resume_all', 'Resume all'),

@@ -63,22 +63,24 @@ class CastingService {
 
       socket.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {
-          final Datagram? dg = socket.receive();
-          if (dg != null) {
-            final response = String.fromCharCodes(dg.data);
-            if (response.contains('MediaRenderer') ||
-                response.contains('LOCATION')) {
-              final addr = dg.address.address;
-              if (!_devices.any((d) => d.address == addr)) {
-                final device = CastDevice(
-                  id: addr,
-                  name: 'Smart TV / DLNA ($addr)',
-                  address: addr,
-                );
-                _devices.add(device);
+          try {
+            final Datagram? dg = socket.receive();
+            if (dg != null) {
+              final response = String.fromCharCodes(dg.data);
+              if (response.contains('MediaRenderer') ||
+                  response.contains('LOCATION')) {
+                final addr = dg.address.address;
+                if (!_devices.any((d) => d.address == addr)) {
+                  final device = CastDevice(
+                    id: addr,
+                    name: 'Smart TV / DLNA ($addr)',
+                    address: addr,
+                  );
+                  _devices.add(device);
+                }
               }
             }
-          }
+          } catch (_) {}
         }
       });
 

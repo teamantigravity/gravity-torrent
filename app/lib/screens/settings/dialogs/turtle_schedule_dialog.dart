@@ -47,6 +47,7 @@ class _TurtleScheduleDialogState extends State<TurtleScheduleDialog> {
       initialTime: _toTimeOfDay(isBegin ? _begin : _end),
     );
     if (picked == null) return;
+    if (!mounted) return;
     setState(() {
       final value = picked.hour * 60 + picked.minute;
       if (isBegin) {

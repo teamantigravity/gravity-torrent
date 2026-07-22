@@ -26,25 +26,40 @@ class _LockScreenState extends State<LockScreen> {
 
   Future<void> _init() async {
     _biometricsAvailable = await AppLockService.instance.canUseBiometrics();
-    if (mounted) setState(() {});
+    if (!mounted) return;
 
     if (AppLockService.instance.useBiometrics && _biometricsAvailable) {
       await _tryBiometricUnlock();
     } else {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        // If the user has biometrics enabled but none are enrolled on this
+        // device, surface an explanatory message instead of silently showing
+        // just the PIN prompt.
+        if (AppLockService.instance.useBiometrics && !_biometricsAvailable) {
+          _error = AppLocalizations.of(context)!.noBiometricsEnrolled;
+        }
+      });
     }
   }
 
   Future<void> _tryBiometricUnlock() async {
-    if (mounted) setState(() => _isLoading = true);
+    if (mounted) setState(() { _isLoading = true; _error = null; });
 
-    final ok = await AppLockService.instance.authenticateWithBiometrics();
-    if (ok && mounted) {
-      widget.onUnlocked();
-      return;
+    try {
+      final ok = await AppLockService.instance.authenticateWithBiometrics();
+      if (ok && mounted) {
+        widget.onUnlocked();
+        return;
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _error = AppLocalizations.of(context)!.biometricFailed;
+      });
     }
-
-    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _unlockWithPin() async {
@@ -52,13 +67,21 @@ class _LockScreenState extends State<LockScreen> {
     final pin = _pinController.text.trim();
     if (pin.isEmpty) return;
 
-    final ok = await AppLockService.instance.authenticateWithPin(pin);
-    if (ok && mounted) {
-      widget.onUnlocked();
-    } else if (mounted) {
-      setState(() {
-        _error = localizations.incorrectPin;
-      });
+    try {
+      final ok = await AppLockService.instance.authenticateWithPin(pin);
+      if (ok && mounted) {
+        widget.onUnlocked();
+      } else if (mounted) {
+        setState(() {
+          _error = localizations.incorrectPin;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = localizations.incorrectPin;
+        });
+      }
     }
   }
 

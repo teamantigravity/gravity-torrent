@@ -27,6 +27,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   }
 
   Future<void> _refresh() async {
+    if (!mounted) return;
     setState(() {
       _running = RemoteControlService.instance.isRunning;
       _address = _running ? RemoteControlService.instance.localAddress : '';

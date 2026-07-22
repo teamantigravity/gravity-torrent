@@ -47,19 +47,28 @@ class ScheduleWindow {
 
   /// Returns true if [now] falls within this window.
   bool isActiveAt(DateTime now) {
-    // Check day bitmask (bit 0 = Monday = weekday 1)
-    final dayBit = 1 << ((now.weekday - 1) % 7);
-    if (dayBitmask & dayBit == 0) return false;
-
     final nowMinutes = now.hour * 60 + now.minute;
     final startMinutes = start.hour * 60 + start.minute;
     final endMinutes = end.hour * 60 + end.minute;
 
     if (startMinutes <= endMinutes) {
+      // No wrap, so just check today's bit
+      final dayBit = 1 << ((now.weekday - 1) % 7);
+      if ((dayBitmask & dayBit) == 0) return false;
       return nowMinutes >= startMinutes && nowMinutes < endMinutes;
     } else {
       // Window wraps midnight
-      return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+      if (nowMinutes >= startMinutes) {
+        // Before midnight, corresponds to today's schedule
+        final dayBit = 1 << ((now.weekday - 1) % 7);
+        return (dayBitmask & dayBit) != 0;
+      } else if (nowMinutes < endMinutes) {
+        // After midnight, corresponds to yesterday's schedule
+        final yesterday = now.subtract(const Duration(days: 1));
+        final yesterdayBit = 1 << ((yesterday.weekday - 1) % 7);
+        return (dayBitmask & yesterdayBit) != 0;
+      }
+      return false;
     }
   }
 }
@@ -95,9 +104,12 @@ class SchedulerService {
     final raw = await SharedPrefsStorage.getString(_storageKey);
     if (raw != null && raw.isNotEmpty) {
       try {
-        _window = ScheduleWindow.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>,
-        );
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) {
+          _window = ScheduleWindow.fromJson(
+            Map<String, dynamic>.from(decoded),
+          );
+        }
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('Failed to load scheduler window: $e\n$s');
@@ -143,6 +155,7 @@ class SchedulerService {
     if (!RemoteConfigService.instance.isFeatureEnabled('enableScheduler')) {
       return;
     }
+    if (!getIt.isRegistered<Engine>()) return;
     final now = DateTime.now();
     final shouldDownload = _window.isActiveAt(now);
 
@@ -192,12 +205,19 @@ class SchedulerService {
 
   Future<void> _resumeAll() async {
     if (_pausedByScheduler.isEmpty) return;
+    if (!getIt.isRegistered<Engine>()) {
+      _pausedByScheduler.clear();
+      return;
+    }
     try {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       final existingIds = {for (final t in torrents) t.id};
-      for (final id in _pausedByScheduler) {
-        if (!existingIds.contains(id)) continue;
+      for (final id in List<int>.from(_pausedByScheduler)) {
+        if (!existingIds.contains(id)) {
+          _pausedByScheduler.remove(id);
+          continue;
+        }
         try {
           await engine.resumeTorrent(id);
         } catch (e) {

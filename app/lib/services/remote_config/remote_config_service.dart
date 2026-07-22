@@ -52,12 +52,14 @@ class RemoteConfigService {
           .get(Uri.parse(_configUrl))
           .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is! Map) return;
+      final json = Map<String, dynamic>.from(decoded);
       if (json.containsKey('show_ads') && json['show_ads'] is bool) {
         showAds = json['show_ads'] as bool;
       }
       if (json.containsKey('sota_features') && json['sota_features'] is Map) {
-        final features = json['sota_features'] as Map<String, dynamic>;
+        final features = Map<String, dynamic>.from(json['sota_features'] as Map);
         featureFlags.clear();
         for (final entry in features.entries) {
           if (entry.value is bool) {

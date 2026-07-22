@@ -1,27 +1,27 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefsStorage {
-  static getString(String key) async {
+  static Future<String?> getString(String key) async {
     var prefs = await SharedPreferences.getInstance();
     return prefs.getString(key);
   }
 
-  static setString(String key, String value) async {
+  static Future<void> setString(String key, String value) async {
     var prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
   }
 
-  static getBool(String key) async {
+  static Future<bool?> getBool(String key) async {
     var prefs = await SharedPreferences.getInstance();
     return prefs.getBool(key);
   }
 
-  static setBool(String key, bool value) async {
+  static Future<void> setBool(String key, bool value) async {
     var prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
   }
 
-  static remove(String key) async {
+  static Future<void> remove(String key) async {
     var prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
   }

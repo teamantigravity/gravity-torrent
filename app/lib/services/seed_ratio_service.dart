@@ -25,11 +25,13 @@ class SeedRatioService {
     final raw = await SharedPrefsStorage.getString(_storageKey);
     if (raw != null && raw.isNotEmpty) {
       try {
-        final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        _goals.clear();
-        decoded.forEach((k, v) {
-          if (v is num) _goals[k] = v.toDouble();
-        });
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) {
+          _goals.clear();
+          decoded.forEach((k, v) {
+            if (v is num) _goals[k.toString()] = v.toDouble();
+          });
+        }
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('SeedRatioService: failed to load goals: $e\n$s');
@@ -69,7 +71,9 @@ class SeedRatioService {
   /// Checks all [torrents] against their goals and pauses those that have
   /// exceeded their ratio. Called by [TorrentsModel] after each fetch.
   Future<void> checkAndStop(List<Torrent> torrents) async {
+    await load();
     if (_goals.isEmpty) return;
+    if (!getIt.isRegistered<Engine>()) return;
     try {
       final engine = getIt<Engine>();
       for (final torrent in torrents) {

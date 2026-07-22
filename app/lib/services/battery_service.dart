@@ -103,6 +103,7 @@ class BatteryService {
 
   Future<void> _enableThrottle() async {
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       // Enable the engine's built-in turtle (alt speed) mode.
       final session = await engine.fetchSession();
@@ -120,6 +121,7 @@ class BatteryService {
 
   Future<void> _restoreNormalSpeed() async {
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       final session = await engine.fetchSession();
       await session.update(SessionBase(altSpeedEnabled: false));

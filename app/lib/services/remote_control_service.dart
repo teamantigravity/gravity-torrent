@@ -168,6 +168,9 @@ class RemoteControlService {
     }
 
     if (path == 'torrents' && method == 'GET') {
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       final payload = torrents
@@ -186,6 +189,9 @@ class RemoteControlService {
     }
 
     if (path == 'pause' && method == 'POST') {
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
       await _forEachActive((engine, torrent) async {
         if (torrent.status == TorrentStatus.downloading ||
             torrent.status == TorrentStatus.seeding) {
@@ -196,6 +202,9 @@ class RemoteControlService {
     }
 
     if (path == 'resume' && method == 'POST') {
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
       await _forEachActive((engine, torrent) async {
         if (torrent.status == TorrentStatus.stopped) {
           await engine.resumeTorrent(torrent.id);
@@ -205,6 +214,9 @@ class RemoteControlService {
     }
 
     if (path == 'add' && method == 'POST') {
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
       if (!(await QuotaService.instance.canAddTorrent())) {
         return _jsonResponse({
           'ok': false,
@@ -212,8 +224,14 @@ class RemoteControlService {
         });
       }
       final body = await request.readAsString();
-      final params = Uri.splitQueryString(body);
-      final magnet = params['magnet'];
+      String? magnet;
+      try {
+        final json = jsonDecode(body);
+        if (json is Map) magnet = json['magnet']?.toString();
+      } catch (_) {
+        final params = Uri.splitQueryString(body);
+        magnet = params['magnet'];
+      }
       if (magnet == null || magnet.isEmpty) {
         return _jsonResponse({'ok': false, 'error': 'missing magnet'});
       }
@@ -231,6 +249,11 @@ class RemoteControlService {
   Middleware get _tokenAuthMiddleware {
     return (Handler innerHandler) {
       return (Request request) async {
+        // Allow CORS preflight through without authentication — browsers
+        // never attach Authorization headers to OPTIONS requests.
+        if (request.method == 'OPTIONS') {
+          return innerHandler(request);
+        }
         final provided = _extractToken(request);
         if (provided == null || !_constantTimeCompare(provided, _token)) {
           return Response.forbidden(
