@@ -106,12 +106,11 @@ class FeatureFlagsModel extends ChangeNotifier {
 
     await RemoteConfigService.instance.refresh();
     HapticService.setEnabled(enableHaptic);
-    unawaited(
-      AppLockService.instance.setEnabled(enableAppLock).catchError((e) {
-        if (kDebugMode) debugPrint('AppLockService sync failed: $e');
-        return null;
-      }),
-    );
+    try {
+      await AppLockService.instance.setEnabled(enableAppLock);
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('AppLockService sync failed: $e\n$st');
+    }
     loaded = true;
     if (!_disposed) notifyListeners();
   }
@@ -162,15 +161,13 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> setEnableAppLock(bool value) async {
     _enableAppLock = value;
     await SharedPrefsStorage.setBool('enableAppLock', value);
+    try {
+      await AppLockService.instance
+          .setEnabled(_effective('enableAppLock', value));
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('AppLockService toggle failed: $e\n$st');
+    }
     if (!_disposed) notifyListeners();
-    unawaited(
-      AppLockService.instance
-          .setEnabled(_effective('enableAppLock', value))
-          .catchError((e) {
-        if (kDebugMode) debugPrint('AppLockService toggle failed: $e');
-        return null;
-      }),
-    );
   }
 
   Future<void> setEnableShortcuts(bool value) async {

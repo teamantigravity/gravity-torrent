@@ -276,6 +276,7 @@ class GravityTorrentApp extends StatefulWidget {
 class _GravityTorrentAppState extends State<GravityTorrentApp>
     with WidgetsBindingObserver, WindowListener {
   bool _unlocked = false;
+  bool _wasLocked = false;
 
   @override
   void initState() {
@@ -298,6 +299,29 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
   Future<void> _shutdownServices() async {
     await stopServices();
     await engine.shutdown();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateLockState();
+  }
+
+  void _updateLockState() {
+    final flags = Provider.of<FeatureFlagsModel>(context, listen: true);
+    final isLockEnabled = flags.enableAppLock &&
+        AppLockService.instance.enabled &&
+        AppLockService.instance.hasPin;
+
+    if (!isLockEnabled) {
+      _unlocked = false;
+      _wasLocked = false;
+    } else {
+      if (!_wasLocked && _unlocked) {
+        _unlocked = false;
+      }
+      _wasLocked = true;
+    }
   }
 
   @override
@@ -348,10 +372,6 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
                 AppLockService.instance.enabled &&
                 AppLockService.instance.hasPin;
             final shouldLock = isLockEnabled && !_unlocked;
-
-            if (!isLockEnabled) {
-              _unlocked = false;
-            }
 
             return DynamicColorBuilder(
               builder: (lightDynamic, darkDynamic) {
