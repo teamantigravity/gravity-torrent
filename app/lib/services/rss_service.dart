@@ -116,6 +116,12 @@ class RssService {
     }
   }
 
+  Future<void> removeFeed(RssFeed feed) async {
+    await load();
+    _feeds.removeWhere((f) => f.url == feed.url && f.keyword == feed.keyword);
+    await _saveFeeds();
+  }
+
   Future<void> updateFeedAt(int index, RssFeed feed) async {
     await load();
     if (index >= 0 && index < _feeds.length) {

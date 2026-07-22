@@ -1,0 +1,1105 @@
+﻿2026-07-22T17:05:01.9519087Z Current runner version: '2.335.1'
+2026-07-22T17:05:01.9545605Z ##[group]Runner Image Provisioner
+2026-07-22T17:05:01.9546786Z Hosted Compute Agent
+2026-07-22T17:05:01.9547452Z Version: 20260707.563
+2026-07-22T17:05:01.9548210Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-07-22T17:05:01.9548986Z Build Date: 2026-07-07T19:33:50Z
+2026-07-22T17:05:01.9549788Z Worker ID: {ece16c44-955a-41e9-9c71-b6a976de2fce}
+2026-07-22T17:05:01.9550570Z Azure Region: westus3
+2026-07-22T17:05:01.9551214Z ##[endgroup]
+2026-07-22T17:05:01.9552854Z ##[group]Operating System
+2026-07-22T17:05:01.9553563Z Ubuntu
+2026-07-22T17:05:01.9554194Z 24.04.4
+2026-07-22T17:05:01.9554815Z LTS
+2026-07-22T17:05:01.9555370Z ##[endgroup]
+2026-07-22T17:05:01.9556216Z ##[group]Runner Image
+2026-07-22T17:05:01.9556907Z Image: ubuntu-24.04
+2026-07-22T17:05:01.9557587Z Version: 20260714.240.1
+2026-07-22T17:05:01.9558946Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260714.240/images/ubuntu/Ubuntu2404-Readme.md
+2026-07-22T17:05:01.9560531Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260714.240
+2026-07-22T17:05:01.9561645Z ##[endgroup]
+2026-07-22T17:05:01.9562904Z ##[group]GITHUB_TOKEN Permissions
+2026-07-22T17:05:01.9564906Z Contents: read
+2026-07-22T17:05:01.9565589Z Metadata: read
+2026-07-22T17:05:01.9566771Z Packages: read
+2026-07-22T17:05:01.9567435Z ##[endgroup]
+2026-07-22T17:05:01.9569639Z Secret source: Actions
+2026-07-22T17:05:01.9570553Z Prepare workflow directory
+2026-07-22T17:05:02.0209833Z Prepare all required actions
+2026-07-22T17:05:02.0250155Z Getting action download info
+2026-07-22T17:05:02.3469062Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-07-22T17:05:03.0380485Z Download action repository 'lukka/run-vcpkg@v11' (SHA:b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2)
+2026-07-22T17:05:03.8499180Z Download action repository 'actions/setup-java@v4' (SHA:c1e323688fd81a25caa38c78aa6df2d33d3e20d9)
+2026-07-22T17:05:04.8049290Z Download action repository 'subosito/flutter-action@v2' (SHA:1a449444c387b1966244ae4d4f8c696479add0b2)
+2026-07-22T17:05:05.2393728Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+2026-07-22T17:05:05.3355191Z Download action repository 'hendrikmuhs/ccache-action@v1.2.14' (SHA:ed74d11c0b343532753ecead8a951bb09bb34bc9)
+2026-07-22T17:05:06.0709155Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-07-22T17:05:06.2794811Z Getting action download info
+2026-07-22T17:05:06.4118548Z Download action repository 'actions/cache@v5' (SHA:caa296126883cff596d87d8935842f9db880ef25)
+2026-07-22T17:05:06.5682103Z Complete job name: android
+2026-07-22T17:05:06.6318015Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:05:06.6326329Z ##[group]Run actions/checkout@v4
+2026-07-22T17:05:06.6326798Z with:
+2026-07-22T17:05:06.6326999Z   submodules: true
+2026-07-22T17:05:06.6327249Z   repository: teamantigravity/gravity-torrent
+2026-07-22T17:05:06.6329929Z   token: ***
+2026-07-22T17:05:06.6330150Z   ssh-strict: true
+2026-07-22T17:05:06.6330359Z   ssh-user: git
+2026-07-22T17:05:06.6330572Z   persist-credentials: true
+2026-07-22T17:05:06.6330812Z   clean: true
+2026-07-22T17:05:06.6331028Z   sparse-checkout-cone-mode: true
+2026-07-22T17:05:06.6331284Z   fetch-depth: 1
+2026-07-22T17:05:06.6331484Z   fetch-tags: false
+2026-07-22T17:05:06.6331685Z   show-progress: true
+2026-07-22T17:05:06.6331933Z   lfs: false
+2026-07-22T17:05:06.6332131Z   set-safe-directory: true
+2026-07-22T17:05:06.6332377Z   allow-unsafe-pr-checkout: false
+2026-07-22T17:05:06.6332813Z env:
+2026-07-22T17:05:06.6333012Z   ENV_FILE: preview.env
+2026-07-22T17:05:06.6333375Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:05:06.6334017Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:05:06.6334244Z ##[endgroup]
+2026-07-22T17:05:06.7326826Z Syncing repository: teamantigravity/gravity-torrent
+2026-07-22T17:05:06.7328222Z ##[group]Getting Git version info
+2026-07-22T17:05:06.7328695Z Working directory is '/home/runner/work/gravity-torrent/gravity-torrent'
+2026-07-22T17:05:06.7329320Z [command]/usr/bin/git version
+2026-07-22T17:05:06.7396097Z git version 2.54.0
+2026-07-22T17:05:06.7418943Z ##[endgroup]
+2026-07-22T17:05:06.7448432Z Temporarily overriding HOME='/home/runner/work/_temp/dbacd6ab-50f9-4987-9683-128c553c53a1' before making global git config changes
+2026-07-22T17:05:06.7450508Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-22T17:05:06.7455293Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/gravity-torrent/gravity-torrent
+2026-07-22T17:05:06.7505143Z Deleting the contents of '/home/runner/work/gravity-torrent/gravity-torrent'
+2026-07-22T17:05:06.7510558Z ##[group]Initializing the repository
+2026-07-22T17:05:06.7515034Z [command]/usr/bin/git init /home/runner/work/gravity-torrent/gravity-torrent
+2026-07-22T17:05:06.7653272Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-07-22T17:05:06.7654403Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-07-22T17:05:06.7655316Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-07-22T17:05:06.7656231Z hint: call:
+2026-07-22T17:05:06.7656552Z hint:
+2026-07-22T17:05:06.7657018Z hint: 	git config --global init.defaultBranch <name>
+2026-07-22T17:05:06.7657538Z hint:
+2026-07-22T17:05:06.7658080Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-07-22T17:05:06.7658960Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-07-22T17:05:06.7659601Z hint:
+2026-07-22T17:05:06.7659922Z hint: 	git branch -m <name>
+2026-07-22T17:05:06.7660302Z hint:
+2026-07-22T17:05:06.7660908Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-07-22T17:05:06.7667864Z Initialized empty Git repository in /home/runner/work/gravity-torrent/gravity-torrent/.git/
+2026-07-22T17:05:06.7680072Z [command]/usr/bin/git remote add origin https://github.com/teamantigravity/gravity-torrent
+2026-07-22T17:05:06.7758940Z ##[endgroup]
+2026-07-22T17:05:06.7759593Z ##[group]Disabling automatic garbage collection
+2026-07-22T17:05:06.7762832Z [command]/usr/bin/git config --local gc.auto 0
+2026-07-22T17:05:06.7795525Z ##[endgroup]
+2026-07-22T17:05:06.7796886Z ##[group]Setting up auth
+2026-07-22T17:05:06.7805090Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-22T17:05:06.7842045Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-22T17:05:06.8216411Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-22T17:05:06.8253934Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-22T17:05:06.8477719Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-22T17:05:06.8513114Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-22T17:05:06.8738079Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-07-22T17:05:06.8776673Z ##[endgroup]
+2026-07-22T17:05:06.8777315Z ##[group]Fetching the repository
+2026-07-22T17:05:06.8788965Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +72a072d7cdf84e175322c76ed702b5523f0be220:refs/remotes/origin/feature/app-lock-biometric
+2026-07-22T17:05:07.6831241Z From https://github.com/teamantigravity/gravity-torrent
+2026-07-22T17:05:07.6832332Z  * [new ref]         72a072d7cdf84e175322c76ed702b5523f0be220 -> origin/feature/app-lock-biometric
+2026-07-22T17:05:07.6868117Z ##[endgroup]
+2026-07-22T17:05:07.6868805Z ##[group]Determining the checkout info
+2026-07-22T17:05:07.6871073Z ##[endgroup]
+2026-07-22T17:05:07.6879622Z [command]/usr/bin/git sparse-checkout disable
+2026-07-22T17:05:07.6938518Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-07-22T17:05:07.6973036Z ##[group]Checking out the ref
+2026-07-22T17:05:07.6980059Z [command]/usr/bin/git checkout --progress --force -B feature/app-lock-biometric refs/remotes/origin/feature/app-lock-biometric
+2026-07-22T17:05:07.7263479Z Switched to a new branch 'feature/app-lock-biometric'
+2026-07-22T17:05:07.7264851Z branch 'feature/app-lock-biometric' set up to track 'origin/feature/app-lock-biometric'.
+2026-07-22T17:05:07.7268028Z ##[endgroup]
+2026-07-22T17:05:07.7268896Z ##[group]Setting up auth for fetching submodules
+2026-07-22T17:05:07.7287723Z [command]/usr/bin/git config --global http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-07-22T17:05:07.7332841Z [command]/usr/bin/git config --global --unset-all url.https://github.com/.insteadOf
+2026-07-22T17:05:07.7370439Z [command]/usr/bin/git config --global --add url.https://github.com/.insteadOf git@github.com:
+2026-07-22T17:05:07.7407039Z [command]/usr/bin/git config --global --add url.https://github.com/.insteadOf org-292000931@github.com:
+2026-07-22T17:05:07.7442598Z ##[endgroup]
+2026-07-22T17:05:07.7443278Z ##[group]Fetching submodules
+2026-07-22T17:05:07.7447593Z [command]/usr/bin/git submodule sync
+2026-07-22T17:05:07.7701070Z [command]/usr/bin/git -c protocol.version=2 submodule update --init --force --depth=1
+2026-07-22T17:05:07.7946310Z Submodule 'app/vcpkg' (https://github.com/microsoft/vcpkg.git) registered for path 'app/vcpkg'
+2026-07-22T17:05:07.7973084Z Cloning into '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'...
+2026-07-22T17:05:10.4246148Z From https://github.com/microsoft/vcpkg
+2026-07-22T17:05:11.1488750Z  * branch              f87344cac03158cbf1467264565f1fd36b382a24 -> FETCH_HEAD
+2026-07-22T17:05:11.1489524Z Submodule path 'app/vcpkg': checked out 'f87344cac03158cbf1467264565f1fd36b382a24'
+2026-07-22T17:05:11.1500705Z [command]/usr/bin/git submodule foreach git config --local gc.auto 0
+2026-07-22T17:05:11.1718624Z Entering 'app/vcpkg'
+2026-07-22T17:05:11.1755003Z ##[endgroup]
+2026-07-22T17:05:11.1755925Z ##[group]Persisting credentials for submodules
+2026-07-22T17:05:11.1763802Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'url\.https\:\/\/github\.com\/\.insteadOf' && git config --local --unset-all 'url.https://github.com/.insteadOf' || :"
+2026-07-22T17:05:11.1978830Z Entering 'app/vcpkg'
+2026-07-22T17:05:11.2062162Z [command]/usr/bin/git submodule foreach sh -c "git config --local 'http.https://github.com/.extraheader' 'AUTHORIZATION: basic ***' && git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-07-22T17:05:11.2270245Z Entering 'app/vcpkg'
+2026-07-22T17:05:11.2310981Z file:/home/runner/work/gravity-torrent/gravity-torrent/.git/modules/app/vcpkg/config	remote.origin.url
+2026-07-22T17:05:11.2336490Z [command]/usr/bin/git submodule foreach git config --local --add 'url.https://github.com/.insteadOf' 'git@github.com:'
+2026-07-22T17:05:11.2548064Z Entering 'app/vcpkg'
+2026-07-22T17:05:11.2582906Z [command]/usr/bin/git submodule foreach git config --local --add 'url.https://github.com/.insteadOf' 'org-292000931@github.com:'
+2026-07-22T17:05:11.2797128Z Entering 'app/vcpkg'
+2026-07-22T17:05:11.2826828Z ##[endgroup]
+2026-07-22T17:05:11.2870341Z [command]/usr/bin/git log -1 --format=%H
+2026-07-22T17:05:11.2896931Z 72a072d7cdf84e175322c76ed702b5523f0be220
+2026-07-22T17:05:11.3084954Z ##[group]Run sudo rm -rf /usr/share/dotnet
+2026-07-22T17:05:11.3085538Z [36;1msudo rm -rf /usr/share/dotnet[0m
+2026-07-22T17:05:11.3086182Z [36;1msudo rm -rf /opt/ghc[0m
+2026-07-22T17:05:11.3163383Z shell: /usr/bin/bash -e {0}
+2026-07-22T17:05:11.3163674Z env:
+2026-07-22T17:05:11.3163873Z   ENV_FILE: preview.env
+2026-07-22T17:05:11.3164237Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:05:11.3164644Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:05:11.3164864Z ##[endgroup]
+2026-07-22T17:05:18.8599730Z ##[group]Run echo $ENCODED_STRING | base64 -di > android/app/android-keystore.jks
+2026-07-22T17:05:18.8600374Z [36;1mecho $ENCODED_STRING | base64 -di > android/app/android-keystore.jks[0m
+2026-07-22T17:05:18.8657437Z shell: /usr/bin/bash -e {0}
+2026-07-22T17:05:18.8657690Z env:
+2026-07-22T17:05:18.8657886Z   ENV_FILE: preview.env
+2026-07-22T17:05:18.8658244Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:05:18.8658648Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:05:18.8658863Z   ENCODED_STRING: 
+2026-07-22T17:05:18.8659076Z ##[endgroup]
+2026-07-22T17:05:18.8800005Z ##[group]Run echo $ENCODED_STRING | base64 -di > android/key.properties
+2026-07-22T17:05:18.8800514Z [36;1mecho $ENCODED_STRING | base64 -di > android/key.properties[0m
+2026-07-22T17:05:18.8851693Z shell: /usr/bin/bash -e {0}
+2026-07-22T17:05:18.8851944Z env:
+2026-07-22T17:05:18.8852133Z   ENV_FILE: preview.env
+2026-07-22T17:05:18.8852483Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:05:18.8852875Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:05:18.8853090Z   ENCODED_STRING: 
+2026-07-22T17:05:18.8853284Z ##[endgroup]
+2026-07-22T17:05:18.9019807Z ##[group]Run lukka/run-vcpkg@v11
+2026-07-22T17:05:18.9020096Z with:
+2026-07-22T17:05:18.9020431Z   vcpkgDirectory: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:05:18.9020853Z   runVcpkgInstall: false
+2026-07-22T17:05:18.9021152Z   vcpkgGitURL: https://github.com/microsoft/vcpkg.git
+2026-07-22T17:05:18.9021476Z   doNotUpdateVcpkg: false
+2026-07-22T17:05:18.9021713Z   doNotCache: true
+2026-07-22T17:05:18.9021922Z   vcpkgJsonGlob: **/vcpkg.json
+2026-07-22T17:05:18.9022164Z   vcpkgJsonIgnores: ['**/vcpkg/**']
+2026-07-22T17:05:18.9022481Z   vcpkgConfigurationJsonGlob: **/vcpkg-configuration.json
+2026-07-22T17:05:18.9023236Z   runVcpkgFormatString: [`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`]
+2026-07-22T17:05:18.9023895Z   useShell: true
+2026-07-22T17:05:18.9024416Z   logCollectionRegExps: \s*"(.+CMakeOutput\.log)"\.\s*;\s*"(.+CMakeError\.log)"\.\s*;\s*(.+out\.log)\s*;\s+(.+err\.log)\s*;\s*(.+vcpkg.+\.log)\s*
+2026-07-22T17:05:18.9024953Z env:
+2026-07-22T17:05:18.9025132Z   ENV_FILE: preview.env
+2026-07-22T17:05:18.9025469Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:05:18.9026188Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:05:18.9026400Z ##[endgroup]
+2026-07-22T17:05:19.0428337Z ##[group]Prepare output directories
+2026-07-22T17:05:19.0429266Z The vpckg root directory: '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'
+2026-07-22T17:05:19.0435317Z (node:2566) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-22T17:05:19.0436186Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-22T17:05:19.0478730Z ##[endgroup]
+2026-07-22T17:05:19.0481563Z ⏱ elapsed: 0.004 seconds
+2026-07-22T17:05:19.0537097Z Running command '/usr/bin/git' with args 'submodule,status,/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg' in current directory '/home/runner/work/gravity-torrent/gravity-torrent'.
+2026-07-22T17:05:19.0564287Z (node:2566) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+2026-07-22T17:05:19.0876969Z  f87344cac03158cbf1467264565f1fd36b382a24 app/vcpkg (f87344ca)
+2026-07-22T17:05:19.0931425Z ##[group]Setup to run on GitHub Action runners
+2026-07-22T17:05:19.0948369Z Set the workflow environment variable 'VCPKG_BINARY_SOURCES' to value 'clear;x-gha,readwrite'
+2026-07-22T17:05:19.0949870Z ##[endgroup]
+2026-07-22T17:05:19.0950567Z ⏱ elapsed: 0.001 seconds
+2026-07-22T17:05:19.0951648Z ##[group]Retrieving the vcpkg Git commit id at: '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'
+2026-07-22T17:05:19.0953764Z Fetching the Git commit id at '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg' ...
+2026-07-22T17:05:19.0955017Z Running command '/usr/bin/git' with args 'rev-parse,HEAD' in current directory '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'.
+2026-07-22T17:05:19.0983240Z f87344cac03158cbf1467264565f1fd36b382a24
+2026-07-22T17:05:19.0989833Z ##[endgroup]
+2026-07-22T17:05:19.0990692Z ⏱ elapsed: 0.007 seconds
+2026-07-22T17:05:19.0991646Z ##[group]Check whether vcpkg repository is up to date
+2026-07-22T17:05:19.0993317Z Checking whether vcpkg's repository is updated to commit id 'f87344cac03158cbf1467264565f1fd36b382a24' ...
+2026-07-22T17:05:19.0994654Z 'vcpkg' is detected as a submodule.
+2026-07-22T17:05:19.0995950Z Is vcpkg repository updated? Yes
+2026-07-22T17:05:19.0996861Z ##[endgroup]
+2026-07-22T17:05:19.0997510Z ⏱ elapsed: 0.000 seconds
+2026-07-22T17:05:19.0998364Z ##[group]Check whether last vcpkg's build is up to date with sources
+2026-07-22T17:05:19.1000201Z Checking last vcpkg build commit id in file '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg/vcpkgLastBuiltCommitId' ...
+2026-07-22T17:05:19.1060000Z There is no file containing last built commit id of vcpkg, forcing a rebuild.
+2026-07-22T17:05:19.1061503Z ##[endgroup]
+2026-07-22T17:05:19.1062408Z ⏱ elapsed: 0.006 seconds
+2026-07-22T17:05:19.1063080Z ##[group]Build vcpkg executable
+2026-07-22T17:05:19.1112661Z Running command 'chmod' with args '+x,/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg/bootstrap-vcpkg.sh' in current directory 'undefined'.
+2026-07-22T17:05:19.1185751Z Running command '/usr/bin/sh' with args '-c,/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg/bootstrap-vcpkg.sh' in current directory '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'.
+2026-07-22T17:05:19.1300641Z Downloading vcpkg-glibc...
+2026-07-22T17:05:19.4709423Z vcpkg package management program version 2026-05-27-d5b6777d666efc1a7f491babfcdab37794c1ae3e
+2026-07-22T17:05:19.4710265Z 
+2026-07-22T17:05:19.4710820Z See LICENSE.txt for license information.
+2026-07-22T17:05:19.4723770Z Telemetry
+2026-07-22T17:05:19.4724110Z ---------
+2026-07-22T17:05:19.4724977Z vcpkg collects usage data in order to help us improve your experience.
+2026-07-22T17:05:19.4725574Z The data collected by Microsoft is anonymous.
+2026-07-22T17:05:19.4727090Z You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics,
+2026-07-22T17:05:19.4728298Z passing --disable-metrics to vcpkg on the command line,
+2026-07-22T17:05:19.4729336Z or by setting the VCPKG_DISABLE_METRICS environment variable.
+2026-07-22T17:05:19.4729821Z 
+2026-07-22T17:05:19.4730359Z Read more about vcpkg telemetry at docs/about/privacy.md
+2026-07-22T17:05:19.4746259Z Fetching the Git commit id at '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg' ...
+2026-07-22T17:05:19.4748549Z Running command '/usr/bin/git' with args 'rev-parse,HEAD' in current directory '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'.
+2026-07-22T17:05:19.4782175Z f87344cac03158cbf1467264565f1fd36b382a24
+2026-07-22T17:05:19.4793386Z Stored last built vcpkg commit id 'f87344cac03158cbf1467264565f1fd36b382a24' in file '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg/vcpkgLastBuiltCommitId'.
+2026-07-22T17:05:19.4795156Z ##[endgroup]
+2026-07-22T17:05:19.4796369Z ⏱ elapsed: 0.374 seconds
+2026-07-22T17:05:19.4797407Z ##[group]Add to PATH vcpkg at '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'
+2026-07-22T17:05:19.4798511Z ##[endgroup]
+2026-07-22T17:05:19.4799170Z ⏱ elapsed: 0.000 seconds
+2026-07-22T17:05:19.4800399Z ##[group]Set output environment variables
+2026-07-22T17:05:19.4802093Z Set the workflow environment variable 'RUNVCPKG_VCPKG_ROOT' to value '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'
+2026-07-22T17:05:19.4804548Z Set the workflow environment variable 'VCPKG_ROOT' to value '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg'
+2026-07-22T17:05:19.4807191Z Set the step output variable 'RUNVCPKG_VCPKG_ROOT_OUT' to value '/home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg''
+2026-07-22T17:05:19.4808459Z ##[endgroup]
+2026-07-22T17:05:19.4808991Z ⏱ elapsed: 0.001 seconds
+2026-07-22T17:05:19.4811616Z run-vcpkg action execution succeeded
+2026-07-22T17:05:19.4971891Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:05:19.4973297Z ##[group]Run actions/setup-java@v4
+2026-07-22T17:05:19.4973541Z with:
+2026-07-22T17:05:19.4973730Z   distribution: zulu
+2026-07-22T17:05:19.4973937Z   java-version: 17
+2026-07-22T17:05:19.4974126Z   cache: gradle
+2026-07-22T17:05:19.4974318Z   java-package: jdk
+2026-07-22T17:05:19.4974521Z   check-latest: false
+2026-07-22T17:05:19.4974724Z   server-id: github
+2026-07-22T17:05:19.4974927Z   server-username: GITHUB_ACTOR
+2026-07-22T17:05:19.4975176Z   server-password: GITHUB_TOKEN
+2026-07-22T17:05:19.4975418Z   overwrite-settings: true
+2026-07-22T17:05:19.4975923Z   job-status: success
+2026-07-22T17:05:19.4978537Z   token: ***
+2026-07-22T17:05:19.4978751Z env:
+2026-07-22T17:05:19.4978931Z   ENV_FILE: preview.env
+2026-07-22T17:05:19.4979273Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:05:19.4979652Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:05:19.4980159Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:05:19.4980746Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:05:19.4981160Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:05:19.4981660Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:05:19.4982016Z ##[endgroup]
+2026-07-22T17:05:19.6544876Z ##[group]Installed distributions
+2026-07-22T17:05:19.6583739Z Trying to resolve the latest version from remote
+2026-07-22T17:05:19.6694069Z (node:2636) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-22T17:05:19.6695957Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-22T17:05:19.7665891Z Resolved latest version as 17.0.20+8
+2026-07-22T17:05:19.7666844Z Trying to download...
+2026-07-22T17:05:19.7668202Z Downloading Java 17.0.20+8 (Zulu) from https://cdn.azul.com/zulu/bin/zulu17.68.17-ca-jdk17.0.20-linux_x64.tar.gz ...
+2026-07-22T17:05:25.4738962Z Extracting Java archive...
+2026-07-22T17:05:25.4872216Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/0a1196e1-723b-4440-b2fa-32589ea5912f -f /home/runner/work/_temp/79d02fd6-fc63-4dc3-a52a-32bda77421df
+2026-07-22T17:05:28.1490410Z Java 17.0.20+8 was downloaded
+2026-07-22T17:05:28.1491079Z Setting Java 17.0.20+8 as the default
+2026-07-22T17:05:28.1502654Z Creating toolchains.xml for JDK version 17 from zulu
+2026-07-22T17:05:28.1577970Z Writing to /home/runner/.m2/toolchains.xml
+2026-07-22T17:05:28.1578435Z 
+2026-07-22T17:05:28.1578734Z Java configuration:
+2026-07-22T17:05:28.1579301Z   Distribution: zulu
+2026-07-22T17:05:28.1579840Z   Version: 17.0.20+8
+2026-07-22T17:05:28.1580599Z   Path: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:05:28.1581033Z 
+2026-07-22T17:05:28.1582237Z ##[endgroup]
+2026-07-22T17:05:28.1597946Z Creating settings.xml with server-id: github
+2026-07-22T17:05:28.1599020Z Writing to /home/runner/.m2/settings.xml
+2026-07-22T17:05:30.2272961Z Cache hit for: setup-java-Linux-x64-gradle-022f0b09be1d1ec344fb9c28fd95cae425b385a51fe9d6dc66d319a80e1b64d8
+2026-07-22T17:05:30.2383717Z (node:2636) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-07-22T17:05:31.4541934Z Received 16777216 of 3106681617 (0.5%), 16.0 MBs/sec
+2026-07-22T17:05:32.4538460Z Received 134217728 of 3106681617 (4.3%), 64.0 MBs/sec
+2026-07-22T17:05:33.4545362Z Received 260046848 of 3106681617 (8.4%), 82.6 MBs/sec
+2026-07-22T17:05:34.4597948Z Received 343932928 of 3106681617 (11.1%), 81.9 MBs/sec
+2026-07-22T17:05:35.4576832Z Received 465567744 of 3106681617 (15.0%), 88.7 MBs/sec
+2026-07-22T17:05:36.4591589Z Received 536870912 of 3106681617 (17.3%), 85.3 MBs/sec
+2026-07-22T17:05:37.4592445Z Received 645922816 of 3106681617 (20.8%), 87.9 MBs/sec
+2026-07-22T17:05:38.4593932Z Received 683671552 of 3106681617 (22.0%), 81.4 MBs/sec
+2026-07-22T17:05:39.4617090Z Received 796917760 of 3106681617 (25.7%), 84.4 MBs/sec
+2026-07-22T17:05:40.4592409Z Received 801112064 of 3106681617 (25.8%), 76.4 MBs/sec
+2026-07-22T17:05:41.4596855Z Received 855638016 of 3106681617 (27.5%), 74.1 MBs/sec
+2026-07-22T17:05:42.4596516Z Received 935329792 of 3106681617 (30.1%), 74.3 MBs/sec
+2026-07-22T17:05:43.4592089Z Received 1015021568 of 3106681617 (32.7%), 74.4 MBs/sec
+2026-07-22T17:05:44.4598682Z Received 1094713344 of 3106681617 (35.2%), 74.5 MBs/sec
+2026-07-22T17:05:45.4610558Z Received 1178599424 of 3106681617 (37.9%), 74.9 MBs/sec
+2026-07-22T17:05:46.4613479Z Received 1207959552 of 3106681617 (38.9%), 72.0 MBs/sec
+2026-07-22T17:05:47.4612274Z Received 1270874112 of 3106681617 (40.9%), 71.3 MBs/sec
+2026-07-22T17:05:48.4611558Z Received 1358954496 of 3106681617 (43.7%), 72.0 MBs/sec
+2026-07-22T17:05:49.4621583Z Received 1447034880 of 3106681617 (46.6%), 72.6 MBs/sec
+2026-07-22T17:05:50.4626039Z Received 1501560832 of 3106681617 (48.3%), 71.6 MBs/sec
+2026-07-22T17:05:51.4622351Z Received 1585446912 of 3106681617 (51.0%), 72.0 MBs/sec
+2026-07-22T17:05:52.4624162Z Received 1606418432 of 3106681617 (51.7%), 69.6 MBs/sec
+2026-07-22T17:05:53.4625180Z Received 1644167168 of 3106681617 (52.9%), 68.1 MBs/sec
+2026-07-22T17:05:54.4629664Z Received 1719664640 of 3106681617 (55.4%), 68.3 MBs/sec
+2026-07-22T17:05:55.4633858Z Received 1761607680 of 3106681617 (56.7%), 67.2 MBs/sec
+2026-07-22T17:05:56.4631631Z Received 1841299456 of 3106681617 (59.3%), 67.5 MBs/sec
+2026-07-22T17:05:57.4634290Z Received 1874853888 of 3106681617 (60.3%), 66.2 MBs/sec
+2026-07-22T17:05:58.4628696Z Received 1874853888 of 3106681617 (60.3%), 63.8 MBs/sec
+2026-07-22T17:05:59.4638191Z Received 1925185536 of 3106681617 (62.0%), 63.3 MBs/sec
+2026-07-22T17:06:00.4647601Z Received 2004877312 of 3106681617 (64.5%), 63.7 MBs/sec
+2026-07-22T17:06:01.4647736Z Received 2009071616 of 3106681617 (64.7%), 61.8 MBs/sec
+2026-07-22T17:06:02.4649050Z Received 2025848832 of 3106681617 (65.2%), 60.4 MBs/sec
+2026-07-22T17:06:03.4656300Z Received 2105540608 of 3106681617 (67.8%), 60.8 MBs/sec
+2026-07-22T17:06:04.4655090Z Received 2147483648 of 3106681617 (69.1%), 60.2 MBs/sec
+2026-07-22T17:06:05.4654549Z Received 2214592512 of 3106681617 (71.3%), 60.3 MBs/sec
+2026-07-22T17:06:06.4651921Z Received 2277507072 of 3106681617 (73.3%), 60.3 MBs/sec
+2026-07-22T17:06:07.4665608Z Received 2327838720 of 3106681617 (74.9%), 60.0 MBs/sec
+2026-07-22T17:06:08.4657426Z Received 2394947584 of 3106681617 (77.1%), 60.1 MBs/sec
+2026-07-22T17:06:09.4652796Z Received 2415919104 of 3106681617 (77.8%), 59.1 MBs/sec
+2026-07-22T17:06:10.4656419Z Received 2474639360 of 3106681617 (79.7%), 59.0 MBs/sec
+2026-07-22T17:06:11.4660150Z Received 2541748224 of 3106681617 (81.8%), 59.1 MBs/sec
+2026-07-22T17:06:12.4662811Z Received 2545942528 of 3106681617 (82.0%), 57.8 MBs/sec
+2026-07-22T17:06:13.4662792Z Received 2600468480 of 3106681617 (83.7%), 57.7 MBs/sec
+2026-07-22T17:06:14.4664589Z Received 2667577344 of 3106681617 (85.9%), 57.8 MBs/sec
+2026-07-22T17:06:15.4666760Z Received 2680160256 of 3106681617 (86.3%), 56.8 MBs/sec
+2026-07-22T17:06:16.4693955Z Received 2734686208 of 3106681617 (88.0%), 56.7 MBs/sec
+2026-07-22T17:06:17.4696784Z Received 2810183680 of 3106681617 (90.5%), 57.0 MBs/sec
+2026-07-22T17:06:18.4699221Z Received 2831155200 of 3106681617 (91.1%), 56.2 MBs/sec
+2026-07-22T17:06:19.4701773Z Received 2902458368 of 3106681617 (93.4%), 56.5 MBs/sec
+2026-07-22T17:06:20.4709378Z Received 2952790016 of 3106681617 (95.0%), 56.3 MBs/sec
+2026-07-22T17:06:21.4767157Z Received 3028287488 of 3106681617 (97.5%), 56.6 MBs/sec
+2026-07-22T17:06:22.4715361Z Received 3087007744 of 3106681617 (99.4%), 56.6 MBs/sec
+2026-07-22T17:06:23.4711381Z Received 3102487313 of 3106681617 (99.9%), 55.8 MBs/sec
+2026-07-22T17:06:23.9854494Z Received 3106681617 of 3106681617 (100.0%), 55.3 MBs/sec
+2026-07-22T17:06:23.9876306Z Cache Size: ~2963 MB (3106681617 B)
+2026-07-22T17:06:23.9943722Z [command]/usr/bin/tar -xf /home/runner/work/_temp/641bf7f0-8ef4-480b-9714-4fffb5ad83a8/cache.tzst -P -C /home/runner/work/gravity-torrent/gravity-torrent --use-compress-program unzstd
+2026-07-22T17:06:42.4604957Z Cache restored successfully
+2026-07-22T17:06:42.5916578Z Cache restored from key: setup-java-Linux-x64-gradle-022f0b09be1d1ec344fb9c28fd95cae425b385a51fe9d6dc66d319a80e1b64d8
+2026-07-22T17:06:42.6233721Z ##[group]Run subosito/flutter-action@v2
+2026-07-22T17:06:42.6234036Z with:
+2026-07-22T17:06:42.6234224Z   channel: stable
+2026-07-22T17:06:42.6234426Z   cache: true
+2026-07-22T17:06:42.6234622Z   architecture: X64
+2026-07-22T17:06:42.6234840Z   pub-cache-path: default
+2026-07-22T17:06:42.6235083Z   dry-run: false
+2026-07-22T17:06:42.6235343Z   git-source: https://github.com/flutter/flutter.git
+2026-07-22T17:06:42.6235919Z env:
+2026-07-22T17:06:42.6236202Z   ENV_FILE: preview.env
+2026-07-22T17:06:42.6236554Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:06:42.6236963Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:06:42.6237472Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:06:42.6238060Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:06:42.6238481Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:42.6239014Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:42.6239445Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:42.6239841Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:42.6240201Z ##[endgroup]
+2026-07-22T17:06:42.6330967Z ##[group]Run chmod +x "$GITHUB_ACTION_PATH/setup.sh"
+2026-07-22T17:06:42.6331345Z [36;1mchmod +x "$GITHUB_ACTION_PATH/setup.sh"[0m
+2026-07-22T17:06:42.6391520Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-22T17:06:42.6391860Z env:
+2026-07-22T17:06:42.6392052Z   ENV_FILE: preview.env
+2026-07-22T17:06:42.6392426Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:06:42.6393138Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:06:42.6393654Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:06:42.6394256Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:06:42.6394688Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:42.6395202Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:42.6395781Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:42.6396194Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:42.6396530Z ##[endgroup]
+2026-07-22T17:06:42.6790340Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh -p \
+2026-07-22T17:06:42.6790927Z [36;1m$GITHUB_ACTION_PATH/setup.sh -p \[0m
+2026-07-22T17:06:42.6791612Z [36;1m  -n '' \[0m
+2026-07-22T17:06:42.6791928Z [36;1m  -f '' \[0m
+2026-07-22T17:06:42.6792236Z [36;1m  -a 'X64' \[0m
+2026-07-22T17:06:42.6792555Z [36;1m  -k '' \[0m
+2026-07-22T17:06:42.6792856Z [36;1m  -c '' \[0m
+2026-07-22T17:06:42.6793169Z [36;1m  -l '' \[0m
+2026-07-22T17:06:42.6793476Z [36;1m  -d 'default' \[0m
+2026-07-22T17:06:42.6793954Z [36;1m  -g 'https://github.com/flutter/flutter.git' \[0m
+2026-07-22T17:06:42.6794495Z [36;1m  stable[0m
+2026-07-22T17:06:42.6848792Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-22T17:06:42.6849131Z env:
+2026-07-22T17:06:42.6849321Z   ENV_FILE: preview.env
+2026-07-22T17:06:42.6849673Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:06:42.6850065Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:06:42.6850585Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:06:42.6851191Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:06:42.6851632Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:42.6852159Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:42.6852590Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:42.6853179Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:42.6853528Z ##[endgroup]
+2026-07-22T17:06:43.0115203Z ##[group]Run actions/cache@v5
+2026-07-22T17:06:43.0115449Z with:
+2026-07-22T17:06:43.0115984Z   path: /opt/hostedtoolcache/flutter/stable-3.44.7-x64
+2026-07-22T17:06:43.0116470Z   key: flutter-linux-stable-3.44.7-x64-84fc5cbb223bc12f83d65b647ff8a56caf779ffd
+2026-07-22T17:06:43.0116907Z   enableCrossOsArchive: false
+2026-07-22T17:06:43.0117162Z   fail-on-cache-miss: false
+2026-07-22T17:06:43.0117390Z   lookup-only: false
+2026-07-22T17:06:43.0117594Z   save-always: false
+2026-07-22T17:06:43.0117786Z env:
+2026-07-22T17:06:43.0118067Z   ENV_FILE: preview.env
+2026-07-22T17:06:43.0118435Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:06:43.0118824Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:06:43.0119340Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:06:43.0119941Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:06:43.0120373Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:43.0120880Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:06:43.0121309Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:43.0121714Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:06:43.0122054Z ##[endgroup]
+2026-07-22T17:06:43.3865298Z Cache hit for: flutter-linux-stable-3.44.7-x64-84fc5cbb223bc12f83d65b647ff8a56caf779ffd
+2026-07-22T17:06:44.6561008Z Received 20971520 of 1691154732 (1.2%), 20.0 MBs/sec
+2026-07-22T17:06:45.6578956Z Received 134217728 of 1691154732 (7.9%), 63.9 MBs/sec
+2026-07-22T17:06:46.6607382Z Received 268435456 of 1691154732 (15.9%), 85.2 MBs/sec
+2026-07-22T17:06:47.6608067Z Received 448790528 of 1691154732 (26.5%), 106.9 MBs/sec
+2026-07-22T17:06:48.6621991Z Received 612368384 of 1691154732 (36.2%), 116.7 MBs/sec
+2026-07-22T17:06:49.6643189Z Received 775946240 of 1691154732 (45.9%), 123.1 MBs/sec
+2026-07-22T17:06:50.6676960Z Received 931135488 of 1691154732 (55.1%), 126.7 MBs/sec
+2026-07-22T17:06:51.6661834Z Received 1073741824 of 1691154732 (63.5%), 127.8 MBs/sec
+2026-07-22T17:06:52.6664963Z Received 1207959552 of 1691154732 (71.4%), 127.8 MBs/sec
+2026-07-22T17:06:53.6668244Z Received 1342177280 of 1691154732 (79.4%), 127.9 MBs/sec
+2026-07-22T17:06:54.6676189Z Received 1497366528 of 1691154732 (88.5%), 129.7 MBs/sec
+2026-07-22T17:06:55.6706986Z Received 1656750080 of 1691154732 (98.0%), 131.5 MBs/sec
+2026-07-22T17:06:55.8867188Z Received 1691154732 of 1691154732 (100.0%), 131.9 MBs/sec
+2026-07-22T17:06:55.8894809Z Cache Size: ~1613 MB (1691154732 B)
+2026-07-22T17:06:55.8953009Z [command]/usr/bin/tar -xf /home/runner/work/_temp/297e9e49-1b1e-4b23-aadc-f4ffdbaac02c/cache.tzst -P -C /home/runner/work/gravity-torrent/gravity-torrent --use-compress-program unzstd
+2026-07-22T17:07:00.7327963Z Cache restored successfully
+2026-07-22T17:07:00.8846053Z Cache restored from key: flutter-linux-stable-3.44.7-x64-84fc5cbb223bc12f83d65b647ff8a56caf779ffd
+2026-07-22T17:07:02.5406233Z ##[group]Run actions/cache@v5
+2026-07-22T17:07:02.5406495Z with:
+2026-07-22T17:07:02.5406698Z   path: /home/runner/.pub-cache
+2026-07-22T17:07:02.5407438Z   key: flutter-pub-linux-stable-3.44.7-x64-84fc5cbb223bc12f83d65b647ff8a56caf779ffd-158109c7904ef69b7fa2a17002a5a6c4046b61de9bc23b372f560d9c027fbfd3
+2026-07-22T17:07:02.5408196Z   enableCrossOsArchive: false
+2026-07-22T17:07:02.5408455Z   fail-on-cache-miss: false
+2026-07-22T17:07:02.5408689Z   lookup-only: false
+2026-07-22T17:07:02.5408916Z   save-always: false
+2026-07-22T17:07:02.5409121Z env:
+2026-07-22T17:07:02.5409306Z   ENV_FILE: preview.env
+2026-07-22T17:07:02.5409653Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:02.5410042Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:02.5410820Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:02.5411425Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:02.5411891Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:02.5412634Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:02.5413203Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:02.5413764Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:02.5414256Z ##[endgroup]
+2026-07-22T17:07:03.0584214Z Cache hit for: flutter-pub-linux-stable-3.44.7-x64-84fc5cbb223bc12f83d65b647ff8a56caf779ffd-158109c7904ef69b7fa2a17002a5a6c4046b61de9bc23b372f560d9c027fbfd3
+2026-07-22T17:07:04.2809127Z Received 16777216 of 171964241 (9.8%), 16.0 MBs/sec
+2026-07-22T17:07:05.2837293Z Received 121634816 of 171964241 (70.7%), 57.9 MBs/sec
+2026-07-22T17:07:06.2822003Z Received 167769937 of 171964241 (97.6%), 53.3 MBs/sec
+2026-07-22T17:07:06.9439648Z Received 171964241 of 171964241 (100.0%), 44.8 MBs/sec
+2026-07-22T17:07:06.9443052Z Cache Size: ~164 MB (171964241 B)
+2026-07-22T17:07:06.9490465Z [command]/usr/bin/tar -xf /home/runner/work/_temp/e95ab709-7633-4ac4-a359-e9b783424b97/cache.tzst -P -C /home/runner/work/gravity-torrent/gravity-torrent --use-compress-program unzstd
+2026-07-22T17:07:09.0870712Z Cache restored successfully
+2026-07-22T17:07:09.1025868Z Cache restored from key: flutter-pub-linux-stable-3.44.7-x64-84fc5cbb223bc12f83d65b647ff8a56caf779ffd-158109c7904ef69b7fa2a17002a5a6c4046b61de9bc23b372f560d9c027fbfd3
+2026-07-22T17:07:09.1149047Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh \
+2026-07-22T17:07:09.1149410Z [36;1m$GITHUB_ACTION_PATH/setup.sh \[0m
+2026-07-22T17:07:09.1149703Z [36;1m  -n '3.44.7' \[0m
+2026-07-22T17:07:09.1149934Z [36;1m  -a 'x64' \[0m
+2026-07-22T17:07:09.1150248Z [36;1m  -c '/opt/hostedtoolcache/flutter/stable-3.44.7-x64' \[0m
+2026-07-22T17:07:09.1150631Z [36;1m  -d '/home/runner/.pub-cache' \[0m
+2026-07-22T17:07:09.1150930Z [36;1m  stable[0m
+2026-07-22T17:07:09.1232719Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-22T17:07:09.1233080Z env:
+2026-07-22T17:07:09.1233280Z   ENV_FILE: preview.env
+2026-07-22T17:07:09.1233650Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:09.1234049Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:09.1234605Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:09.1235231Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:09.1235919Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:09.1236659Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:09.1237103Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:09.1237529Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:09.1237880Z ##[endgroup]
+2026-07-22T17:07:09.3202083Z ##[group]Run sudo apt-get update -y
+2026-07-22T17:07:09.3202430Z [36;1msudo apt-get update -y[0m
+2026-07-22T17:07:09.3202828Z [36;1msudo apt-get install -y ninja-build libsecret-1-dev libglib2.0-dev[0m
+2026-07-22T17:07:09.3261698Z shell: /usr/bin/bash -e {0}
+2026-07-22T17:07:09.3261970Z env:
+2026-07-22T17:07:09.3262169Z   ENV_FILE: preview.env
+2026-07-22T17:07:09.3262548Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:09.3262946Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:09.3263476Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:09.3264093Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:09.3264542Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:09.3265059Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:09.3265527Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:09.3266283Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:09.3266733Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.7-x64/flutter
+2026-07-22T17:07:09.3267112Z   PUB_CACHE: /home/runner/.pub-cache
+2026-07-22T17:07:09.3267381Z ##[endgroup]
+2026-07-22T17:07:09.4149895Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-07-22T17:07:09.4479695Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-07-22T17:07:09.4483330Z Hit:6 https://packages.microsoft.com/repos/azure-cli noble InRelease
+2026-07-22T17:07:09.4495609Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-07-22T17:07:09.4509265Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-07-22T17:07:09.4537098Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-07-22T17:07:09.4586384Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-07-22T17:07:09.5089004Z Get:8 https://dl.google.com/linux/chrome-stable/deb stable InRelease [2548 B]
+2026-07-22T17:07:09.6239307Z Get:9 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [201 kB]
+2026-07-22T17:07:09.6383305Z Get:10 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [235 kB]
+2026-07-22T17:07:09.6466262Z Get:11 https://packages.microsoft.com/ubuntu/24.04/prod noble/main armhf Packages [11.7 kB]
+2026-07-22T17:07:09.6691639Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1126 kB]
+2026-07-22T17:07:09.6750754Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [274 kB]
+2026-07-22T17:07:09.6779586Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [180 kB]
+2026-07-22T17:07:09.6786505Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1676 kB]
+2026-07-22T17:07:09.6868278Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [333 kB]
+2026-07-22T17:07:09.6892829Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+2026-07-22T17:07:09.6914934Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1277 kB]
+2026-07-22T17:07:09.6978302Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [291 kB]
+2026-07-22T17:07:09.6999591Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+2026-07-22T17:07:09.7266859Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5772 B]
+2026-07-22T17:07:09.7699975Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [10.5 kB]
+2026-07-22T17:07:09.7797485Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [864 kB]
+2026-07-22T17:07:09.7828691Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [193 kB]
+2026-07-22T17:07:09.7850078Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.4 kB]
+2026-07-22T17:07:09.7866578Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1181 kB]
+2026-07-22T17:07:09.7959208Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [233 kB]
+2026-07-22T17:07:09.7986002Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.2 kB]
+2026-07-22T17:07:09.7991775Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1178 kB]
+2026-07-22T17:07:09.8053562Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [272 kB]
+2026-07-22T17:07:09.8763098Z Get:31 https://dl.google.com/linux/chrome-stable/deb stable/main amd64 Packages [1414 B]
+2026-07-22T17:07:13.7333921Z Fetched 10.4 MB in 1s (8428 kB/s)
+2026-07-22T17:07:14.3954929Z Reading package lists...
+2026-07-22T17:07:14.4257239Z Reading package lists...
+2026-07-22T17:07:14.5682113Z Building dependency tree...
+2026-07-22T17:07:14.5689591Z Reading state information...
+2026-07-22T17:07:14.6976516Z The following additional packages will be installed:
+2026-07-22T17:07:14.6977728Z   gir1.2-secret-1 libblkid-dev libgcrypt20-dev libgirepository-2.0-0
+2026-07-22T17:07:14.6979123Z   libglib2.0-dev-bin libgpg-error-dev libmount-dev libsecret-1-0
+2026-07-22T17:07:14.6982809Z   libsecret-common libselinux1-dev libsepol-dev uuid-dev
+2026-07-22T17:07:14.6988055Z Suggested packages:
+2026-07-22T17:07:14.6988680Z   libgcrypt20-doc gir1.2-glib-2.0-dev libglib2.0-doc libgdk-pixbuf2.0-bin
+2026-07-22T17:07:14.6989138Z   libxml2-utils
+2026-07-22T17:07:14.7227812Z The following NEW packages will be installed:
+2026-07-22T17:07:14.7228678Z   gir1.2-secret-1 libblkid-dev libgcrypt20-dev libgirepository-2.0-0
+2026-07-22T17:07:14.7231431Z   libglib2.0-dev libglib2.0-dev-bin libgpg-error-dev libmount-dev
+2026-07-22T17:07:14.7232917Z   libsecret-1-0 libsecret-1-dev libsecret-common libselinux1-dev libsepol-dev
+2026-07-22T17:07:14.7234036Z   ninja-build uuid-dev
+2026-07-22T17:07:14.7403745Z 0 upgraded, 15 newly installed, 0 to remove and 72 not upgraded.
+2026-07-22T17:07:14.7404618Z Need to get 3981 kB of archives.
+2026-07-22T17:07:14.7405571Z After this operation, 23.3 MB of additional disk space will be used.
+2026-07-22T17:07:14.7406836Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-07-22T17:07:14.8048204Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsecret-common all 0.21.4-1build3 [4962 B]
+2026-07-22T17:07:14.9107580Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsecret-1-0 amd64 0.21.4-1build3 [116 kB]
+2026-07-22T17:07:15.1220481Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 gir1.2-secret-1 amd64 0.21.4-1build3 [9424 B]
+2026-07-22T17:07:15.1735240Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgpg-error-dev amd64 1.47-3build2.1 [128 kB]
+2026-07-22T17:07:15.2612797Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgcrypt20-dev amd64 1.10.3-2ubuntu0.1 [593 kB]
+2026-07-22T17:07:15.4369420Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgirepository-2.0-0 amd64 2.80.0-6ubuntu3.8 [73.6 kB]
+2026-07-22T17:07:15.4970389Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-dev-bin amd64 2.80.0-6ubuntu3.8 [138 kB]
+2026-07-22T17:07:15.5473524Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 uuid-dev amd64 2.39.3-9ubuntu6.5 [33.5 kB]
+2026-07-22T17:07:15.6027521Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libblkid-dev amd64 2.39.3-9ubuntu6.5 [204 kB]
+2026-07-22T17:07:15.6564809Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsepol-dev amd64 3.5-2build1 [384 kB]
+2026-07-22T17:07:15.7292292Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libselinux1-dev amd64 3.5-2ubuntu2.1 [164 kB]
+2026-07-22T17:07:15.7815312Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libmount-dev amd64 2.39.3-9ubuntu6.5 [14.9 kB]
+2026-07-22T17:07:15.8406154Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-dev amd64 2.80.0-6ubuntu3.8 [1860 kB]
+2026-07-22T17:07:15.9788275Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsecret-1-dev amd64 0.21.4-1build3 [129 kB]
+2026-07-22T17:07:16.0310628Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 ninja-build amd64 1.11.1-2 [129 kB]
+2026-07-22T17:07:16.2779354Z Fetched 3981 kB in 1s (3058 kB/s)
+2026-07-22T17:07:16.3011024Z Selecting previously unselected package libsecret-common.
+2026-07-22T17:07:16.3282509Z (Reading database ... 
+2026-07-22T17:07:16.3283095Z (Reading database ... 5%
+2026-07-22T17:07:16.3283632Z (Reading database ... 10%
+2026-07-22T17:07:16.3284215Z (Reading database ... 15%
+2026-07-22T17:07:16.3284771Z (Reading database ... 20%
+2026-07-22T17:07:16.3285327Z (Reading database ... 25%
+2026-07-22T17:07:16.3285919Z (Reading database ... 30%
+2026-07-22T17:07:16.3286248Z (Reading database ... 35%
+2026-07-22T17:07:16.3286543Z (Reading database ... 40%
+2026-07-22T17:07:16.3286956Z (Reading database ... 45%
+2026-07-22T17:07:16.3287537Z (Reading database ... 50%
+2026-07-22T17:07:16.3336684Z (Reading database ... 55%
+2026-07-22T17:07:16.4883091Z (Reading database ... 60%
+2026-07-22T17:07:16.6676583Z (Reading database ... 65%
+2026-07-22T17:07:16.8722874Z (Reading database ... 70%
+2026-07-22T17:07:16.9868914Z (Reading database ... 75%
+2026-07-22T17:07:17.1911240Z (Reading database ... 80%
+2026-07-22T17:07:17.3736657Z (Reading database ... 85%
+2026-07-22T17:07:17.5783645Z (Reading database ... 90%
+2026-07-22T17:07:17.7880508Z (Reading database ... 95%
+2026-07-22T17:07:17.7881009Z (Reading database ... 100%
+2026-07-22T17:07:17.7881705Z (Reading database ... 202507 files and directories currently installed.)
+2026-07-22T17:07:17.7922636Z Preparing to unpack .../00-libsecret-common_0.21.4-1build3_all.deb ...
+2026-07-22T17:07:17.7948692Z Unpacking libsecret-common (0.21.4-1build3) ...
+2026-07-22T17:07:17.8156990Z Selecting previously unselected package libsecret-1-0:amd64.
+2026-07-22T17:07:17.8281361Z Preparing to unpack .../01-libsecret-1-0_0.21.4-1build3_amd64.deb ...
+2026-07-22T17:07:17.8300158Z Unpacking libsecret-1-0:amd64 (0.21.4-1build3) ...
+2026-07-22T17:07:17.8519844Z Selecting previously unselected package gir1.2-secret-1:amd64.
+2026-07-22T17:07:17.8643211Z Preparing to unpack .../02-gir1.2-secret-1_0.21.4-1build3_amd64.deb ...
+2026-07-22T17:07:17.8651797Z Unpacking gir1.2-secret-1:amd64 (0.21.4-1build3) ...
+2026-07-22T17:07:17.8854804Z Selecting previously unselected package libgpg-error-dev.
+2026-07-22T17:07:17.8977254Z Preparing to unpack .../03-libgpg-error-dev_1.47-3build2.1_amd64.deb ...
+2026-07-22T17:07:17.8985272Z Unpacking libgpg-error-dev (1.47-3build2.1) ...
+2026-07-22T17:07:17.9274507Z Selecting previously unselected package libgcrypt20-dev.
+2026-07-22T17:07:17.9399402Z Preparing to unpack .../04-libgcrypt20-dev_1.10.3-2ubuntu0.1_amd64.deb ...
+2026-07-22T17:07:17.9408254Z Unpacking libgcrypt20-dev (1.10.3-2ubuntu0.1) ...
+2026-07-22T17:07:17.9718386Z Selecting previously unselected package libgirepository-2.0-0:amd64.
+2026-07-22T17:07:17.9840659Z Preparing to unpack .../05-libgirepository-2.0-0_2.80.0-6ubuntu3.8_amd64.deb ...
+2026-07-22T17:07:17.9850589Z Unpacking libgirepository-2.0-0:amd64 (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.0060235Z Selecting previously unselected package libglib2.0-dev-bin.
+2026-07-22T17:07:18.0183692Z Preparing to unpack .../06-libglib2.0-dev-bin_2.80.0-6ubuntu3.8_amd64.deb ...
+2026-07-22T17:07:18.0192081Z Unpacking libglib2.0-dev-bin (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.0580734Z Selecting previously unselected package uuid-dev:amd64.
+2026-07-22T17:07:18.0704672Z Preparing to unpack .../07-uuid-dev_2.39.3-9ubuntu6.5_amd64.deb ...
+2026-07-22T17:07:18.0712859Z Unpacking uuid-dev:amd64 (2.39.3-9ubuntu6.5) ...
+2026-07-22T17:07:18.0960694Z Selecting previously unselected package libblkid-dev:amd64.
+2026-07-22T17:07:18.1083015Z Preparing to unpack .../08-libblkid-dev_2.39.3-9ubuntu6.5_amd64.deb ...
+2026-07-22T17:07:18.1090025Z Unpacking libblkid-dev:amd64 (2.39.3-9ubuntu6.5) ...
+2026-07-22T17:07:18.1320008Z Selecting previously unselected package libsepol-dev:amd64.
+2026-07-22T17:07:18.1443430Z Preparing to unpack .../09-libsepol-dev_3.5-2build1_amd64.deb ...
+2026-07-22T17:07:18.1452762Z Unpacking libsepol-dev:amd64 (3.5-2build1) ...
+2026-07-22T17:07:18.1770078Z Selecting previously unselected package libselinux1-dev:amd64.
+2026-07-22T17:07:18.1896236Z Preparing to unpack .../10-libselinux1-dev_3.5-2ubuntu2.1_amd64.deb ...
+2026-07-22T17:07:18.1903643Z Unpacking libselinux1-dev:amd64 (3.5-2ubuntu2.1) ...
+2026-07-22T17:07:18.2340034Z Selecting previously unselected package libmount-dev:amd64.
+2026-07-22T17:07:18.2462555Z Preparing to unpack .../11-libmount-dev_2.39.3-9ubuntu6.5_amd64.deb ...
+2026-07-22T17:07:18.2472987Z Unpacking libmount-dev:amd64 (2.39.3-9ubuntu6.5) ...
+2026-07-22T17:07:18.2675995Z Selecting previously unselected package libglib2.0-dev:amd64.
+2026-07-22T17:07:18.2799527Z Preparing to unpack .../12-libglib2.0-dev_2.80.0-6ubuntu3.8_amd64.deb ...
+2026-07-22T17:07:18.2812003Z Unpacking libglib2.0-dev:amd64 (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.3846927Z Selecting previously unselected package libsecret-1-dev:amd64.
+2026-07-22T17:07:18.3972518Z Preparing to unpack .../13-libsecret-1-dev_0.21.4-1build3_amd64.deb ...
+2026-07-22T17:07:18.3981460Z Unpacking libsecret-1-dev:amd64 (0.21.4-1build3) ...
+2026-07-22T17:07:18.4762898Z Selecting previously unselected package ninja-build.
+2026-07-22T17:07:18.4890191Z Preparing to unpack .../14-ninja-build_1.11.1-2_amd64.deb ...
+2026-07-22T17:07:18.4898587Z Unpacking ninja-build (1.11.1-2) ...
+2026-07-22T17:07:18.5347770Z Setting up libglib2.0-dev-bin (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.7035017Z Setting up libgirepository-2.0-0:amd64 (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.7078715Z Setting up ninja-build (1.11.1-2) ...
+2026-07-22T17:07:18.7099314Z Setting up libgpg-error-dev (1.47-3build2.1) ...
+2026-07-22T17:07:18.7118719Z Setting up uuid-dev:amd64 (2.39.3-9ubuntu6.5) ...
+2026-07-22T17:07:18.8408381Z Setting up libsepol-dev:amd64 (3.5-2build1) ...
+2026-07-22T17:07:18.8429913Z Setting up libsecret-common (0.21.4-1build3) ...
+2026-07-22T17:07:18.8448694Z Setting up libblkid-dev:amd64 (2.39.3-9ubuntu6.5) ...
+2026-07-22T17:07:18.8469204Z Setting up libselinux1-dev:amd64 (3.5-2ubuntu2.1) ...
+2026-07-22T17:07:18.8488625Z Setting up libsecret-1-0:amd64 (0.21.4-1build3) ...
+2026-07-22T17:07:18.8508231Z Setting up gir1.2-secret-1:amd64 (0.21.4-1build3) ...
+2026-07-22T17:07:18.8526799Z Setting up libgcrypt20-dev (1.10.3-2ubuntu0.1) ...
+2026-07-22T17:07:18.8546122Z Setting up libmount-dev:amd64 (2.39.3-9ubuntu6.5) ...
+2026-07-22T17:07:18.8565087Z Setting up libglib2.0-dev:amd64 (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.8600472Z Processing triggers for libglib2.0-0t64:amd64 (2.80.0-6ubuntu3.8) ...
+2026-07-22T17:07:18.8730277Z Processing triggers for install-info (7.1-3build2) ...
+2026-07-22T17:07:18.9705334Z Processing triggers for libc-bin (2.39-0ubuntu8.7) ...
+2026-07-22T17:07:19.0053006Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-07-22T17:07:19.0074605Z Not building database; man-db/auto-update is not 'true'.
+2026-07-22T17:07:19.0088717Z Setting up libsecret-1-dev:amd64 (0.21.4-1build3) ...
+2026-07-22T17:07:19.6229669Z 
+2026-07-22T17:07:19.6230316Z Running kernel seems to be up-to-date.
+2026-07-22T17:07:19.6230607Z 
+2026-07-22T17:07:19.6230826Z No services need to be restarted.
+2026-07-22T17:07:19.6231446Z 
+2026-07-22T17:07:19.6231667Z No containers need to be restarted.
+2026-07-22T17:07:19.6231890Z 
+2026-07-22T17:07:19.6232160Z No user sessions are running outdated binaries.
+2026-07-22T17:07:19.6232416Z 
+2026-07-22T17:07:19.6232854Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-07-22T17:07:20.3639767Z ##[group]Run echo "GRAVITY_TORRENT_ADMOB_APP_ID=" >> ${ENV_FILE}
+2026-07-22T17:07:20.3640299Z [36;1mecho "GRAVITY_TORRENT_ADMOB_APP_ID=" >> ${ENV_FILE}[0m
+2026-07-22T17:07:20.3640696Z [36;1mecho "GRAVITY_TORRENT_ADMOB_BANNER=" >> ${ENV_FILE}[0m
+2026-07-22T17:07:20.3641101Z [36;1mecho "GRAVITY_TORRENT_ADMOB_INTERSTITIAL=" >> ${ENV_FILE}[0m
+2026-07-22T17:07:20.3700253Z shell: /usr/bin/bash -e {0}
+2026-07-22T17:07:20.3700514Z env:
+2026-07-22T17:07:20.3700711Z   ENV_FILE: preview.env
+2026-07-22T17:07:20.3701080Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:20.3701477Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:20.3702032Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:20.3702652Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:20.3703098Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:20.3703646Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:20.3704088Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:20.3704500Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:20.3704943Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.7-x64/flutter
+2026-07-22T17:07:20.3705325Z   PUB_CACHE: /home/runner/.pub-cache
+2026-07-22T17:07:20.3705587Z ##[endgroup]
+2026-07-22T17:07:20.4369192Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:07:20.4370534Z ##[group]Run actions/cache@v4
+2026-07-22T17:07:20.4370784Z with:
+2026-07-22T17:07:20.4370986Z   path: ~/.pub-cache
+2026-07-22T17:07:20.4371374Z   key: Linux-pub-158109c7904ef69b7fa2a17002a5a6c4046b61de9bc23b372f560d9c027fbfd3
+2026-07-22T17:07:20.4371829Z   restore-keys: Linux-pub-
+
+2026-07-22T17:07:20.4372106Z   enableCrossOsArchive: false
+2026-07-22T17:07:20.4372372Z   fail-on-cache-miss: false
+2026-07-22T17:07:20.4372610Z   lookup-only: false
+2026-07-22T17:07:20.4372832Z   save-always: false
+2026-07-22T17:07:20.4373046Z env:
+2026-07-22T17:07:20.4373238Z   ENV_FILE: preview.env
+2026-07-22T17:07:20.4373630Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:20.4374034Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:20.4389417Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:20.4390124Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:20.4390598Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:20.4391133Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:20.4391590Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:20.4392017Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:20.4392481Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.7-x64/flutter
+2026-07-22T17:07:20.4392872Z   PUB_CACHE: /home/runner/.pub-cache
+2026-07-22T17:07:20.4393136Z ##[endgroup]
+2026-07-22T17:07:20.5511484Z (node:3634) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-22T17:07:20.5512598Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-22T17:07:20.7617856Z Cache hit for: Linux-pub-158109c7904ef69b7fa2a17002a5a6c4046b61de9bc23b372f560d9c027fbfd3
+2026-07-22T17:07:20.7732721Z (node:3634) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-07-22T17:07:22.0100231Z Received 20971520 of 172182762 (12.2%), 20.0 MBs/sec
+2026-07-22T17:07:23.0104844Z Received 134217728 of 172182762 (78.0%), 63.9 MBs/sec
+2026-07-22T17:07:23.1771140Z Received 172182762 of 172182762 (100.0%), 75.7 MBs/sec
+2026-07-22T17:07:23.1773527Z Cache Size: ~164 MB (172182762 B)
+2026-07-22T17:07:23.1818136Z [command]/usr/bin/tar -xf /home/runner/work/_temp/2072276a-c336-4a95-bc7c-cba4d6228ad3/cache.tzst -P -C /home/runner/work/gravity-torrent/gravity-torrent --use-compress-program unzstd
+2026-07-22T17:07:25.9065180Z Cache restored successfully
+2026-07-22T17:07:25.9220464Z Cache restored from key: Linux-pub-158109c7904ef69b7fa2a17002a5a6c4046b61de9bc23b372f560d9c027fbfd3
+2026-07-22T17:07:25.9403902Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:07:25.9405265Z ##[group]Run hendrikmuhs/ccache-action@v1.2.14
+2026-07-22T17:07:25.9405580Z with:
+2026-07-22T17:07:25.9406080Z   key: Linux-android
+2026-07-22T17:07:25.9406321Z   restore: true
+2026-07-22T17:07:25.9406528Z   max-size: 500M
+2026-07-22T17:07:25.9406737Z   verbose: 0
+2026-07-22T17:07:25.9406935Z   variant: ccache
+2026-07-22T17:07:25.9407145Z   save: true
+2026-07-22T17:07:25.9407358Z   append-timestamp: true
+2026-07-22T17:07:25.9407610Z   create-symlink: false
+2026-07-22T17:07:25.9407836Z env:
+2026-07-22T17:07:25.9408037Z   ENV_FILE: preview.env
+2026-07-22T17:07:25.9408431Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:25.9408850Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:25.9409394Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:25.9410004Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:25.9410451Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:25.9411007Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:25.9411492Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:25.9411928Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:25.9412384Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.7-x64/flutter
+2026-07-22T17:07:25.9412783Z   PUB_CACHE: /home/runner/.pub-cache
+2026-07-22T17:07:25.9413058Z ##[endgroup]
+2026-07-22T17:07:26.0436110Z (node:3652) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-22T17:07:26.0437790Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-22T17:07:26.0465163Z ##[group]Install ccache
+2026-07-22T17:07:26.0512918Z [command]/usr/bin/sh -xc $(which sudo) apt-get install -y ccache
+2026-07-22T17:07:26.0558979Z + which sudo
+2026-07-22T17:07:26.0568156Z + /usr/bin/sudo apt-get install -y ccache
+2026-07-22T17:07:26.0765512Z Reading package lists...
+2026-07-22T17:07:26.2247291Z Building dependency tree...
+2026-07-22T17:07:26.2254421Z Reading state information...
+2026-07-22T17:07:26.3562805Z The following additional packages will be installed:
+2026-07-22T17:07:26.3566285Z   libhiredis1.1.0
+2026-07-22T17:07:26.3573103Z Suggested packages:
+2026-07-22T17:07:26.3573609Z   distcc | icecc
+2026-07-22T17:07:26.3702973Z The following NEW packages will be installed:
+2026-07-22T17:07:26.3710526Z   ccache libhiredis1.1.0
+2026-07-22T17:07:26.3872241Z 0 upgraded, 2 newly installed, 0 to remove and 72 not upgraded.
+2026-07-22T17:07:26.3873531Z Need to get 633 kB of archives.
+2026-07-22T17:07:26.3874493Z After this operation, 1756 kB of additional disk space will be used.
+2026-07-22T17:07:26.3875542Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-07-22T17:07:26.4614609Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libhiredis1.1.0 amd64 1.2.0-6ubuntu3 [41.4 kB]
+2026-07-22T17:07:26.5198712Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 ccache amd64 4.9.1-1 [592 kB]
+2026-07-22T17:07:26.7594739Z Fetched 633 kB in 0s (4313 kB/s)
+2026-07-22T17:07:26.8069482Z Selecting previously unselected package libhiredis1.1.0:amd64.
+2026-07-22T17:07:26.8125328Z (Reading database ... 
+2026-07-22T17:07:26.8126254Z (Reading database ... 5%
+2026-07-22T17:07:26.8126948Z (Reading database ... 10%
+2026-07-22T17:07:26.8127507Z (Reading database ... 15%
+2026-07-22T17:07:26.8127903Z (Reading database ... 20%
+2026-07-22T17:07:26.8128297Z (Reading database ... 25%
+2026-07-22T17:07:26.8129017Z (Reading database ... 30%
+2026-07-22T17:07:26.8129442Z (Reading database ... 35%
+2026-07-22T17:07:26.8129822Z (Reading database ... 40%
+2026-07-22T17:07:26.8130207Z (Reading database ... 45%
+2026-07-22T17:07:26.8130584Z (Reading database ... 50%
+2026-07-22T17:07:26.8135711Z (Reading database ... 55%
+2026-07-22T17:07:26.8253465Z (Reading database ... 60%
+2026-07-22T17:07:26.8279963Z (Reading database ... 65%
+2026-07-22T17:07:26.8300094Z (Reading database ... 70%
+2026-07-22T17:07:26.8340554Z (Reading database ... 75%
+2026-07-22T17:07:26.8363012Z (Reading database ... 80%
+2026-07-22T17:07:26.8387026Z (Reading database ... 85%
+2026-07-22T17:07:26.8539273Z (Reading database ... 90%
+2026-07-22T17:07:26.8789873Z (Reading database ... 95%
+2026-07-22T17:07:26.8790459Z (Reading database ... 100%
+2026-07-22T17:07:26.8791369Z (Reading database ... 203579 files and directories currently installed.)
+2026-07-22T17:07:26.8830971Z Preparing to unpack .../libhiredis1.1.0_1.2.0-6ubuntu3_amd64.deb ...
+2026-07-22T17:07:26.8856057Z Unpacking libhiredis1.1.0:amd64 (1.2.0-6ubuntu3) ...
+2026-07-22T17:07:26.9083425Z Selecting previously unselected package ccache.
+2026-07-22T17:07:26.9206591Z Preparing to unpack .../ccache_4.9.1-1_amd64.deb ...
+2026-07-22T17:07:26.9215357Z Unpacking ccache (4.9.1-1) ...
+2026-07-22T17:07:26.9684456Z Setting up libhiredis1.1.0:amd64 (1.2.0-6ubuntu3) ...
+2026-07-22T17:07:26.9729930Z Setting up ccache (4.9.1-1) ...
+2026-07-22T17:07:26.9755970Z Updating symlinks in /usr/lib/ccache ...
+2026-07-22T17:07:26.9890852Z Processing triggers for libc-bin (2.39-0ubuntu8.7) ...
+2026-07-22T17:07:27.0039586Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-07-22T17:07:27.0056245Z Not building database; man-db/auto-update is not 'true'.
+2026-07-22T17:07:27.5358067Z 
+2026-07-22T17:07:27.5358878Z Running kernel seems to be up-to-date.
+2026-07-22T17:07:27.5361204Z 
+2026-07-22T17:07:27.5361633Z No services need to be restarted.
+2026-07-22T17:07:27.5362757Z 
+2026-07-22T17:07:27.5363340Z No containers need to be restarted.
+2026-07-22T17:07:27.5363756Z 
+2026-07-22T17:07:27.5364180Z No user sessions are running outdated binaries.
+2026-07-22T17:07:27.5364569Z 
+2026-07-22T17:07:27.5365216Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-07-22T17:07:28.2759309Z 
+2026-07-22T17:07:28.2773771Z ##[endgroup]
+2026-07-22T17:07:28.2774527Z ##[group]Restore cache
+2026-07-22T17:07:28.3296850Z ##[warning]Failed to restore: Cache service responded with 400
+2026-07-22T17:07:28.3306623Z No cache found.
+2026-07-22T17:07:28.3307027Z ##[endgroup]
+2026-07-22T17:07:28.3307406Z ##[group]Configure ccache, linux
+2026-07-22T17:07:28.3308856Z [command]/usr/bin/sh -xc ccache --set-config=cache_dir='/home/runner/work/gravity-torrent/gravity-torrent/.ccache'
+2026-07-22T17:07:28.3312894Z + ccache --set-config=cache_dir=/home/runner/work/gravity-torrent/gravity-torrent/.ccache
+2026-07-22T17:07:28.3356528Z [command]/usr/bin/sh -xc ccache --set-config=max_size='500M'
+2026-07-22T17:07:28.3373054Z + ccache --set-config=max_size=500M
+2026-07-22T17:07:28.3407509Z [command]/usr/bin/sh -xc ccache --set-config=compression=true
+2026-07-22T17:07:28.3423941Z + ccache --set-config=compression=true
+2026-07-22T17:07:28.3445566Z Cccache config:
+2026-07-22T17:07:28.3461368Z [command]/usr/bin/sh -xc ccache -p
+2026-07-22T17:07:28.3478924Z + ccache -p
+2026-07-22T17:07:28.3492045Z (default) absolute_paths_in_stderr = false
+2026-07-22T17:07:28.3492752Z (default) base_dir = 
+2026-07-22T17:07:28.3493604Z (/home/runner/.config/ccache/ccache.conf) cache_dir = /home/runner/work/gravity-torrent/gravity-torrent/.ccache
+2026-07-22T17:07:28.3494444Z (default) compiler = 
+2026-07-22T17:07:28.3495083Z (default) compiler_check = mtime
+2026-07-22T17:07:28.3496076Z (default) compiler_type = auto
+2026-07-22T17:07:28.3497026Z (/home/runner/.config/ccache/ccache.conf) compression = true
+2026-07-22T17:07:28.3497910Z (default) compression_level = 0
+2026-07-22T17:07:28.3498581Z (default) cpp_extension = 
+2026-07-22T17:07:28.3499192Z (default) debug = false
+2026-07-22T17:07:28.3500073Z (default) debug_dir = 
+2026-07-22T17:07:28.3500723Z (default) debug_level = 2
+2026-07-22T17:07:28.3501371Z (default) depend_mode = false
+2026-07-22T17:07:28.3502046Z (default) direct_mode = true
+2026-07-22T17:07:28.3502686Z (default) disable = false
+2026-07-22T17:07:28.3503337Z (default) extra_files_to_hash = 
+2026-07-22T17:07:28.3504019Z (default) file_clone = false
+2026-07-22T17:07:28.3504658Z (default) hard_link = false
+2026-07-22T17:07:28.3505285Z (default) hash_dir = true
+2026-07-22T17:07:28.3506225Z (default) ignore_headers_in_manifest = 
+2026-07-22T17:07:28.3506943Z (default) ignore_options = 
+2026-07-22T17:07:28.3507596Z (default) inode_cache = true
+2026-07-22T17:07:28.3508328Z (default) keep_comments_cpp = false
+2026-07-22T17:07:28.3509001Z (default) log_file = 
+2026-07-22T17:07:28.3509567Z (default) max_files = 0
+2026-07-22T17:07:28.3510447Z (/home/runner/.config/ccache/ccache.conf) max_size = 500.0 MB
+2026-07-22T17:07:28.3511449Z (default) msvc_dep_prefix = Note: including file:
+2026-07-22T17:07:28.3512211Z (default) namespace = 
+2026-07-22T17:07:28.3512778Z (default) path = 
+2026-07-22T17:07:28.3513437Z (default) pch_external_checksum = false
+2026-07-22T17:07:28.3514132Z (default) prefix_command = 
+2026-07-22T17:07:28.3514757Z (default) prefix_command_cpp = 
+2026-07-22T17:07:28.3515372Z (default) read_only = false
+2026-07-22T17:07:28.3516256Z (default) read_only_direct = false
+2026-07-22T17:07:28.3516889Z (default) recache = false
+2026-07-22T17:07:28.3517479Z (default) remote_only = false
+2026-07-22T17:07:28.3518064Z (default) remote_storage = 
+2026-07-22T17:07:28.3518651Z (default) reshare = false
+2026-07-22T17:07:28.3519265Z (default) run_second_cpp = true
+2026-07-22T17:07:28.3519857Z (default) sloppiness = 
+2026-07-22T17:07:28.3520396Z (default) stats = true
+2026-07-22T17:07:28.3520901Z (default) stats_log = 
+2026-07-22T17:07:28.3521589Z (default) temporary_dir = /run/user/1001/ccache-tmp
+2026-07-22T17:07:28.3522234Z (default) umask = 
+2026-07-22T17:07:28.3522814Z [command]/usr/bin/sh -xc ccache -z
+2026-07-22T17:07:28.3533836Z + ccache -z
+2026-07-22T17:07:28.3984720Z Statistics zeroed
+2026-07-22T17:07:28.3990530Z ##[endgroup]
+2026-07-22T17:07:28.4088566Z ##[group]Run flutter build apk --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols
+2026-07-22T17:07:28.4089393Z [36;1mflutter build apk --dart-define-from-file=${ENV_FILE} --obfuscate --split-debug-info=build/symbols[0m
+2026-07-22T17:07:28.4148547Z shell: /usr/bin/bash -e {0}
+2026-07-22T17:07:28.4148815Z env:
+2026-07-22T17:07:28.4149031Z   ENV_FILE: preview.env
+2026-07-22T17:07:28.4149421Z   VCPKG_MANIFEST_DIR: /home/runner/work/gravity-torrent/gravity-torrent/app
+2026-07-22T17:07:28.4149844Z   SOURCE_DATE_EPOCH: 0
+2026-07-22T17:07:28.4150378Z   VCPKG_DEFAULT_BINARY_CACHE: /home/runner/work/gravity-torrent/gravity-torrent/969f6665-88a2-4c98-938e-ca9259871fec/vcpkg_cache
+2026-07-22T17:07:28.4151001Z   VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+2026-07-22T17:07:28.4151458Z   RUNVCPKG_VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:28.4152199Z   VCPKG_ROOT: /home/runner/work/gravity-torrent/gravity-torrent/app/vcpkg
+2026-07-22T17:07:28.4152653Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:28.4153081Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Zulu_jdk/17.0.20-8/x64
+2026-07-22T17:07:28.4153537Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.7-x64/flutter
+2026-07-22T17:07:28.4153917Z   PUB_CACHE: /home/runner/.pub-cache
+2026-07-22T17:07:28.4154203Z   CMAKE_C_COMPILER_LAUNCHER: ccache
+2026-07-22T17:07:28.4154485Z   CMAKE_CXX_COMPILER_LAUNCHER: ccache
+2026-07-22T17:07:28.4154755Z ##[endgroup]
+2026-07-22T17:07:28.6496723Z Resolving dependencies...
+2026-07-22T17:07:28.9421085Z Downloading packages...
+2026-07-22T17:07:29.0283706Z ! _fe_analyzer_shared 105.0.0 (overridden)
+2026-07-22T17:07:29.0284447Z ! analyzer 14.1.0 (overridden)
+2026-07-22T17:07:29.0285148Z ! assorted_layout_widgets 12.6.2 (overridden)
+2026-07-22T17:07:29.0286184Z   battery_plus 6.2.3 (7.1.1 available)
+2026-07-22T17:07:29.0286827Z ! cli_util 0.5.1 (overridden)
+2026-07-22T17:07:29.0287522Z   connectivity_plus 6.1.5 (7.3.0 available)
+2026-07-22T17:07:29.0288193Z   dbus 0.7.13 (0.7.14 available)
+2026-07-22T17:07:29.0288923Z   flutter_adaptive_scaffold 0.3.3+1 (discontinued)
+2026-07-22T17:07:29.0289452Z   flutter_cache_manager 3.4.1 (3.4.2 available)
+2026-07-22T17:07:29.0289999Z   flutter_local_notifications 22.0.1 (22.1.0 available)
+2026-07-22T17:07:29.0290714Z   flutter_local_notifications_platform_interface 12.0.0 (12.0.1 available)
+2026-07-22T17:07:29.0291348Z ! flutter_secure_storage_darwin 0.4.0 (overridden)
+2026-07-22T17:07:29.0291773Z ! hooks 2.1.0 (overridden)
+2026-07-22T17:07:29.0292218Z   in_app_purchase_android 0.5.1 (0.5.2 available)
+2026-07-22T17:07:29.0292639Z ! intl 0.20.3 (overridden)
+2026-07-22T17:07:29.0293161Z ! matcher 0.12.20 (overridden)
+2026-07-22T17:07:29.0293740Z ! meta 1.19.0 (overridden)
+2026-07-22T17:07:29.0294339Z ! package_config 3.0.0 (overridden)
+2026-07-22T17:07:29.0294969Z   qr 3.0.2 (4.0.0 available)
+2026-07-22T17:07:29.0295558Z ! record_use 1.0.0 (overridden)
+2026-07-22T17:07:29.0296425Z   safe_local_storage 2.0.4 (2.0.6 available)
+2026-07-22T17:07:29.0297131Z   synchronized 3.4.1 (3.4.1+1 available)
+2026-07-22T17:07:29.0297742Z ! test 1.31.2 (overridden)
+2026-07-22T17:07:29.0298302Z ! test_api 0.7.13 (overridden)
+2026-07-22T17:07:29.0298882Z ! test_core 0.6.19 (overridden)
+2026-07-22T17:07:29.0299487Z ! vector_math 2.4.0 (overridden)
+2026-07-22T17:07:29.0299916Z   wakelock_plus 1.6.1 (1.7.0 available)
+2026-07-22T17:07:29.0300385Z   wakelock_plus_platform_interface 1.5.1 (1.6.0 available)
+2026-07-22T17:07:29.0300792Z Got dependencies!
+2026-07-22T17:07:29.0301097Z 1 package is discontinued.
+2026-07-22T17:07:29.0301627Z 12 packages have newer versions incompatible with dependency constraints.
+2026-07-22T17:07:29.0302179Z Try `flutter pub outdated` for more information.
+2026-07-22T17:07:55.4221203Z Running Gradle task 'assembleRelease'...                        
+2026-07-22T17:07:55.4248330Z Warning: Flutter support for your project's Gradle version (8.12.0) will soon be dropped. Please upgrade your Gradle version to a version of at least 8.14.0 soon.
+2026-07-22T17:07:55.4250697Z Alternatively, use the flag "--android-skip-build-dependency-validation" to bypass this check.
+2026-07-22T17:07:55.4251562Z 
+2026-07-22T17:07:55.4254351Z Potential fix: Your project's gradle version is typically defined in the gradle wrapper file. By default, this can be found at /home/runner/work/gravity-torrent/gravity-torrent/app/android/gradle/wrapper/gradle-wrapper.properties. 
+2026-07-22T17:07:55.4288550Z For more information, see https://docs.gradle.org/current/userguide/gradle_wrapper.html.
+2026-07-22T17:07:55.4316000Z 
+2026-07-22T17:07:55.4328721Z Warning: Flutter support for your project's Android Gradle Plugin version (Android Gradle Plugin version 8.9.1) will soon be dropped. Please upgrade your Android Gradle Plugin version to a version of at least Android Gradle Plugin version 8.11.1 soon.
+2026-07-22T17:07:55.4357207Z Alternatively, use the flag "--android-skip-build-dependency-validation" to bypass this check.
+2026-07-22T17:07:55.4366696Z 
+2026-07-22T17:07:55.4369354Z Potential fix: Your project's AGP version is typically defined in the plugins block of the `settings.gradle` file (/home/runner/work/gravity-torrent/gravity-torrent/app/android/settings.gradle), by a plugin with the id of com.android.application. 
+2026-07-22T17:07:55.4377458Z If you don't see a plugins block, your project was likely created with an older template version. In this case it is most likely defined in the top-level build.gradle file (/home/runner/work/gravity-torrent/gravity-torrent/app/android/build.gradle) by the following line in the dependencies block of the buildscript: "classpath 'com.android.tools.build:gradle:<version>'".
+2026-07-22T17:07:55.4396184Z 
+2026-07-22T17:08:03.1088474Z Checking the license for package NDK (Side by side) 27.0.12077973 in /usr/local/lib/android/sdk/licenses
+2026-07-22T17:08:03.1089842Z License for package NDK (Side by side) 27.0.12077973 accepted.
+2026-07-22T17:08:03.1090603Z Preparing "Install NDK (Side by side) 27.0.12077973 v.27.0.12077973".
+2026-07-22T17:08:16.2090686Z "Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" ready.
+2026-07-22T17:08:16.2092110Z Installing NDK (Side by side) 27.0.12077973 in /usr/local/lib/android/sdk/ndk/27.0.12077973
+2026-07-22T17:08:16.2093384Z "Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" complete.
+2026-07-22T17:08:16.3080988Z "Install NDK (Side by side) 27.0.12077973 v.27.0.12077973" finished.
+2026-07-22T17:08:23.2080201Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-arm64-v8a.jar
+2026-07-22T17:08:23.7079889Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-armeabi-v7a.jar
+2026-07-22T17:08:24.0084115Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-x86_64.jar
+2026-07-22T17:08:24.3081118Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-x86.jar
+2026-07-22T17:08:29.6080479Z Checking the license for package CMake 3.22.1 in /usr/local/lib/android/sdk/licenses
+2026-07-22T17:08:29.6081728Z License for package CMake 3.22.1 accepted.
+2026-07-22T17:08:29.6082643Z Preparing "Install CMake 3.22.1 v.3.22.1".
+2026-07-22T17:08:30.5086774Z "Install CMake 3.22.1 v.3.22.1" ready.
+2026-07-22T17:08:30.5087411Z Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
+2026-07-22T17:08:30.5087918Z "Install CMake 3.22.1 v.3.22.1" complete.
+2026-07-22T17:08:30.6083856Z "Install CMake 3.22.1 v.3.22.1" finished.
+2026-07-22T17:08:45.9097816Z lib/models/app.dart:56:13: Error: The getter 'kDebugMode' isn't defined for the type 'AppModel'.
+2026-07-22T17:08:45.9099404Z  - 'AppModel' is from 'package:gravity_torrent/models/app.dart' ('lib/models/app.dart').
+2026-07-22T17:08:45.9100386Z Try correcting the name to the name of an existing getter, or defining a getter or field named 'kDebugMode'.
+2026-07-22T17:08:45.9101524Z         if (kDebugMode) debugPrint('Failed to get package info: $e');
+2026-07-22T17:08:45.9101971Z             ^^^^^^^^^^
+2026-07-22T17:08:45.9102623Z lib/models/app.dart:59:11: Error: The getter 'kDebugMode' isn't defined for the type 'AppModel'.
+2026-07-22T17:08:45.9103435Z  - 'AppModel' is from 'package:gravity_torrent/models/app.dart' ('lib/models/app.dart').
+2026-07-22T17:08:45.9104310Z Try correcting the name to the name of an existing getter, or defining a getter or field named 'kDebugMode'.
+2026-07-22T17:08:45.9105053Z       if (kDebugMode) debugPrint('AppModel._loadSettings error: $e');
+2026-07-22T17:08:45.9105473Z           ^^^^^^^^^^
+2026-07-22T17:08:45.9106421Z lib/utils/notifications.dart:192:47: Error: Too many positional arguments: 0 allowed, but 1 found.
+2026-07-22T17:08:45.9107036Z Try removing the extra positional arguments.
+2026-07-22T17:08:45.9107817Z   await flutterLocalNotificationsPlugin.cancel(_progressNotificationId);
+2026-07-22T17:08:45.9108367Z                                               ^
+2026-07-22T17:08:45.9109018Z lib/utils/notifications.dart:196:3: Error: Undefined name 'WidgetsFlutterBinding'.
+2026-07-22T17:08:45.9109596Z   WidgetsFlutterBinding.ensureInitialized();
+2026-07-22T17:08:45.9109967Z   ^^^^^^^^^^^^^^^^^^^^^
+2026-07-22T17:08:45.9110531Z lib/utils/notifications.dart:284:3: Error: Undefined name 'WidgetsFlutterBinding'.
+2026-07-22T17:08:45.9111089Z   WidgetsFlutterBinding.ensureInitialized();
+2026-07-22T17:08:45.9111446Z   ^^^^^^^^^^^^^^^^^^^^^
+2026-07-22T17:08:46.7080511Z lib/screens/sota/rss_screen.dart:205:59: Error: The method 'removeFeed' isn't defined for the type 'RssService'.
+2026-07-22T17:08:46.7096426Z  - 'RssService' is from 'package:gravity_torrent/services/rss_service.dart' ('lib/services/rss_service.dart').
+2026-07-22T17:08:46.7098174Z Try correcting the name to the name of an existing method, or defining a method named 'removeFeed'.
+2026-07-22T17:08:46.7099601Z                                 await RssService.instance.removeFeed(feedToRemove);
+2026-07-22T17:08:46.7100612Z                                                           ^^^^^^^^^^
+2026-07-22T17:08:46.8079826Z lib/services/shortcuts_service.dart:59:8: Error: Undefined name 'kIsWeb'.
+2026-07-22T17:08:46.8081551Z       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+2026-07-22T17:08:46.8082395Z        ^^^^^^
+2026-07-22T17:08:50.1085114Z lib/widgets/torrent_player/torrent_player.dart:93:5: Error: The setter '_disposed' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1088372Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1090814Z Try correcting the name to the name of an existing setter, or defining a setter or field named '_disposed'.
+2026-07-22T17:08:50.1096603Z     _disposed = true;
+2026-07-22T17:08:50.1097419Z     ^^^^^^^^^
+2026-07-22T17:08:50.1099347Z lib/widgets/torrent_player/torrent_player.dart:145:9: Error: The getter '_disposed' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1102141Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1107637Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_disposed'.
+2026-07-22T17:08:50.1108961Z     if (_disposed) return;
+2026-07-22T17:08:50.1109722Z         ^^^^^^^^^
+2026-07-22T17:08:50.1111523Z lib/widgets/torrent_player/torrent_player.dart:184:9: Error: The getter '_disposed' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1114230Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1116754Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_disposed'.
+2026-07-22T17:08:50.1118098Z     if (_disposed) return;
+2026-07-22T17:08:50.1119260Z         ^^^^^^^^^
+2026-07-22T17:08:50.1121097Z lib/widgets/torrent_player/torrent_player.dart:188:9: Error: The getter '_disposed' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1123799Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1126442Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_disposed'.
+2026-07-22T17:08:50.1127643Z     if (_disposed) return;
+2026-07-22T17:08:50.1128364Z         ^^^^^^^^^
+2026-07-22T17:08:50.1130061Z lib/widgets/torrent_player/torrent_player.dart:226:9: Error: The getter '_disposed' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1132623Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1134937Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_disposed'.
+2026-07-22T17:08:50.1135892Z     if (_disposed) return;
+2026-07-22T17:08:50.1136245Z         ^^^^^^^^^
+2026-07-22T17:08:50.1137076Z lib/widgets/torrent_player/torrent_player.dart:230:9: Error: The getter '_disposed' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1138372Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1139472Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_disposed'.
+2026-07-22T17:08:50.1140040Z     if (_disposed) return;
+2026-07-22T17:08:50.1140326Z         ^^^^^^^^^
+2026-07-22T17:08:50.1141194Z lib/widgets/torrent_player/torrent_player.dart:510:30: Error: The getter '_videoComponentKey' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1142516Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1143652Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_videoComponentKey'.
+2026-07-22T17:08:50.1144301Z                         key: _videoComponentKey,
+2026-07-22T17:08:50.1144714Z                              ^^^^^^^^^^^^^^^^^^
+2026-07-22T17:08:50.1145883Z lib/widgets/torrent_player/torrent_player.dart:529:30: Error: The getter '_videoComponentKey' isn't defined for the type 'TorrentPlayerState'.
+2026-07-22T17:08:50.1147711Z  - 'TorrentPlayerState' is from 'package:gravity_torrent/widgets/torrent_player/torrent_player.dart' ('lib/widgets/torrent_player/torrent_player.dart').
+2026-07-22T17:08:50.1148859Z Try correcting the name to the name of an existing getter, or defining a getter or field named '_videoComponentKey'.
+2026-07-22T17:08:50.1149510Z                         key: _videoComponentKey,
+2026-07-22T17:08:50.1149957Z                              ^^^^^^^^^^^^^^^^^^
+2026-07-22T17:08:57.2081047Z Target kernel_snapshot_program failed: Exception
+2026-07-22T17:08:57.2081979Z 
+2026-07-22T17:08:57.3108261Z 
+2026-07-22T17:08:57.3109392Z FAILURE: Build failed with an exception.
+2026-07-22T17:08:57.3110120Z 
+2026-07-22T17:08:57.3110624Z * What went wrong:
+2026-07-22T17:08:57.3111725Z Execution failed for task ':app:compileFlutterBuildRelease'.
+2026-07-22T17:08:57.3113715Z > Process 'command '/opt/hostedtoolcache/flutter/stable-3.44.7-x64/flutter/bin/flutter'' finished with non-zero exit value 1
+2026-07-22T17:08:57.3116646Z 
+2026-07-22T17:08:57.3117076Z * Try:
+2026-07-22T17:08:57.3118049Z > Run with --stacktrace option to get the stack trace.
+2026-07-22T17:08:57.3124844Z > Run with --info or --debug option to get more log output.
+2026-07-22T17:08:57.3126275Z > Run with --scan to get full insights.
+2026-07-22T17:08:57.3127315Z > Get more help at https://help.gradle.org.
+2026-07-22T17:08:57.3127924Z 
+2026-07-22T17:08:57.3128397Z BUILD FAILED in 1m 27s
+2026-07-22T17:08:57.7543627Z Running Gradle task 'assembleRelease'...                           88.1s
+2026-07-22T17:08:57.7640234Z Gradle task assembleRelease failed with exit code 1
+2026-07-22T17:08:57.7718366Z ##[error]Process completed with exit code 1.
+2026-07-22T17:08:57.7831040Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:08:57.7832334Z Post job cleanup.
+2026-07-22T17:08:58.0227146Z (node:4346) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-22T17:08:58.0228198Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-22T17:08:58.0353156Z ##[group]ccache stats
+2026-07-22T17:08:58.0371840Z [command]/usr/bin/ccache -s
+2026-07-22T17:08:58.0434842Z Cacheable calls:     6 /   6 (100.0%)
+2026-07-22T17:08:58.0435510Z   Hits:              0 /   6 ( 0.00%)
+2026-07-22T17:08:58.0436406Z     Direct:          0
+2026-07-22T17:08:58.0436935Z     Preprocessed:    0
+2026-07-22T17:08:58.0437546Z   Misses:            6 /   6 (100.0%)
+2026-07-22T17:08:58.0437852Z Local storage:
+2026-07-22T17:08:58.0438171Z   Cache size (GB): 0.0 / 0.5 ( 0.01%)
+2026-07-22T17:08:58.0438543Z   Hits:              0 /   6 ( 0.00%)
+2026-07-22T17:08:58.0438895Z   Misses:            6 /   6 (100.0%)
+2026-07-22T17:08:58.0439359Z ##[endgroup]
+2026-07-22T17:08:58.0568817Z Save cache using key "ccache-Linux-android-2026-07-22T17:08:58.053Z".
+2026-07-22T17:08:58.0719005Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/gravity-torrent/gravity-torrent --files-from manifest.txt --use-compress-program zstdmt
+2026-07-22T17:08:58.1345448Z ##[warning]Failed to save: <h2>Our services aren't available right now</h2><p>We're working to restore all services as soon as possible. Please check back soon.</p>0KvlgagAAAAAiRKZMh016T7Fb7887dFdoUEhYMzFFREdFMDIxMQBFZGdl
+2026-07-22T17:08:58.1549759Z Post job cleanup.
+2026-07-22T17:08:58.1615551Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:08:58.1617085Z Post job cleanup.
+2026-07-22T17:08:58.3096136Z (node:4369) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-07-22T17:08:58.3097933Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-07-22T17:08:58.3271830Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-07-22T17:08:58.3273149Z Post job cleanup.
+2026-07-22T17:08:58.4221085Z [command]/usr/bin/git version
+2026-07-22T17:08:58.4264102Z git version 2.54.0
+2026-07-22T17:08:58.4342208Z Temporarily overriding HOME='/home/runner/work/_temp/29f664cb-4962-4169-b190-f9a51c36c46b' before making global git config changes
+2026-07-22T17:08:58.4344348Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-22T17:08:58.4350231Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/gravity-torrent/gravity-torrent
+2026-07-22T17:08:58.4423640Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-22T17:08:58.4458362Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-22T17:08:58.4706810Z Entering 'app/vcpkg'
+2026-07-22T17:08:58.4813493Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-22T17:08:58.4839314Z http.https://github.com/.extraheader
+2026-07-22T17:08:58.4853355Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-07-22T17:08:58.4894718Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-22T17:08:58.5137021Z Entering 'app/vcpkg'
+2026-07-22T17:08:58.5161299Z http.https://github.com/.extraheader
+2026-07-22T17:08:58.5235579Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-22T17:08:58.5283630Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-22T17:08:58.5510145Z Entering 'app/vcpkg'
+2026-07-22T17:08:58.5530111Z file:/home/runner/work/gravity-torrent/gravity-torrent/.git/modules/app/vcpkg/config	remote.origin.url
+2026-07-22T17:08:58.5587501Z [command]/usr/bin/git config --file /home/runner/work/gravity-torrent/gravity-torrent/.git/modules/app/vcpkg/config --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-22T17:08:58.5760290Z Cleaning up orphan processes
+2026-07-22T17:08:58.6191891Z Terminate orphan process: pid (3868) (java)
+2026-07-22T17:08:58.6221995Z Terminate orphan process: pid (3947) (java)
+2026-07-22T17:08:58.6231131Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@v4, actions/checkout@v4, actions/setup-java@v4, hendrikmuhs/ccache-action@v1.2.14. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

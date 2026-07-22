@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:gravity_torrent/engine/engine.dart';
@@ -189,7 +190,7 @@ Future<void> cancelDownloadProgressNotification() async {
   if (defaultTargetPlatform == TargetPlatform.android) {
     return;
   }
-  await flutterLocalNotificationsPlugin.cancel(_progressNotificationId);
+  await (flutterLocalNotificationsPlugin as dynamic).cancel(_progressNotificationId);
 }
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {

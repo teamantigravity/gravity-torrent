@@ -65,6 +65,8 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   VideoController? controller;
   BuildContext? _videoLoadingDialogContext;
   BuildContext? _subsLoadingDialogContext;
+  bool _disposed = false;
+  final GlobalKey _videoComponentKey = GlobalKey();
 
   void _closeVideoLoadingDialog() {
     if (_videoLoadingDialogContext != null && _videoLoadingDialogContext!.mounted) {
