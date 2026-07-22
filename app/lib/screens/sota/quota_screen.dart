@@ -4,6 +4,7 @@ import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class QuotaScreen extends StatefulWidget {
   const QuotaScreen({super.key});
@@ -52,12 +53,13 @@ class _QuotaScreenState extends State<QuotaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
-          : AppBar(title: const Text('Bandwidth quota')),
+          : AppBar(title: Text(localizations.bandwidthQuota)),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -125,7 +127,7 @@ class _QuotaScreenState extends State<QuotaScreen> {
                     child: FilledButton.icon(
                       onPressed: _save,
                       icon: const Icon(Icons.save),
-                      label: const Text('Save quota'),
+                      label: Text(localizations.saveQuota),
                     ),
                   ),
                   const SizedBox(height: 16),

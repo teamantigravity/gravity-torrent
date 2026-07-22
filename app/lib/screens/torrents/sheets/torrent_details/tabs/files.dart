@@ -203,8 +203,7 @@ class _FilesTabState extends State<FilesTab> {
                             // ignore: deprecated_member_use
                             await Share.shareXFiles([XFile(filePath)]);
                           } else if (value == 'play_in_app') {
-                            debugPrint(
-                                'Play in app: $filePath (TODO: StreamingServer URL)');
+                            _handlePlayClick(context, file);
                           }
                         },
                         itemBuilder: (context) {

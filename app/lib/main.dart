@@ -36,6 +36,8 @@ import 'package:gravity_torrent/services/scheduler_service.dart';
 import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/services/battery_service.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
+import 'package:gravity_torrent/services/analytics_service.dart';
+import 'package:gravity_torrent/services/blocklist_service.dart';
 
 ColorScheme _buildColorScheme(Brightness brightness, ColorScheme? dynamic) {
   return dynamic ??
@@ -122,6 +124,18 @@ Future<void> startServices(FeatureFlagsModel flags) async {
     await AppLockService.instance.load();
   } catch (e) {
     if (kDebugMode) debugPrint('AppLockService init failed: $e');
+  }
+
+  try {
+    await AnalyticsService.instance.load();
+  } catch (e) {
+    if (kDebugMode) debugPrint('AnalyticsService init failed: $e');
+  }
+
+  try {
+    await BlocklistService.instance.load();
+  } catch (e) {
+    if (kDebugMode) debugPrint('BlocklistService init failed: $e');
   }
 
   try {

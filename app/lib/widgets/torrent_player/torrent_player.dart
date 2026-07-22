@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:async/async.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/audio_handler.dart';
+import 'package:gravity_torrent/services/casting_service.dart';
 import 'package:gravity_torrent/services/haptic_service.dart';
 import 'package:gravity_torrent/services/pip_service.dart';
 import 'package:media_kit/media_kit.dart';
@@ -16,6 +18,7 @@ import 'package:gravity_torrent/engine/file.dart' as torrent_file;
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/utils/device.dart' as device;
 import 'package:gravity_torrent/models/feature_flags.dart';
+import 'package:gravity_torrent/utils/moov_priority_booster.dart';
 import 'package:gravity_torrent/utils/streaming_server.dart';
 import 'package:gravity_torrent/utils/subtitles.dart';
 import 'package:gravity_torrent/utils/subtitles_server.dart';
@@ -92,6 +95,12 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   }
 
   void initPlayer() async {
+    // Boost Moov atom and header pieces for rapid playback startup
+    await MoovPriorityBooster.boostForStreaming(
+      torrent: widget.torrent,
+      file: widget.file,
+    );
+
     // Streaming server
     server = StreamingServer(
       filePath: widget.filePath,
@@ -382,10 +391,59 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     );
   }
 
+  Widget _buildCastButton() {
+    final isCasting = CastingService.instance.isCasting;
+    final localizations = AppLocalizations.of(context)!;
+    return MaterialDesktopCustomButton(
+      icon: Icon(
+        isCasting ? Icons.cast_connected : Icons.cast,
+        color: isCasting ? Colors.blue : null,
+      ),
+      onPressed: () async {
+        HapticService.medium();
+        final scaffold = ScaffoldMessenger.of(context);
+        scaffold.showSnackBar(
+          SnackBar(content: Text(localizations.castScanningMessage)),
+        );
+        final devices = await CastingService.instance.discoverDevices();
+        if (!mounted) return;
+        if (devices.isEmpty) {
+          scaffold.showSnackBar(
+            SnackBar(content: Text(localizations.castNoDevicesFound)),
+          );
+          return;
+        }
+        final streamUrl = await server?.getAddress() ?? '';
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          builder: (dialogCtx) => SimpleDialog(
+            title: Text(localizations.castToDevice),
+            children: devices.map((d) {
+              return SimpleDialogOption(
+                child: Text(d.name),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  await CastingService.instance.castStream(
+                    device: d,
+                    streamUrl: streamUrl,
+                    title: widget.file.name,
+                  );
+                  if (mounted) setState(() {});
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
   List<Widget> _buildMobileBottomButtonBar() {
     return [
       const MaterialPositionIndicator(),
       const Spacer(),
+      _buildCastButton(),
       _buildSubtitlesButton(),
       _buildAudioTrackButton(),
       _buildPipButton(),

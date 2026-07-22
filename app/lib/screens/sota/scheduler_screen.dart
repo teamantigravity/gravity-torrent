@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gravity_torrent/services/scheduler_service.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class SchedulerScreen extends StatefulWidget {
   const SchedulerScreen({super.key});
@@ -82,11 +83,12 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
-          : AppBar(title: const Text('Download scheduler')),
+          : AppBar(title: Text(localizations.downloadScheduler)),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -107,7 +109,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                   const SizedBox(height: 24),
                   SwitchListTile(
                     secondary: const Icon(Icons.schedule),
-                    title: const Text('Enable scheduler'),
+                    title: Text(localizations.enableScheduler),
                     subtitle: Text(
                       _enabled
                           ? 'Active — pausing downloads outside window'
@@ -135,8 +137,9 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                             Icons.play_arrow,
                             color: colorScheme.primary,
                           ),
-                          title: const Text('Start time'),
-                          subtitle: const Text('Downloads resume at this time'),
+                          title: Text(localizations.startTime),
+                          subtitle:
+                              Text(localizations.downloadsResumeAtThisTime),
                           trailing: Text(
                             _loaded
                                 ? _formatTime(_startHour, _startMinute)
@@ -162,8 +165,9 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                         ListTile(
                           enabled: _enabled,
                           leading: Icon(Icons.stop, color: colorScheme.error),
-                          title: const Text('End time'),
-                          subtitle: const Text('Downloads pause at this time'),
+                          title: Text(localizations.endTime),
+                          subtitle:
+                              Text(localizations.downloadsPauseAtThisTime),
                           trailing: Text(
                             _loaded
                                 ? _formatTime(_endHour, _endMinute)
@@ -204,7 +208,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                       Chip(
                         avatar: Icon(Icons.info_outline,
                             color: colorScheme.primary),
-                        label: const Text('Schedule wraps past midnight'),
+                        label: Text(localizations.scheduleWrapsPastMidnight),
                       ),
                     ],
                   ],
@@ -242,7 +246,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                     child: FilledButton.icon(
                       onPressed: _enabled ? _save : null,
                       icon: const Icon(Icons.save),
-                      label: const Text('Save schedule'),
+                      label: Text(localizations.saveSchedule),
                     ),
                   ),
                 ],

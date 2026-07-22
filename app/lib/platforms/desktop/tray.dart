@@ -3,6 +3,8 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/utils/lifecycle.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -33,6 +35,9 @@ initTray(BuildContext context) async {
       items: [
         MenuItem(key: 'show_window', label: 'Show Window'),
         MenuItem.separator(),
+        MenuItem(key: 'pause_all', label: 'Pause All Torrents'),
+        MenuItem(key: 'resume_all', label: 'Resume All Torrents'),
+        MenuItem.separator(),
         MenuItem(key: 'exit_app', label: 'Exit App'),
       ],
     );
@@ -54,11 +59,27 @@ class AppTrayListener extends TrayListener {
   AppTrayListener({required this.onExit});
 
   @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
+  void onTrayMenuItemClick(MenuItem menuItem) async {
     debugPrint('onTrayMenuItemClick ${menuItem.key}');
     if (menuItem.key == 'show_window') {
       windowManager.show();
       windowManager.focus();
+    } else if (menuItem.key == 'pause_all') {
+      try {
+        final engine = getIt<Engine>();
+        final torrents = await engine.fetchTorrents();
+        await engine.pauseTorrents(torrents.map((t) => t.id).toList());
+      } catch (e) {
+        debugPrint('Tray pause_all error: $e');
+      }
+    } else if (menuItem.key == 'resume_all') {
+      try {
+        final engine = getIt<Engine>();
+        final torrents = await engine.fetchTorrents();
+        await engine.resumeTorrents(torrents.map((t) => t.id).toList());
+      } catch (e) {
+        debugPrint('Tray resume_all error: $e');
+      }
     } else if (menuItem.key == 'exit_app') {
       windowManager.show();
       windowManager.focus();

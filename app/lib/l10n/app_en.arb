@@ -256,5 +256,50 @@
   "pinRequiredBeforeLock": "Save a backup PIN before enabling app lock",
   "@pinRequiredBeforeLock": {},
   "noBiometricsEnrolled": "No biometrics are enrolled on this device",
-  "@noBiometricsEnrolled": {}
+  "@noBiometricsEnrolled": {},
+  "@_NETWORK_PRIVACY": {},
+  "wifiOnlyMode": "WiFi Only Mode",
+  "wifiOnlyModeDescription": "Only download and upload when connected to Wi-Fi",
+  "vpnKillSwitch": "VPN Kill Switch",
+  "vpnKillSwitchDescription": "Pause downloads if IP address changes (VPN disconnect protection)",
+  "batterySaverMode": "Battery Saver Mode",
+  "batterySaverModeDescription": "Pause downloads below battery threshold",
+  "batteryThreshold": "Battery Threshold",
+  "batteryThresholdDescription": "Pause when battery drops below this level",
+  "peerBlocklistManager": "Peer Blocklist Manager",
+  "peerBlocklistManagerActive": "Active ({count} rules loaded)",
+  "@peerBlocklistManagerActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "peerBlocklistManagerDisabled": "Disabled",
+  "backupAndRestoreSettings": "Backup & Restore Settings",
+  "batteryThresholdDialogTitle": "Battery Threshold (%)",
+  "castToDevice": "Cast to Device",
+  "castScanningMessage": "Scanning for Smart TVs & DLNA screens...",
+  "castNoDevicesFound": "No local DLNA screens found on Wi-Fi",
+  "pauseAllTorrents": "Pause All Torrents",
+  "resumeAllTorrents": "Resume All Torrents",
+  "importAction": "Import",
+  "backupAndRestore": "Backup & Restore",
+  "export": "Export",
+  "pickBackupFile": "Pick backup file",
+  "bandwidthQuota": "Bandwidth quota",
+  "saveQuota": "Save quota",
+  "remoteControlServer": "Remote control server",
+  "addRssFeed": "Add RSS feed",
+  "allItems": "All items",
+  "downloadScheduler": "Download scheduler",
+  "enableScheduler": "Enable scheduler",
+  "startTime": "Start time",
+  "downloadsResumeAtThisTime": "Downloads resume at this time",
+  "endTime": "End time",
+  "downloadsPauseAtThisTime": "Downloads pause at this time",
+  "scheduleWrapsPastMidnight": "Schedule wraps past midnight",
+  "saveSchedule": "Save schedule",
+  "filters": "Filters",
+  "setSeedRatioGoal": "Set Seed Ratio Goal"
 }

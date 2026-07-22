@@ -17,7 +17,22 @@
   </a>
 </p>
 
-**Gravity Torrent** is a modern, cross-platform BitTorrent client built with Flutter. It is designed to be simple enough for everyday users while still providing the control advanced users expect. It is powered by the Transmission backend via [`flutter_libtransmission`](https://github.com/G-Ray/flutter_libtransmission) and can stream media files while they download.
+**Gravity Torrent 2.0** is a state-of-the-art, cross-platform BitTorrent client built with Flutter. It is designed to be simple enough for everyday users while providing rich power-user capabilities. Powered by the Transmission backend via [`flutter_libtransmission`](https://github.com/G-Ray/flutter_libtransmission), it can stream media files instantly while downloading.
+
+---
+
+## What's New in Version 2.0 🚀
+
+- **📺 DLNA / UPnP / Smart TV Media Casting** — Discover and stream downloading media to local Smart TVs and DLNA renderers directly from the player interface.
+- **⚡ Moov Atom & Sequential Priority Booster** — Automatically calculates and boosts Transmission piece priorities for the first 1% (header) and last 1% (MP4 `moov` atom) of video files for instant playback.
+- **🛡️ Auto-Updating Peer Blocklist Manager** — Dynamically fetches, updates, and applies P2P IP blocklists to block known malicous IP ranges, complete with live rule count monitoring in Settings.
+- **🌐 Local Network LAN Streaming** — Built-in HTTP server with local network binding (`0.0.0.0`) and LAN IP resolution for external TV streaming.
+- **🖥️ Desktop System Tray Quick Actions** — Quick "Pause All" and "Resume All" actions directly from the system tray menu.
+- **📶 Wi-Fi Only Mode & VPN Kill Switch** — Restrict transfers to Wi-Fi networks and automatically pause downloads if your VPN disconnects or IP address changes.
+- **🔋 Battery Saver Mode** — Automatically pause downloads when battery drops below your customizable threshold.
+- **🔒 App Lock & Privacy Vault** — Biometric (Face ID / Fingerprint) and PIN authentication with on-device privacy scoring.
+- **📊 Data Usage Analytics** — Interactive 7-day bandwidth chart with per-torrent download/upload metrics.
+- **📡 RSS Auto-Download Feeds** — Automate torrent downloads from RSS feeds with regex rules.
 
 ---
 
@@ -33,10 +48,12 @@
 - **File-level control** — select which files to download and set priority per file.
 - **Per-torrent speed limits** and **sequential download** for media streaming.
 
-### Media streaming
+### Media streaming & casting
 
 - **Stream video and audio** directly from an incomplete torrent using the built-in player.
-- **Local streaming server** serves file ranges with seek support.
+- **Smart TV & DLNA Casting** — cast live stream URLs to local TV renderers over Wi-Fi.
+- **Moov Atom Priority Booster** — instant playback startup without seek buffering.
+- **Local network streaming server** serves file ranges with HTTP byte-range seek support.
 - **Subtitles server** for external subtitle files (`.srt`, `.vtt`, `.ass`, `.ssa`, `.sub`, `.idx`), with automatic language detection.
 - **Subtitle and audio track selection** during playback.
 
@@ -46,14 +63,14 @@
 - **Locale** / language selector.
 - **Download directory** picker and **maximum active downloads** limit.
 - **Global speed limits** and **Turtle mode** (scheduled alternative speed limits).
-- **Privacy & security** — peer encryption, peer blocklist, DHT, PEX, LPD, and µTP toggles.
+- **Privacy & security** — peer blocklist manager, peer encryption, DHT, PEX, LPD, and µTP toggles.
 - **Seeding limits** — seed ratio and idle seeding timeout.
 - **Reset** all Transmission session settings.
 
 ### SOTA cross-platform UX
 
 - **Adaptive Material 3 UI** — dynamic color theming from the system wallpaper / accent color (Android 12+), with responsive breakpoints and an adaptive navigation rail / bottom bar.
-- **Feature flags** — all new SOTA features are gated by persistent, runtime-toggleable flags. Flags are also backed by a remote kill-switch so any feature can be disabled in an emergency without an app update.
+- **Feature flags** — all new SOTA features are gated by persistent, runtime-toggleable flags with remote kill-switch support.
 - **Smart notifications** — progress notification with live speed and pause/resume actions for all downloads, plus per-torrent completion notifications.
 - **Background audio & media session** — playback continues in the background on Android, iOS and macOS, with media controls in the notification / control center / lock screen (via `audio_service`).
 - **Picture-in-Picture / compact floating window** — PiP-ready on Android, with a compact always-on-top floating window fallback on desktop.

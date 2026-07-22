@@ -68,4 +68,7 @@ abstract class Engine {
 
   // Set torrent sequential download mode
   Future setTorrentSequentialDownload(int id, bool sequential);
+
+  // Update peer blocklist from session URL
+  Future<int> updateBlocklist();
 }

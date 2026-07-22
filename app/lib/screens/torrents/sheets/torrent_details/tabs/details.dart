@@ -78,9 +78,9 @@ class _DetailsTabState extends State<DetailsTab> {
           subtitle: Text(ratio.toString()),
         ),
         ListTile(
-          title: const Text(
-              'Seed Ratio Goal'), // Using literal as there's no localization provided for this yet
-          subtitle: Text(ratioGoal != null ? ratioGoal.toString() : 'Not set'),
+          title: Text(localizations.setSeedRatioGoal),
+          subtitle: Text(
+              ratioGoal != null ? ratioGoal.toString() : localizations.notSet),
           trailing: const Icon(Icons.edit),
           onTap: () async {
             String? newGoal = await showDialog<String>(
@@ -89,7 +89,7 @@ class _DetailsTabState extends State<DetailsTab> {
                 final controller =
                     TextEditingController(text: ratioGoal?.toString() ?? '');
                 return AlertDialog(
-                  title: const Text('Set Seed Ratio Goal'),
+                  title: Text(localizations.setSeedRatioGoal),
                   content: TextField(
                     controller: controller,
                     keyboardType:
@@ -99,11 +99,11 @@ class _DetailsTabState extends State<DetailsTab> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+                      child: Text(localizations.cancel),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, controller.text),
-                      child: const Text('Save'),
+                      child: Text(localizations.save),
                     ),
                   ],
                 );

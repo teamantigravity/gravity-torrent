@@ -4,6 +4,7 @@ import 'package:gravity_torrent/constants/locales.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/app_lock_service.dart';
 import 'package:gravity_torrent/services/battery_service.dart';
+import 'package:gravity_torrent/services/blocklist_service.dart';
 import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/dialogs/reusable/number_input.dart';
 import 'package:gravity_torrent/engine/session.dart';
@@ -719,18 +720,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     SwitchListTile(
                       secondary: const Icon(Icons.wifi),
-                      title: const Text('WiFi Only Mode'),
+                      title: Text(localizations.wifiOnlyMode),
                       subtitle: _featureSubtitle('enableWifiOnly', flags),
                       value: flags.enableWifiOnly,
                       onChanged: (v) => flags.setEnableWifiOnly(v),
+                    ),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.shield_outlined),
+                      title: Text(localizations.peerBlocklistManager),
+                      subtitle: Text(
+                        BlocklistService.instance.isEnabled
+                            ? localizations.peerBlocklistManagerActive(
+                                BlocklistService.instance.rulesCount,
+                              )
+                            : localizations.peerBlocklistManagerDisabled,
+                      ),
+                      value: BlocklistService.instance.isEnabled,
+                      onChanged: (v) async {
+                        await BlocklistService.instance.setEnabled(v);
+                        if (v) {
+                          try {
+                            await BlocklistService.instance.updateNow();
+                          } catch (_) {}
+                        }
+                        setState(() {});
+                      },
                     ),
                     if (flags.enableWifiOnly)
                       SwitchListTile(
                         contentPadding:
                             const EdgeInsets.only(left: 72, right: 16),
-                        title: const Text('VPN Kill Switch'),
-                        subtitle:
-                            const Text('Pause downloads if IP address changes'),
+                        title: Text(localizations.vpnKillSwitch),
+                        subtitle: Text(localizations.vpnKillSwitchDescription),
                         value: WifiGuardService.instance.mode ==
                             WifiGuardMode.vpnKillSwitch,
                         onChanged: (v) {
@@ -745,7 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (isMobile()) ...[
                       SwitchListTile(
                         secondary: const Icon(Icons.battery_saver),
-                        title: const Text('Battery Saver Mode'),
+                        title: Text(localizations.batterySaverMode),
                         subtitle: _featureSubtitle('enableBatterySaver', flags),
                         value: flags.enableBatterySaver,
                         onChanged: (v) => flags.setEnableBatterySaver(v),
@@ -754,14 +775,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ListTile(
                           contentPadding:
                               const EdgeInsets.only(left: 72, right: 16),
-                          title: const Text('Battery Threshold'),
+                          title: Text(localizations.batteryThreshold),
                           subtitle:
                               Text('${BatteryService.instance.threshold}%'),
                           onTap: () {
                             showDialog<void>(
                               context: context,
                               builder: (context) => NumberInputDialog(
-                                title: 'Battery Threshold (%)',
+                                title:
+                                    localizations.batteryThresholdDialogTitle,
                                 currentValue: BatteryService.instance.threshold,
                                 onSave: (val) {
                                   BatteryService.instance.setThreshold(val);
@@ -775,7 +797,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       leading:
                           const Icon(Icons.settings_backup_restore_rounded),
-                      title: const Text('Backup & Restore Settings'),
+                      title: Text(localizations.backupAndRestoreSettings),
                       onTap: () => context.push('/backup'),
                     ),
                   ],

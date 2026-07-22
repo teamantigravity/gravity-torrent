@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gravity_torrent/services/rss_service.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class RssScreen extends StatefulWidget {
   const RssScreen({super.key});
@@ -37,7 +38,7 @@ class _RssScreenState extends State<RssScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add RSS feed'),
+        title: Text(AppLocalizations.of(context)!.addRssFeed),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -67,7 +68,7 @@ class _RssScreenState extends State<RssScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -91,7 +92,7 @@ class _RssScreenState extends State<RssScreen> {
               if (ctx.mounted) Navigator.of(ctx).pop();
               await _load();
             },
-            child: const Text('Add'),
+            child: Text(AppLocalizations.of(context)!.add),
           ),
         ],
       ),
@@ -211,7 +212,8 @@ class _RssScreenState extends State<RssScreen> {
                                 ),
                                 subtitle: feed.keyword.isNotEmpty
                                     ? Text('Filter: "${feed.keyword}"')
-                                    : const Text('All items'),
+                                    : Text(
+                                        AppLocalizations.of(context)!.allItems),
                                 value: feed.enabled,
                                 onChanged: (v) async {
                                   await RssService.instance.updateFeedAt(

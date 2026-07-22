@@ -41,7 +41,7 @@ class _FiltersDialogState extends State<FiltersDialog> {
     return Consumer<TorrentsModel>(
       builder: (context, torrentsModel, child) {
         return AlertDialog(
-          title: const Text('Filters'),
+          title: Text(localizations.filters),
           content: torrentsModel.labels.isEmpty
               ? Text(localizations.noTagsAddedYet)
               : Wrap(

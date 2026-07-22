@@ -2,7 +2,7 @@ name: gravity_torrent
 description: "Gravity Torrent — stream and download torrents on all your devices"
 
 publish_to: "none"
-version: 1.0.1+2
+version: 2.0.0+3
 
 environment:
   sdk: ^3.5.3

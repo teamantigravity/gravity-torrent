@@ -4,6 +4,7 @@ import 'package:gravity_torrent/services/remote_control_service.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class RemoteControlScreen extends StatefulWidget {
   const RemoteControlScreen({super.key});
@@ -45,10 +46,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
-          : AppBar(title: const Text('Local remote control')),
+          : AppBar(title: Text(localizations.localRemoteControl)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -66,7 +68,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
             const SizedBox(height: 24),
             SwitchListTile(
               secondary: const Icon(Icons.wifi_tethering),
-              title: const Text('Remote control server'),
+              title: Text(localizations.remoteControlServer),
               subtitle: Text(
                 _running ? 'Running on $_address' : 'Server is off',
               ),

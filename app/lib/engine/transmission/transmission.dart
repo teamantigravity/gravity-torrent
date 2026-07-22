@@ -726,4 +726,18 @@ class TransmissionEngine extends Engine {
     await flutter_libtransmission.requestAsync(jsonEncode(request));
     requestCheckpoint();
   }
+
+  @override
+  Future<int> updateBlocklist() async {
+    final responseRaw = await flutter_libtransmission.requestAsync(
+      jsonEncode({'method': 'blocklist-update'}),
+    );
+    try {
+      final decoded = jsonDecode(responseRaw) as Map<String, dynamic>;
+      final args = decoded['arguments'] as Map<String, dynamic>?;
+      return (args?['blocklist-size'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
 }

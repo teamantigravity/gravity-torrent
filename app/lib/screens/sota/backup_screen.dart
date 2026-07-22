@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gravity_torrent/services/backup_service.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
 import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 /// Screen for exporting and importing Gravity Torrent settings.
 class BackupScreen extends StatefulWidget {
@@ -65,11 +66,11 @@ class _BackupScreenState extends State<BackupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Import'),
+            child: Text(AppLocalizations.of(context)!.importAction),
           ),
         ],
       ),
@@ -103,11 +104,12 @@ class _BackupScreenState extends State<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
-          : AppBar(title: const Text('Backup & Restore')),
+          : AppBar(title: Text(localizations.backupAndRestore)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -148,7 +150,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     const SizedBox(height: 16),
                     FilledButton.icon(
                       icon: const Icon(Icons.save_alt),
-                      label: const Text('Export'),
+                      label: Text(localizations.export),
                       onPressed: _busy ? null : _export,
                     ),
                   ],
@@ -205,7 +207,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.folder_open),
-                      label: const Text('Pick backup file'),
+                      label: Text(localizations.pickBackupFile),
                       onPressed: _busy ? null : _import,
                     ),
                   ],

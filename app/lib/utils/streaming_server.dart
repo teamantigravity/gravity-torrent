@@ -21,6 +21,8 @@ class StreamingServer {
   final torrent_file.File torrentFile;
   late File _file;
 
+  final bool allowNetworkAccess;
+
   CancelableOperation? _cancelableOperation;
 
   StreamingServer({
@@ -28,11 +30,15 @@ class StreamingServer {
     required this.bufferSize,
     required this.torrent,
     required this.torrentFile,
+    this.allowNetworkAccess = false,
   });
 
   Future<void> start() async {
     _file = File(filePath);
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final address = allowNetworkAccess
+        ? InternetAddress.anyIPv4
+        : InternetAddress.loopbackIPv4;
+    final server = await HttpServer.bind(address, 0);
     _server = server;
     if (_stopped) {
       // stop() was called before bind completed.
@@ -90,7 +96,25 @@ class StreamingServer {
     if (server == null) {
       throw StateError('Streaming server is not running');
     }
-    return 'http://${server.address.host}:${server.port}';
+    var host = server.address.host;
+    if (host == '0.0.0.0' || host == '::') {
+      try {
+        final interfaces = await NetworkInterface.list(
+          type: InternetAddressType.IPv4,
+          includeLinkLocal: false,
+        );
+        for (final interface in interfaces) {
+          for (final addr in interface.addresses) {
+            if (!addr.isLoopback) {
+              host = addr.address;
+              break;
+            }
+          }
+          if (host != '0.0.0.0' && host != '::') break;
+        }
+      } catch (_) {}
+    }
+    return 'http://$host:${server.port}';
   }
 
   Future<void> _handleRequest(
