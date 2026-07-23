@@ -187,6 +187,9 @@
   "idleSeedingLimitDescription": "Stop seeding torrents that have had no activity",
   "idleSeedingLimit": "Idle seeding limit (minutes)",
   "notSet": "Not set",
+  "torrentNotes": "Notes",
+  "torrentNotesHint": "Add a private note about this torrent",
+  "editTorrentNotes": "Edit note",
   "minutesValue": "{count} minutes",
   "@minutesValue": {
     "placeholders": {

@@ -7,6 +7,7 @@ import 'package:duration/duration.dart';
 import 'package:gravity_torrent/ui/torrent_speed_chart.dart';
 import 'package:gravity_torrent/services/speed_history_service.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
+import 'package:gravity_torrent/services/torrent_notes_service.dart';
 
 class DetailsTab extends StatefulWidget {
   final Torrent torrent;
@@ -18,6 +19,67 @@ class DetailsTab extends StatefulWidget {
 }
 
 class _DetailsTabState extends State<DetailsTab> {
+  String _note = '';
+  bool _loadingNote = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNote();
+  }
+
+  @override
+  void didUpdateWidget(covariant DetailsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.torrent.id != widget.torrent.id) {
+      _loadNote();
+    }
+  }
+
+  Future<void> _loadNote() async {
+    setState(() => _loadingNote = true);
+    final note = await TorrentNotesService.instance.getNote(widget.torrent.id);
+    if (mounted) {
+      setState(() {
+        _note = note;
+        _loadingNote = false;
+      });
+    }
+  }
+
+  Future<void> _editNote() async {
+    final localizations = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: _note);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.torrentNotes),
+        content: TextField(
+          controller: controller,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          decoration: InputDecoration(
+            hintText: localizations.torrentNotesHint,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(localizations.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: Text(localizations.save),
+          ),
+        ],
+      ),
+    );
+    if (value != null) {
+      await TorrentNotesService.instance.setNote(widget.torrent.id, value);
+      await _loadNote();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -196,6 +258,24 @@ class _DetailsTabState extends State<DetailsTab> {
               );
             },
           ),
+        ),
+        ListTile(
+          title: Text(localizations.torrentNotes),
+          subtitle: Text(
+            _loadingNote
+                ? '...'
+                : _note.isEmpty
+                    ? localizations.notSet
+                    : _note,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.edit_note),
+            tooltip: localizations.editTorrentNotes,
+            onPressed: _editNote,
+          ),
+          onTap: _editNote,
         ),
       ],
     );

@@ -36,6 +36,7 @@ import 'package:gravity_torrent/services/scheduler_service.dart';
 import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/services/battery_service.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
+import 'package:gravity_torrent/services/torrent_notes_service.dart';
 import 'package:gravity_torrent/services/analytics_service.dart';
 import 'package:gravity_torrent/services/blocklist_service.dart';
 
@@ -95,6 +96,12 @@ Future<void> startServices(FeatureFlagsModel flags) async {
     await SeedRatioService.instance.load();
   } catch (e) {
     if (kDebugMode) debugPrint('SeedRatioService init failed: $e');
+  }
+
+  try {
+    await TorrentNotesService.instance.load();
+  } catch (e) {
+    if (kDebugMode) debugPrint('TorrentNotesService init failed: $e');
   }
 
   try {

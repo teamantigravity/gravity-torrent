@@ -22,19 +22,20 @@ class AnalyticsOptInDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Help Improve Gravity Torrent'),
+      title: const Text('Local data usage dashboard'),
       content: const Text(
-        'We value your privacy. Would you like to opt-in to anonymous analytics to help us improve the app? '
-        'We collect crash reports and non-identifying usage statistics. You can change this later in Settings.',
+        'Gravity Torrent can show a data usage dashboard with download and upload totals. '
+        'This information is stored on your device only and is not uploaded or shared. '
+        'You can change this later in Settings.',
       ),
       actions: [
         TextButton(
           onPressed: () => _handleRefuseClick(context), 
-          child: const Text('No Thanks')
+          child: const Text('Not now')
         ),
         FilledButton(
           onPressed: () => _handleAcceptClick(context),
-          child: const Text('Opt-In'),
+          child: const Text('Enable'),
         ),
       ],
     );
