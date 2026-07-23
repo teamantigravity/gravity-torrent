@@ -16,7 +16,7 @@ import 'package:gravity_torrent/services/speed_history_service.dart';
 
 const refreshIntervalSeconds = 5;
 
-enum Sort { addedDate, progress, size }
+enum Sort { addedDate, progress, size, eta }
 
 class Filters {
   Set<String> labels = {};
@@ -194,6 +194,12 @@ class TorrentsModel extends ChangeNotifier {
         torrentsSorted.sort((a, b) => a.progress.compareTo(b.progress));
       case Sort.size:
         torrentsSorted.sort((a, b) => a.size.compareTo(b.size));
+      case Sort.eta:
+        torrentsSorted.sort((a, b) {
+          final etaA = a.eta < 0 ? double.infinity : a.eta;
+          final etaB = b.eta < 0 ? double.infinity : b.eta;
+          return etaA.compareTo(etaB);
+        });
     }
 
     return reverseSort ? torrentsSorted.reversed.toList() : torrentsSorted;

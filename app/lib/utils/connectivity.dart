@@ -26,15 +26,16 @@ void startConnectivityCheck(BuildContext context) {
         ),
       );
     } else {
-      // Close previous snackbar
+      // Close previous snackbar and notify recovery only if we were offline
       if (_activeSnackBarController != null) {
         _activeSnackBarController?.close();
-        _activeSnackBarController = ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('You are back online'),
             backgroundColor: Colors.lightGreen,
           ),
         );
+        _activeSnackBarController = null;
       }
     }
   });

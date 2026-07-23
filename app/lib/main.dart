@@ -48,9 +48,16 @@ ColorScheme _buildColorScheme(Brightness brightness, ColorScheme? dynamic) {
       );
 }
 
-ThemeData _buildTheme(ColorScheme colorScheme) {
+ThemeData _buildTheme(ColorScheme colorScheme, {bool trueBlack = false}) {
+  final adjustedScheme = trueBlack && colorScheme.brightness == Brightness.dark
+      ? colorScheme.copyWith(surface: Colors.black)
+      : colorScheme;
+
   return ThemeData(
-    colorScheme: colorScheme,
+    colorScheme: adjustedScheme,
+    scaffoldBackgroundColor: trueBlack && colorScheme.brightness == Brightness.dark
+        ? Colors.black
+        : adjustedScheme.surface,
     useMaterial3: true,
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: Colors.transparent,
@@ -60,7 +67,7 @@ ThemeData _buildTheme(ColorScheme colorScheme) {
       indicatorColor: Colors.transparent,
     ),
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: adjustedScheme.surface,
     ),
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.0)),
@@ -390,8 +397,8 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
                 return MaterialApp.router(
                   title: 'Gravity Torrent',
-                  theme: _buildTheme(lightColorScheme),
-                  darkTheme: _buildTheme(darkColorScheme),
+                  theme: _buildTheme(lightColorScheme, trueBlack: app.amoledBlack),
+                  darkTheme: _buildTheme(darkColorScheme, trueBlack: app.amoledBlack),
                   themeMode: app.theme,
                   routerConfig: router,
                   localizationsDelegates:

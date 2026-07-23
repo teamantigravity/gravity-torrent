@@ -67,6 +67,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   BuildContext? _subsLoadingDialogContext;
   bool _disposed = false;
   final GlobalKey _videoComponentKey = GlobalKey();
+  Timer? _sleepTimer;
 
   void _closeVideoLoadingDialog() {
     if (_videoLoadingDialogContext != null && _videoLoadingDialogContext!.mounted) {
@@ -93,6 +94,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   @override
   void dispose() {
     _disposed = true;
+    _sleepTimer?.cancel();
     unawaited(_disposePlayer());
     super.dispose();
   }
@@ -361,6 +363,72 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     );
   }
 
+  onPlaybackSpeedClick() {
+    if (player == null) return;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: const Text('Playback Speed'),
+          children: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((rate) {
+            return SimpleDialogOption(
+              onPressed: () {
+                player!.setRate(rate);
+                Navigator.pop(context);
+              },
+              child: Text('${rate}x'),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  onSleepTimerClick() {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return SimpleDialog(
+          title: const Text('Sleep Timer'),
+          children: [
+            SimpleDialogOption(
+              onPressed: () {
+                _sleepTimer?.cancel();
+                _sleepTimer = null;
+                Navigator.pop(dialogContext);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sleep timer cancelled')),
+                  );
+                }
+              },
+              child: const Text('Off'),
+            ),
+            ...[15, 30, 45, 60, 90, 120].map((minutes) {
+              return SimpleDialogOption(
+                onPressed: () {
+                  _sleepTimer?.cancel();
+                  _sleepTimer = Timer(Duration(minutes: minutes), () {
+                    if (mounted && Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                  });
+                  Navigator.pop(dialogContext);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Sleep timer set for $minutes minutes')),
+                    );
+                  }
+                },
+                child: Text('$minutes minutes'),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildBackButton() {
     return IconButton(
       icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -408,6 +476,20 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     return MaterialDesktopCustomButton(
       icon: const Icon(Icons.multitrack_audio),
       onPressed: onAudioTrackClick,
+    );
+  }
+
+  Widget _buildPlaybackSpeedButton() {
+    return MaterialDesktopCustomButton(
+      icon: const Icon(Icons.speed),
+      onPressed: onPlaybackSpeedClick,
+    );
+  }
+
+  Widget _buildSleepTimerButton() {
+    return MaterialDesktopCustomButton(
+      icon: const Icon(Icons.snooze),
+      onPressed: onSleepTimerClick,
     );
   }
 
@@ -464,6 +546,8 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       const MaterialPositionIndicator(),
       const Spacer(),
       _buildCastButton(),
+      _buildSleepTimerButton(),
+      _buildPlaybackSpeedButton(),
       _buildSubtitlesButton(),
       _buildAudioTrackButton(),
       _buildPipButton(),
@@ -478,6 +562,8 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       const MaterialDesktopVolumeButton(),
       const MaterialDesktopPositionIndicator(),
       const Spacer(),
+      _buildSleepTimerButton(),
+      _buildPlaybackSpeedButton(),
       _buildSubtitlesButton(),
       _buildAudioTrackButton(),
       _buildPipButton(),

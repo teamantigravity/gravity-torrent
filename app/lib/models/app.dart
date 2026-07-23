@@ -19,6 +19,7 @@ class AppModel extends ChangeNotifier {
   bool quitting = false;
   String locale = 'en';
   String version = '';
+  bool amoledBlack = false;
   bool _disposed = false;
 
   AppModel() {
@@ -48,6 +49,7 @@ class AppModel extends ChangeNotifier {
       checkForUpdate =
           await SharedPrefsStorage.getBool('checkForUpdate') ?? checkForUpdate;
       locale = await SharedPrefsStorage.getString('locale') ?? locale;
+      amoledBlack = await SharedPrefsStorage.getBool('amoledBlack') ?? amoledBlack;
 
       // Load app version
       try {
@@ -68,6 +70,12 @@ class AppModel extends ChangeNotifier {
     theme = value;
     notifyListeners();
     await SharedPrefsStorage.setString('theme', value.name);
+  }
+
+  void setAmoledBlack(bool value) async {
+    amoledBlack = value;
+    notifyListeners();
+    await SharedPrefsStorage.setBool('amoledBlack', value);
   }
 
   void setTermsOfUseAccepted(bool value) async {

@@ -515,6 +515,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: flags.useDynamicColor,
                     onChanged: (v) => flags.setUseDynamicColor(v),
                   ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.nightlight_round),
+                    title: const Text('AMOLED True Black'),
+                    subtitle: const Text('Uses pure black for dark theme backgrounds to save battery on OLED screens.'),
+                    value: app.amoledBlack,
+                    onChanged: (v) => app.setAmoledBlack(v),
+                  ),
                   ListTile(
                     onTap: () => showLocaleDialog(context),
                     leading: const Icon(Icons.language),

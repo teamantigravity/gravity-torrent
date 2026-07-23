@@ -140,9 +140,13 @@ class StreamingServer {
       if (kDebugMode) {
         debugPrint("streaming_server: Error processing request: $e");
       }
-      request.response.statusCode = HttpStatus.internalServerError;
+      try {
+        request.response.statusCode = HttpStatus.internalServerError;
+      } catch (_) {}
     } finally {
-      await request.response.close();
+      try {
+        await request.response.close();
+      } catch (_) {}
       cancelableCompleter.complete();
     }
   }

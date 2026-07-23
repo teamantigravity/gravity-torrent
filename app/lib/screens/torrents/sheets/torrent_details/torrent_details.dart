@@ -55,10 +55,10 @@ class TorrentDetailsModalSheetContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    return DefaultTabController(
-      length: 4, // Number of tabs
-      initialIndex: initialTab,
-      child: Expanded(
+    return Expanded(
+      child: DefaultTabController(
+        length: 4, // Number of tabs
+        initialIndex: initialTab,
         child: Material(
           child: Column(
             children: [

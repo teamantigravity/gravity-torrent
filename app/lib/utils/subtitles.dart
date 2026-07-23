@@ -136,16 +136,17 @@ String? _normalizeLanguageTag(String tag) {
 }
 
 List<File> getExternalSubtitles(File file, Torrent torrent) {
-  final slashesCount = countSlashesRegex(file.name);
-  final externalSubtitlesFiles = torrent.files
-      .where(
-        (f) =>
-            slashesCount == countSlashesRegex(f.name) &&
-            isSubtitleFileName(f.name),
-      )
-      .toList();
+  final dirname = file.name.contains('/')
+      ? file.name.substring(0, file.name.lastIndexOf('/'))
+      : '';
 
-  return externalSubtitlesFiles;
+  return torrent.files.where((f) {
+    if (!isSubtitleFileName(f.name)) return false;
+    final fDirname = f.name.contains('/')
+        ? f.name.substring(0, f.name.lastIndexOf('/'))
+        : '';
+    return fDirname == dirname;
+  }).toList();
 }
 
 Future<void> downloadSubtitles(

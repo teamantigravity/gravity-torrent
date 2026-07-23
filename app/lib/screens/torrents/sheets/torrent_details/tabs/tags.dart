@@ -11,6 +11,7 @@ class TagsTab extends StatelessWidget {
   const TagsTab({super.key, required this.torrent});
 
   _handleAddLabel(BuildContext context, String label) async {
+    if (torrent.labels?.contains(label) == true) return;
     TorrentBase torrentUpdate = TorrentBase(
       id: torrent.id,
       labels: [...torrent.labels ?? [], label],

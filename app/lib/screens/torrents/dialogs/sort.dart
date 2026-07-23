@@ -77,6 +77,12 @@ class _SortDialogState extends State<SortDialog> {
                 groupValue: groupValue,
                 onChanged: _handleChange,
               ),
+              RadioListTile<Sort>(
+                title: const Text('ETA'),
+                value: Sort.eta,
+                groupValue: groupValue,
+                onChanged: _handleChange,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [

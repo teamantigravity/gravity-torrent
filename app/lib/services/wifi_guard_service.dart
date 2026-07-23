@@ -120,8 +120,6 @@ class WifiGuardService {
             );
           }
           await _pauseAll();
-        } else if (_pausedByGuard.isNotEmpty) {
-          await _resumeAll();
         }
         _lastIpAddresses = currentIps;
       }

@@ -161,7 +161,7 @@ class RssService {
       stopPolling();
       return;
     }
-    for (final feed in _feeds) {
+    for (final feed in List.of(_feeds)) {
       if (!feed.enabled) continue;
       try {
         await _pollFeed(feed);
