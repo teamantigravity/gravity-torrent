@@ -12,7 +12,7 @@ Future<bool> checkAndRequestStoragePermissions(BuildContext context) async {
 
   final sdkVersion = await getAndroidSdkVersion();
 
-  if (sdkVersion <= 29) {
+  if (sdkVersion != null && sdkVersion <= 29) {
     if (await Permission.storage.isGranted) return true;
 
     var isPermanentlyDenied = await Permission.storage.isPermanentlyDenied;

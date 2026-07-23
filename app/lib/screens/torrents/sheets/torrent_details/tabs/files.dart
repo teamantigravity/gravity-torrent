@@ -160,9 +160,9 @@ class _FilesTabState extends State<FilesTab> {
             itemBuilder: (context, index) {
               var file = displayedFiles[index];
 
-              var percent = file.length > 0
+              final percent = file.length > 0
                   ? (file.bytesCompleted / file.length * 100).floor()
-                  : 100;
+                  : null;
 
               var completed = file.bytesCompleted == file.length;
 
@@ -176,9 +176,11 @@ class _FilesTabState extends State<FilesTab> {
                 title: Text(file.name),
                 subtitle: Row(
                   children: [
-                    percent < 100
-                        ? Text('${percent.toString()} %')
-                        : const Icon(Icons.download_done, size: 16),
+                    percent == null
+                        ? const Text('—')
+                        : percent < 100
+                            ? Text('${percent.toString()} %')
+                            : const Icon(Icons.download_done, size: 16),
                     Text(' • ${prettyBytes(file.length.toDouble())}'),
                   ],
                 ),

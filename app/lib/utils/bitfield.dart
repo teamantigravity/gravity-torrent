@@ -5,6 +5,7 @@ import 'dart:typed_data';
 /// or empty bitfield) default to `false` so callers can safely index the full
 /// [pieceCount] range without a [RangeError].
 List<bool> convertBitfieldToBoolList(Uint8List bitfield, int pieceCount) {
+  assert(pieceCount >= 0, 'pieceCount should never be negative');
   if (pieceCount <= 0) return [];
   final List<bool> piecesAsBool = List<bool>.filled(pieceCount, false);
   int pieceIndex = 0;

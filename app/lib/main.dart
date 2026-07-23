@@ -55,9 +55,10 @@ ThemeData _buildTheme(ColorScheme colorScheme, {bool trueBlack = false}) {
 
   return ThemeData(
     colorScheme: adjustedScheme,
-    scaffoldBackgroundColor: trueBlack && colorScheme.brightness == Brightness.dark
-        ? Colors.black
-        : adjustedScheme.surface,
+    scaffoldBackgroundColor:
+        trueBlack && colorScheme.brightness == Brightness.dark
+            ? Colors.black
+            : adjustedScheme.surface,
     useMaterial3: true,
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: Colors.transparent,
@@ -284,6 +285,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
     with WidgetsBindingObserver, WindowListener {
   bool _unlocked = false;
   bool _wasLocked = false;
+  Timer? _lockDebounceTimer;
 
   @override
   void initState() {
@@ -296,6 +298,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
   @override
   void dispose() {
+    _lockDebounceTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     if (isDesktop()) {
       windowManager.removeListener(this);
@@ -341,6 +344,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
     switch (state) {
       case AppLifecycleState.resumed:
+        _lockDebounceTimer?.cancel();
         if (kDebugMode) debugPrint("Application resumed");
         unawaited(processPendingNotificationAction());
         break;
@@ -350,10 +354,16 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
-        if (_unlocked) setState(() => _unlocked = false);
+        if (_unlocked) {
+          _lockDebounceTimer?.cancel();
+          _lockDebounceTimer = Timer(const Duration(seconds: 5), () {
+            if (mounted) setState(() => _unlocked = false);
+          });
+        }
         break;
 
       case AppLifecycleState.detached:
+        _lockDebounceTimer?.cancel();
         unawaited(_shutdownServices());
         break;
     }
@@ -397,8 +407,10 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
                 return MaterialApp.router(
                   title: 'Gravity Torrent',
-                  theme: _buildTheme(lightColorScheme, trueBlack: app.amoledBlack),
-                  darkTheme: _buildTheme(darkColorScheme, trueBlack: app.amoledBlack),
+                  theme:
+                      _buildTheme(lightColorScheme, trueBlack: app.amoledBlack),
+                  darkTheme:
+                      _buildTheme(darkColorScheme, trueBlack: app.amoledBlack),
                   themeMode: app.theme,
                   routerConfig: router,
                   localizationsDelegates:

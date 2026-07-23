@@ -13,7 +13,8 @@ class StoragePermissionDialog extends StatelessWidget {
     if (isPermanentlyDenied) {
       openAppSettings();
     } else {
-      if (Platform.isAndroid && await getAndroidSdkVersion() > 29) {
+      final sdkVersion = await getAndroidSdkVersion();
+      if (Platform.isAndroid && sdkVersion != null && sdkVersion > 29) {
         await Permission.manageExternalStorage.request();
       } else {
         await Permission.storage.request();

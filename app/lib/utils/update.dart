@@ -90,7 +90,8 @@ Future<bool> isDistributedFromAppStore() async {
         final windowsStore = WindowsStoreApi();
         final license = await windowsStore.getAppLicenseAsync();
         return license.isActive;
-      } catch (_) {
+      } catch (e) {
+        if (kDebugMode) debugPrint('WindowsStore license check failed: $e');
         return false;
       }
     }
@@ -105,7 +106,8 @@ Future<bool> isDistributedFromAppStore() async {
       Source.UNKNOWN => false,
       _ => true,
     };
-  } catch (_) {
+  } catch (e) {
+    if (kDebugMode) debugPrint('StoreChecker failed: $e');
     return false;
   }
 }
