@@ -195,6 +195,8 @@
   "recentDownloadDirectories": "Recent destinations",
   "copyMagnetLink": "Copy magnet link",
   "magnetLinkCopied": "Magnet link copied to clipboard",
+  "pasteTorrentLink": "Paste torrent link",
+  "clipboardEmpty": "Clipboard is empty",
   "minutesValue": "{count} minutes",
   "@minutesValue": {
     "placeholders": {

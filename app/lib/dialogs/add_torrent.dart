@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:content_resolver/content_resolver.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/session.dart';
@@ -231,6 +232,33 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
     });
   }
 
+  Future<void> _handlePasteFromClipboard() async {
+    final localizations = AppLocalizations.of(context)!;
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = data?.text;
+      if (text == null || text.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.clipboardEmpty),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      _torrentLinkController.text = text.trim();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.clipboardEmpty),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   Widget _buildRecentDirectoriesChipRow() {
     final localizations = AppLocalizations.of(context)!;
     final recentDirs = RecentDownloadDirectoriesService.instance.directories;
@@ -275,12 +303,21 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         prefixIcon: const Icon(Icons.link),
         hintText: localizations.torrentLinkHint,
         label: Text(localizations.torrentLinkLabel),
-        suffixIcon: _torrentLinkController.text.isNotEmpty
-            ? IconButton(
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: localizations.pasteTorrentLink,
+              onPressed: _handlePasteFromClipboard,
+              icon: const Icon(Icons.paste),
+            ),
+            if (_torrentLinkController.text.isNotEmpty)
+              IconButton(
                 onPressed: () => _torrentLinkController.clear(),
                 icon: const Icon(Icons.clear),
-              )
-            : null,
+              ),
+          ],
+        ),
       ),
     );
   }
