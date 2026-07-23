@@ -87,6 +87,15 @@ class AppLockService {
     }
   }
 
+  /// Stops an in-progress biometric authentication prompt.
+  Future<void> stopBiometricAuthentication() async {
+    try {
+      await _localAuth.stopAuthentication();
+    } catch (e) {
+      if (kDebugMode) debugPrint('AppLockService stop biometric failed: $e');
+    }
+  }
+
   Future<bool> authenticateWithPin(String pin) async {
     try {
       return await PinService.instance.verifyPin(pin);

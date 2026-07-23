@@ -29,7 +29,12 @@ class _LockScreenState extends State<LockScreen> {
     if (!mounted) return;
 
     if (AppLockService.instance.useBiometrics && _biometricsAvailable) {
-      await _tryBiometricUnlock();
+      // Defer the biometric prompt until after the first frame is drawn so
+      // the activity window is fully attached. Starting it during initState
+      // can cause the prompt to fail on some Android versions.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _tryBiometricUnlock();
+      });
     } else {
       setState(() {
         _isLoading = false;
@@ -92,6 +97,7 @@ class _LockScreenState extends State<LockScreen> {
 
   @override
   void dispose() {
+    AppLockService.instance.stopBiometricAuthentication();
     _pinController.dispose();
     super.dispose();
   }
