@@ -54,6 +54,8 @@ class AnalyticsService {
   bool _loaded = false;
   Map<int, int> _lastDownloadedByTorrent = {};
   Map<int, int> _lastUploadedByTorrent = {};
+  int? _lastDownloadedTotal;
+  int? _lastUploadedTotal;
 
   @visibleForTesting
   void reset() {
@@ -61,6 +63,8 @@ class AnalyticsService {
     _history = [];
     _lastDownloadedByTorrent = {};
     _lastUploadedByTorrent = {};
+    _lastDownloadedTotal = null;
+    _lastUploadedTotal = null;
   }
 
   Future<void> load() async {
@@ -103,13 +107,47 @@ class AnalyticsService {
     await SharedPrefsStorage.setString(_storageKey, raw);
   }
 
-  /// Record the latest cumulative totals. The delta since the last sample is
-  /// added to today's bucket.
-  Future<void> recordTorrentStats(List<dynamic> torrents) async {
+  /// Record the latest cumulative session totals. The delta since the last
+  /// sample is added to today's bucket.
+  Future<void> recordTotals({
+    required int downloadedBytes,
+    required int uploadedBytes,
+  }) async {
     await load();
-    final today = DateTime.now();
-    final key = DateTime(today.year, today.month, today.day);
 
+    int deltaDown = 0;
+    int deltaUp = 0;
+
+    final lastD = _lastDownloadedTotal;
+    final lastU = _lastUploadedTotal;
+
+    if (lastD == null) {
+      // First sample for this session, establish the baseline.
+    } else if (downloadedBytes >= lastD) {
+      deltaDown = downloadedBytes - lastD;
+    } else {
+      // Counter reset: treat the new total as fresh progress.
+      deltaDown = downloadedBytes;
+    }
+
+    if (lastU == null) {
+      // First sample for this session, establish the baseline.
+    } else if (uploadedBytes >= lastU) {
+      deltaUp = uploadedBytes - lastU;
+    } else {
+      // Counter reset: treat the new total as fresh progress.
+      deltaUp = uploadedBytes;
+    }
+
+    _lastDownloadedTotal = downloadedBytes;
+    _lastUploadedTotal = uploadedBytes;
+
+    await _recordDeltas(deltaDown, deltaUp);
+  }
+
+  /// Record the latest cumulative per-torrent totals. The aggregate delta since
+  /// the last sample is added to today's bucket.
+  Future<void> recordTorrentStats(List<dynamic> torrents) async {
     int deltaDown = 0;
     int deltaUp = 0;
 
@@ -144,6 +182,14 @@ class AnalyticsService {
     final currentIds = torrents.map((t) => t.id as int).toSet();
     _lastDownloadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
     _lastUploadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
+
+    await _recordDeltas(deltaDown, deltaUp);
+  }
+
+  Future<void> _recordDeltas(int deltaDown, int deltaUp) async {
+    await load();
+    final now = DateTime.now();
+    final key = DateTime(now.year, now.month, now.day);
 
     // Keep only the last [_maxDays] days
     final excess = _history.length - _maxDays;

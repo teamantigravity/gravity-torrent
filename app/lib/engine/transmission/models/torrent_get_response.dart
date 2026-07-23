@@ -23,10 +23,10 @@ class TorrentGetResponseArguments {
   TorrentGetResponseArguments.fromJson(Map<String, dynamic> json)
       : torrents = json['torrents'] is List<dynamic>
             ? (json['torrents'] as List<dynamic>)
-                .where((j) => j is Map)
+                .whereType<Map>()
                 .map(
                   (j) => TransmissionTorrentModel.fromJson(
-                    Map<String, dynamic>.from(j as Map),
+                    Map<String, dynamic>.from(j),
                   ),
                 )
                 .toList()

@@ -72,14 +72,14 @@ class _MaximumActiveDownloadEditorState extends State<PeerPortDialog> {
       ),
       actions: <Widget>[
         TextButton(
-          child: Text(localizations.cancel),
           onPressed: () {
             Navigator.of(context).pop();
           },
+          child: Text(localizations.cancel),
         ),
         TextButton(
-          child: Text(localizations.save),
           onPressed: handleSave,
+          child: Text(localizations.save),
         ),
       ],
     );
