@@ -13,6 +13,39 @@ import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/services/battery_service.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
+/// Feature toggles used by the app and remote-config kill-switch.
+enum Feature {
+  useDynamicColor,
+  useEnhancedNotifications,
+  usePipBackgroundAudio,
+  enableRemoteControl,
+  enableAnalytics,
+  enableAppLock,
+  enableShortcuts,
+  enableHaptic,
+  enableScheduler,
+  enableQuota,
+  enableRssAutoDownload,
+  enableWifiOnly,
+  enableBatterySaver,
+}
+
+const _featureDefaults = <Feature, bool>{
+  Feature.useDynamicColor: true,
+  Feature.useEnhancedNotifications: true,
+  Feature.usePipBackgroundAudio: true,
+  Feature.enableRemoteControl: false,
+  Feature.enableAnalytics: false,
+  Feature.enableAppLock: false,
+  Feature.enableShortcuts: false,
+  Feature.enableHaptic: false,
+  Feature.enableScheduler: false,
+  Feature.enableQuota: false,
+  Feature.enableRssAutoDownload: false,
+  Feature.enableWifiOnly: false,
+  Feature.enableBatterySaver: false,
+};
+
 /// Persistent, user-controllable feature flags for SOTA cross-platform
 /// features, combined with a remote kill-switch from [RemoteConfigService].
 ///
@@ -21,22 +54,10 @@ import 'package:gravity_torrent/storage/shared_preferences.dart';
 /// disables a feature, the effective state becomes `false` regardless of the
 /// local toggle. This lets new features be rolled back in an emergency.
 class FeatureFlagsModel extends ChangeNotifier {
-  bool _useDynamicColor = true;
-  bool _useEnhancedNotifications = true;
-  bool _usePipBackgroundAudio = true;
-  bool _enableRemoteControl = false;
-  bool _enableAnalytics = false;
-  bool _enableAppLock = false;
-  bool _enableShortcuts = false;
-  bool _enableHaptic = false;
-  bool _enableScheduler = false;
-  bool _enableQuota = false;
-  bool _enableRssAutoDownload = false;
-  bool _enableWifiOnly = false;
-  bool _enableBatterySaver = false;
   bool loaded = false;
   bool _disposed = false;
   late final Future<void> _initialization;
+  final Map<Feature, bool> _values = {};
 
   FeatureFlagsModel() {
     _initialization = _load();
@@ -52,27 +73,24 @@ class FeatureFlagsModel extends ChangeNotifier {
     super.dispose();
   }
 
-  bool _isEnabled(String key, bool localValue) =>
-      localValue && RemoteConfigService.instance.isFeatureEnabled(key);
+  bool isEnabled(Feature feature) =>
+      (_values[feature] ?? _featureDefaults[feature]!) &&
+      RemoteConfigService.instance.isFeatureEnabled(feature.name);
 
-  bool get useDynamicColor => _isEnabled('useDynamicColor', _useDynamicColor);
+  bool get useDynamicColor => isEnabled(Feature.useDynamicColor);
   bool get useEnhancedNotifications =>
-      _isEnabled('useEnhancedNotifications', _useEnhancedNotifications);
-  bool get usePipBackgroundAudio =>
-      _isEnabled('usePipBackgroundAudio', _usePipBackgroundAudio);
-  bool get enableRemoteControl =>
-      _isEnabled('enableRemoteControl', _enableRemoteControl);
-  bool get enableAnalytics => _isEnabled('enableAnalytics', _enableAnalytics);
-  bool get enableAppLock => _isEnabled('enableAppLock', _enableAppLock);
-  bool get enableShortcuts => _isEnabled('enableShortcuts', _enableShortcuts);
-  bool get enableHaptic => _isEnabled('enableHaptic', _enableHaptic);
-  bool get enableScheduler => _isEnabled('enableScheduler', _enableScheduler);
-  bool get enableQuota => _isEnabled('enableQuota', _enableQuota);
-  bool get enableRssAutoDownload =>
-      _isEnabled('enableRssAutoDownload', _enableRssAutoDownload);
-  bool get enableWifiOnly => _isEnabled('enableWifiOnly', _enableWifiOnly);
-  bool get enableBatterySaver =>
-      _isEnabled('enableBatterySaver', _enableBatterySaver);
+      isEnabled(Feature.useEnhancedNotifications);
+  bool get usePipBackgroundAudio => isEnabled(Feature.usePipBackgroundAudio);
+  bool get enableRemoteControl => isEnabled(Feature.enableRemoteControl);
+  bool get enableAnalytics => isEnabled(Feature.enableAnalytics);
+  bool get enableAppLock => isEnabled(Feature.enableAppLock);
+  bool get enableShortcuts => isEnabled(Feature.enableShortcuts);
+  bool get enableHaptic => isEnabled(Feature.enableHaptic);
+  bool get enableScheduler => isEnabled(Feature.enableScheduler);
+  bool get enableQuota => isEnabled(Feature.enableQuota);
+  bool get enableRssAutoDownload => isEnabled(Feature.enableRssAutoDownload);
+  bool get enableWifiOnly => isEnabled(Feature.enableWifiOnly);
+  bool get enableBatterySaver => isEnabled(Feature.enableBatterySaver);
 
   /// True when the remote config explicitly disables this feature.
   bool isRemotelyDisabled(String key) =>
@@ -81,29 +99,10 @@ class FeatureFlagsModel extends ChangeNotifier {
 
   Future<void> _load() async {
     try {
-      _useDynamicColor =
-          await SharedPrefsStorage.getBool('useDynamicColor') ?? true;
-      _useEnhancedNotifications =
-          await SharedPrefsStorage.getBool('useEnhancedNotifications') ?? true;
-      _usePipBackgroundAudio =
-          await SharedPrefsStorage.getBool('usePipBackgroundAudio') ?? true;
-      _enableRemoteControl =
-          await SharedPrefsStorage.getBool('enableRemoteControl') ?? false;
-      _enableAnalytics =
-          await SharedPrefsStorage.getBool('enableAnalytics') ?? false;
-      _enableAppLock = await SharedPrefsStorage.getBool('enableAppLock') ?? false;
-      _enableShortcuts =
-          await SharedPrefsStorage.getBool('enableShortcuts') ?? false;
-      _enableHaptic = await SharedPrefsStorage.getBool('enableHaptic') ?? false;
-      _enableScheduler =
-          await SharedPrefsStorage.getBool('enableScheduler') ?? false;
-      _enableQuota = await SharedPrefsStorage.getBool('enableQuota') ?? false;
-      _enableRssAutoDownload =
-          await SharedPrefsStorage.getBool('enableRssAutoDownload') ?? false;
-      _enableWifiOnly =
-          await SharedPrefsStorage.getBool('enableWifiOnly') ?? false;
-      _enableBatterySaver =
-          await SharedPrefsStorage.getBool('enableBatterySaver') ?? false;
+      for (final feature in Feature.values) {
+        _values[feature] = await SharedPrefsStorage.getBool(feature.name) ??
+            _featureDefaults[feature]!;
+      }
 
       try {
         await RemoteConfigService.instance.refresh();
@@ -125,36 +124,40 @@ class FeatureFlagsModel extends ChangeNotifier {
     }
   }
 
-  Future<void> setUseDynamicColor(bool value) async {
-    _useDynamicColor = value;
-    await SharedPrefsStorage.setBool('useDynamicColor', value);
-    if (!_disposed) notifyListeners();
-  }
-
-  Future<void> setUseEnhancedNotifications(bool value) async {
-    _useEnhancedNotifications = value;
-    await SharedPrefsStorage.setBool('useEnhancedNotifications', value);
-    if (!_disposed) notifyListeners();
-  }
-
-  Future<void> setUsePipBackgroundAudio(bool value) async {
-    _usePipBackgroundAudio = value;
-    await SharedPrefsStorage.setBool('usePipBackgroundAudio', value);
-    if (!_disposed) notifyListeners();
+  Future<void> _persist(Feature feature, bool value) async {
+    _values[feature] = value;
+    await SharedPrefsStorage.setBool(feature.name, value);
   }
 
   /// Effective boolean helper used by setters so service calls honour the
   /// remote kill-switch even when the user toggles the local preference.
-  bool _effective(String key, bool localValue) => RemoteConfigService.instance
-      .isFeatureEnabled(key, defaultValue: localValue);
+  bool _effective(Feature feature, bool localValue) =>
+      RemoteConfigService.instance.isFeatureEnabled(
+        feature.name,
+        defaultValue: localValue,
+      );
+
+  Future<void> setUseDynamicColor(bool value) async {
+    await _persist(Feature.useDynamicColor, value);
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> setUseEnhancedNotifications(bool value) async {
+    await _persist(Feature.useEnhancedNotifications, value);
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> setUsePipBackgroundAudio(bool value) async {
+    await _persist(Feature.usePipBackgroundAudio, value);
+    if (!_disposed) notifyListeners();
+  }
 
   Future<void> setEnableRemoteControl(bool value) async {
-    _enableRemoteControl = value;
-    await SharedPrefsStorage.setBool('enableRemoteControl', value);
+    await _persist(Feature.enableRemoteControl, value);
     if (!_disposed) notifyListeners();
     unawaited(
       RemoteControlService.instance
-          .setEnabled(_effective('enableRemoteControl', value))
+          .setEnabled(_effective(Feature.enableRemoteControl, value))
           .catchError((e) {
         if (kDebugMode) debugPrint('RemoteControlService toggle failed: $e');
         return null;
@@ -163,17 +166,15 @@ class FeatureFlagsModel extends ChangeNotifier {
   }
 
   Future<void> setEnableAnalytics(bool value) async {
-    _enableAnalytics = value;
-    await SharedPrefsStorage.setBool('enableAnalytics', value);
+    await _persist(Feature.enableAnalytics, value);
     if (!_disposed) notifyListeners();
   }
 
   Future<void> setEnableAppLock(bool value) async {
-    _enableAppLock = value;
-    await SharedPrefsStorage.setBool('enableAppLock', value);
+    await _persist(Feature.enableAppLock, value);
     try {
       await AppLockService.instance
-          .setEnabled(_effective('enableAppLock', value));
+          .setEnabled(_effective(Feature.enableAppLock, value));
     } catch (e, st) {
       if (kDebugMode) debugPrint('AppLockService toggle failed: $e\n$st');
     }
@@ -181,26 +182,23 @@ class FeatureFlagsModel extends ChangeNotifier {
   }
 
   Future<void> setEnableShortcuts(bool value) async {
-    _enableShortcuts = value;
-    await SharedPrefsStorage.setBool('enableShortcuts', value);
+    await _persist(Feature.enableShortcuts, value);
     if (!_disposed) notifyListeners();
-    ShortcutsService.setEnabled(_effective('enableShortcuts', value));
+    ShortcutsService.setEnabled(_effective(Feature.enableShortcuts, value));
   }
 
   Future<void> setEnableHaptic(bool value) async {
-    _enableHaptic = value;
-    await SharedPrefsStorage.setBool('enableHaptic', value);
+    await _persist(Feature.enableHaptic, value);
     if (!_disposed) notifyListeners();
-    HapticService.setEnabled(_effective('enableHaptic', value));
+    HapticService.setEnabled(_effective(Feature.enableHaptic, value));
   }
 
   Future<void> setEnableScheduler(bool value) async {
-    _enableScheduler = value;
-    await SharedPrefsStorage.setBool('enableScheduler', value);
+    await _persist(Feature.enableScheduler, value);
     if (!_disposed) notifyListeners();
     unawaited(
       SchedulerService.instance
-          .setEnabled(_effective('enableScheduler', value))
+          .setEnabled(_effective(Feature.enableScheduler, value))
           .catchError((e) {
         if (kDebugMode) debugPrint('SchedulerService toggle failed: $e');
         return null;
@@ -209,12 +207,11 @@ class FeatureFlagsModel extends ChangeNotifier {
   }
 
   Future<void> setEnableQuota(bool value) async {
-    _enableQuota = value;
-    await SharedPrefsStorage.setBool('enableQuota', value);
+    await _persist(Feature.enableQuota, value);
     if (!_disposed) notifyListeners();
     unawaited(
       QuotaService.instance
-          .setEnabled(_effective('enableQuota', value))
+          .setEnabled(_effective(Feature.enableQuota, value))
           .catchError((e) {
         if (kDebugMode) debugPrint('QuotaService toggle failed: $e');
         return null;
@@ -223,12 +220,11 @@ class FeatureFlagsModel extends ChangeNotifier {
   }
 
   Future<void> setEnableRssAutoDownload(bool value) async {
-    _enableRssAutoDownload = value;
-    await SharedPrefsStorage.setBool('enableRssAutoDownload', value);
+    await _persist(Feature.enableRssAutoDownload, value);
     if (!_disposed) notifyListeners();
     unawaited(
       RssService.instance
-          .setEnabled(_effective('enableRssAutoDownload', value))
+          .setEnabled(_effective(Feature.enableRssAutoDownload, value))
           .catchError((e) {
         if (kDebugMode) debugPrint('RssService toggle failed: $e');
         return null;
@@ -237,12 +233,11 @@ class FeatureFlagsModel extends ChangeNotifier {
   }
 
   Future<void> setEnableWifiOnly(bool value) async {
-    _enableWifiOnly = value;
-    await SharedPrefsStorage.setBool('enableWifiOnly', value);
+    await _persist(Feature.enableWifiOnly, value);
     if (!_disposed) notifyListeners();
     unawaited(
       WifiGuardService.instance
-          .setEnabled(_effective('enableWifiOnly', value))
+          .setEnabled(_effective(Feature.enableWifiOnly, value))
           .catchError((e) {
         if (kDebugMode) debugPrint('WifiGuardService toggle failed: $e');
         return null;
@@ -251,12 +246,11 @@ class FeatureFlagsModel extends ChangeNotifier {
   }
 
   Future<void> setEnableBatterySaver(bool value) async {
-    _enableBatterySaver = value;
-    await SharedPrefsStorage.setBool('enableBatterySaver', value);
+    await _persist(Feature.enableBatterySaver, value);
     if (!_disposed) notifyListeners();
     unawaited(
       BatteryService.instance
-          .setEnabled(_effective('enableBatterySaver', value))
+          .setEnabled(_effective(Feature.enableBatterySaver, value))
           .catchError((e) {
         if (kDebugMode) debugPrint('BatteryService toggle failed: $e');
         return null;

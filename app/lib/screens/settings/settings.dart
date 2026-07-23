@@ -144,6 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     final sessionModel = Provider.of<SessionModel>(context, listen: false);
     await sessionModel.session?.update(update);
+    if (!mounted) return;
     await sessionModel.fetchSession();
   }
 
@@ -153,9 +154,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _handleBlocklistToggle(bool value) =>
       _updateSession(SessionBase(blocklistEnabled: value));
 
-  void _handleBlocklistUrlSave(String url) => _updateSession(
-        SessionBase(blocklistUrl: url, blocklistEnabled: url.isNotEmpty),
-      );
+  void _handleBlocklistUrlSave(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isNotEmpty) {
+      final uri = Uri.tryParse(trimmed);
+      final isValid = uri != null &&
+          (uri.scheme == 'http' || uri.scheme == 'https') &&
+          uri.host.isNotEmpty;
+      if (!isValid) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enter a valid HTTP or HTTPS URL'),
+            ),
+          );
+        }
+        return;
+      }
+    }
+    _updateSession(
+      SessionBase(blocklistUrl: trimmed, blocklistEnabled: trimmed.isNotEmpty),
+    );
+  }
 
   void _handleDhtToggle(bool value) =>
       _updateSession(SessionBase(dhtEnabled: value));
@@ -518,7 +538,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SwitchListTile(
                     secondary: const Icon(Icons.nightlight_round),
                     title: const Text('AMOLED True Black'),
-                    subtitle: const Text('Uses pure black for dark theme backgrounds to save battery on OLED screens.'),
+                    subtitle: const Text(
+                        'Uses pure black for dark theme backgrounds to save battery on OLED screens.'),
                     value: app.amoledBlack,
                     onChanged: (v) => app.setAmoledBlack(v),
                   ),

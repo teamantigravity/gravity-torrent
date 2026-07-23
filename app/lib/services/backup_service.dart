@@ -40,6 +40,21 @@ const List<String> _backupKeys = [
 /// Backup version — increment when the schema changes in a breaking way.
 const int _backupVersion = 1;
 
+/// Migrates a backup from an older [_backupVersion] to the current schema.
+/// Currently a no-op because version 1 is the only known schema, but new
+/// migrations should be added here when the schema changes.
+Map<String, dynamic> _migrateBackup(
+    int version, Map<String, dynamic> settings) {
+  if (version < _backupVersion) {
+    if (kDebugMode) {
+      debugPrint(
+          'BackupService: migrating backup from version $version to $_backupVersion');
+    }
+    // Add future schema migrations here.
+  }
+  return settings;
+}
+
 /// Exports and imports Gravity Torrent settings as a JSON file.
 class BackupService {
   BackupService._();
@@ -108,7 +123,12 @@ class BackupService {
     }
 
     final settingsRaw = data['settings'];
-    final settings = settingsRaw is Map ? Map<String, dynamic>.from(settingsRaw) : <String, dynamic>{};
+    final settings = settingsRaw is Map
+        ? _migrateBackup(
+            version,
+            Map<String, dynamic>.from(settingsRaw),
+          )
+        : <String, dynamic>{};
     final restored = <String>[];
 
     for (final entry in settings.entries) {
