@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gravity_torrent/dialogs/remove_torrent.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
@@ -142,6 +143,23 @@ class TorrentListTile extends StatelessWidget {
                       tooltip: localizations.share,
                       onPressed: () => shareLink(context, torrent.magnetLink),
                       icon: const Icon(Icons.share),
+                    ),
+                    IconButton(
+                      tooltip: localizations.copyMagnetLink,
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: torrent.magnetLink),
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(localizations.magnetLinkCopied),
+                              backgroundColor: Colors.lightGreen,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy),
                     ),
                     if (isDesktop())
                       IconButton(

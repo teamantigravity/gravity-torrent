@@ -193,6 +193,8 @@
   "favorite": "Favorite",
   "unfavorite": "Unfavorite",
   "recentDownloadDirectories": "Recent destinations",
+  "copyMagnetLink": "Copy magnet link",
+  "magnetLinkCopied": "Magnet link copied to clipboard",
   "minutesValue": "{count} minutes",
   "@minutesValue": {
     "placeholders": {
