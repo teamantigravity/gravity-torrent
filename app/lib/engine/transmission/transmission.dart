@@ -220,6 +220,36 @@ class TransmissionTorrent extends Torrent {
   }
 
   @override
+  Future<void> startNow() async {
+    var request = TorrentActionRequest(
+      action: TorrentAction.startNow,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    engine.requestCheckpoint();
+  }
+
+  @override
+  Future<void> verify() async {
+    var request = TorrentActionRequest(
+      action: TorrentAction.verify,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    engine.requestCheckpoint();
+  }
+
+  @override
+  Future<void> reannounce() async {
+    var request = TorrentActionRequest(
+      action: TorrentAction.reannounce,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
+    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    engine.requestCheckpoint();
+  }
+
+  @override
   Future<void> remove(bool withData) async {
     var request = TorrentRemoveRequest(
       arguments: TorrentRemoveRequestArguments(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
@@ -23,8 +24,10 @@ class _DetailsTabState extends State<DetailsTab> {
     final torrent = widget.torrent;
 
     double ratio = torrent.downloadedEver > 0
-        ? torrent.uploadedEver / torrent.downloadedEver
+        ? (torrent.uploadedEver / torrent.downloadedEver)
         : 0;
+    // Clamp and format to a readable two-decimal value.
+    ratio = ratio.clamp(0.0, double.infinity);
 
     String status = switch (torrent.status) {
       TorrentStatus.stopped => localizations.stopped,
@@ -63,19 +66,22 @@ class _DetailsTabState extends State<DetailsTab> {
         ),
         ListTile(
           title: Text(localizations.size),
-          subtitle: Text(prettyBytes(torrent.size.toDouble())),
+          subtitle: Text(
+              prettyBytes(torrent.size.toDouble(), locale: localizations.localeName)),
         ),
         ListTile(
           title: Text(localizations.downloaded),
-          subtitle: Text(prettyBytes(torrent.downloadedEver.toDouble())),
+          subtitle: Text(prettyBytes(
+              torrent.downloadedEver.toDouble(), locale: localizations.localeName)),
         ),
         ListTile(
           title: Text(localizations.uploaded),
-          subtitle: Text(prettyBytes(torrent.uploadedEver.toDouble())),
+          subtitle: Text(prettyBytes(
+              torrent.uploadedEver.toDouble(), locale: localizations.localeName)),
         ),
         ListTile(
           title: Text(localizations.ratio),
-          subtitle: Text(ratio.toString()),
+          subtitle: Text(ratio.toStringAsFixed(2)),
         ),
         ListTile(
           title: Text(localizations.setSeedRatioGoal),
@@ -141,7 +147,9 @@ class _DetailsTabState extends State<DetailsTab> {
         ),
         ListTile(
           title: Text(localizations.pieceSize),
-          subtitle: Text(prettyBytes(torrent.pieceSize.toDouble()).toString()),
+          subtitle: Text(prettyBytes(torrent.pieceSize.toDouble(),
+                  locale: localizations.localeName)
+              .toString()),
         ),
         ListTile(
           title: Text(localizations.addedDate),
@@ -163,6 +171,31 @@ class _DetailsTabState extends State<DetailsTab> {
         ListTile(
           title: Text(localizations.downloadDirectory),
           subtitle: Text(torrent.location),
+        ),
+        ListTile(
+          title: Text(localizations.magnetLink),
+          subtitle: Text(
+            torrent.magnetLink,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.copy),
+            tooltip: localizations.copy,
+            onPressed: () async {
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              await Clipboard.setData(
+                ClipboardData(text: torrent.magnetLink),
+              );
+              if (!mounted) return;
+              scaffoldMessenger.showSnackBar(
+                SnackBar(
+                  content: Text(localizations.copiedToClipboard),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );

@@ -145,67 +145,104 @@ class TorrentListTile extends StatelessWidget {
                   ],
                 )
               : null,
-          subtitle: Row(
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: TorrentStatusText(torrent: torrent, percent: percent),
-              ),
-              Expanded(
-                child: Text(
-                  prettyBytes(torrent.size.toDouble()),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Expanded(
+                    child: TorrentStatusText(torrent: torrent, percent: percent),
                   ),
-                ),
-              ),
-              Expanded(
-                child: torrent.progress != 1
-                    ? Row(
-                        children: [
-                          const Icon(
-                            Icons.arrow_circle_down,
-                            size: 16,
-                            color: Colors.lightGreen,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              overflow: TextOverflow.ellipsis,
-                              '${prettyBytes(torrent.rateDownload.toDouble())}/s',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : const SizedBox(width: 0),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.arrow_circle_up,
-                      size: 16,
-                      color: Color(0xFF4285F4),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+                  Expanded(
+                    child: Text(
+                      prettyBytes(
+                        torrent.size.toDouble(),
+                        locale: localizations.localeName,
+                      ),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                         overflow: TextOverflow.ellipsis,
-                        '${prettyBytes(torrent.rateUpload.toDouble())}/s',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: torrent.progress != 1
+                        ? Row(
+                            children: [
+                              const Icon(
+                                Icons.arrow_circle_down,
+                                size: 16,
+                                color: Colors.lightGreen,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  overflow: TextOverflow.ellipsis,
+                                  '${prettyBytes(
+                                    torrent.rateDownload.toDouble(),
+                                    locale: localizations.localeName,
+                                  )}/s',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const SizedBox(width: 0),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.arrow_circle_up,
+                          size: 16,
+                          color: Color(0xFF4285F4),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            overflow: TextOverflow.ellipsis,
+                            '${prettyBytes(
+                              torrent.rateUpload.toDouble(),
+                              locale: localizations.localeName,
+                            )}/s',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              if (torrent.labels?.isNotEmpty ?? false)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Wrap(
+                    spacing: 4.0,
+                    runSpacing: 4.0,
+                    children: torrent.labels!
+                        .map(
+                          (label) => Chip(
+                            label: Text(
+                              label,
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
             ],
           ),
         );

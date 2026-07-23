@@ -48,6 +48,33 @@ class _ExpandableSearchFormFieldState extends State<ExpandableSearchFormField> {
   bool _isExpanded = false;
 
   @override
+  void initState() {
+    super.initState();
+    _updateClearState();
+    widget.controller.addListener(_updateClearState);
+  }
+
+  @override
+  void didUpdateWidget(covariant ExpandableSearchFormField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_updateClearState);
+      _updateClearState();
+      widget.controller.addListener(_updateClearState);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_updateClearState);
+    super.dispose();
+  }
+
+  void _updateClearState() {
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
@@ -72,6 +99,14 @@ class _ExpandableSearchFormFieldState extends State<ExpandableSearchFormField> {
                     decoration: InputDecoration(
                       labelText: '${localizations.search}...',
                       prefixIcon: const Icon(Icons.search),
+                      suffixIcon: controller.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: controller.clear,
+                              tooltip: MaterialLocalizations.of(context)
+                                  .deleteButtonTooltip,
+                            )
+                          : null,
                       border: InputBorder.none,
                     ),
                   )

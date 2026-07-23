@@ -49,6 +49,7 @@ class AnalyticsService {
   static final AnalyticsService instance = AnalyticsService._();
 
   static const _storageKey = 'gravity_torrent_analytics_history';
+  static const _baselinesKey = 'gravity_torrent_analytics_baselines';
   static const _maxDays = 90;
 
   List<DataUsageSnapshot> _history = [];
@@ -66,6 +67,17 @@ class AnalyticsService {
     _lastUploadedByTorrent = {};
     _lastDownloadedTotal = null;
     _lastUploadedTotal = null;
+  }
+
+  /// Clears all stored analytics history and per-torrent baselines.
+  Future<void> clearHistory() async {
+    _history = [];
+    _lastDownloadedByTorrent = {};
+    _lastUploadedByTorrent = {};
+    _lastDownloadedTotal = null;
+    _lastUploadedTotal = null;
+    await SharedPrefsStorage.remove(_storageKey);
+    await SharedPrefsStorage.remove(_baselinesKey);
   }
 
   Future<void> load() async {
@@ -100,6 +112,7 @@ class AnalyticsService {
       _history = [];
     }
     _history.sort((a, b) => a.day.compareTo(b.day));
+    await _loadBaselines();
     _loaded = true;
   }
 
@@ -149,6 +162,7 @@ class AnalyticsService {
   /// Record the latest cumulative per-torrent totals. The aggregate delta since
   /// the last sample is added to today's bucket.
   Future<void> recordTorrentStats(List<Torrent> torrents) async {
+    await load();
     int deltaDown = 0;
     int deltaUp = 0;
 
@@ -185,6 +199,7 @@ class AnalyticsService {
     _lastUploadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
 
     await _recordDeltas(deltaDown, deltaUp);
+    await _saveBaselines();
   }
 
   Future<void> _recordDeltas(int deltaDown, int deltaUp) async {
@@ -226,6 +241,58 @@ class AnalyticsService {
     }
 
     await save();
+  }
+
+  Future<void> _loadBaselines() async {
+    try {
+      final raw = await SharedPrefsStorage.getString(_baselinesKey);
+      if (raw == null || raw.isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+
+      final down = decoded['down'];
+      final up = decoded['up'];
+      _lastDownloadedByTorrent = {};
+      _lastUploadedByTorrent = {};
+      if (down is Map) {
+        for (final entry in down.entries) {
+          final id = int.tryParse(entry.key.toString());
+          final value = (entry.value as num?)?.toInt();
+          if (id != null && value != null) {
+            _lastDownloadedByTorrent[id] = value;
+          }
+        }
+      }
+      if (up is Map) {
+        for (final entry in up.entries) {
+          final id = int.tryParse(entry.key.toString());
+          final value = (entry.value as num?)?.toInt();
+          if (id != null && value != null) {
+            _lastUploadedByTorrent[id] = value;
+          }
+        }
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load analytics baselines: $e\n$s');
+      }
+      _lastDownloadedByTorrent = {};
+      _lastUploadedByTorrent = {};
+    }
+  }
+
+  Future<void> _saveBaselines() async {
+    final payload = {
+      'down': {
+        for (final e in _lastDownloadedByTorrent.entries)
+          e.key.toString(): e.value,
+      },
+      'up': {
+        for (final e in _lastUploadedByTorrent.entries)
+          e.key.toString(): e.value,
+      },
+    };
+    await SharedPrefsStorage.setString(_baselinesKey, jsonEncode(payload));
   }
 
   List<DataUsageSnapshot> get history => List.unmodifiable(_history);

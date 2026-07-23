@@ -44,10 +44,11 @@ class RssService {
   static const _feedsKey = 'gravity_torrent_rss_feeds';
   static const _seenKey = 'gravity_torrent_rss_seen';
   static const _pollMinutes = 30;
+  static const _maxSeenLinks = 1000;
 
   List<RssFeed> _feeds = [];
-  // Dart's default Set is a LinkedHashSet, so skip() keeps the 1000 most
-  // recently inserted links. Explicit type to make the assumption visible.
+  // Dart's default Set is a LinkedHashSet, so skip() keeps the [_maxSeenLinks]
+  // most recently inserted links. Explicit type to make the assumption visible.
   Set<String> _seenLinks = <String>{};
   bool _loaded = false;
   Timer? _timer;
@@ -85,6 +86,7 @@ class RssService {
         _seenLinks = {};
       }
     }
+    _trimSeenLinks();
     _loaded = true;
   }
 
@@ -92,6 +94,13 @@ class RssService {
     await SharedPrefsStorage.setString(
       _feedsKey,
       jsonEncode(_feeds.map((f) => f.toJson()).toList()),
+    );
+  }
+
+  void _trimSeenLinks() {
+    if (_seenLinks.length <= _maxSeenLinks) return;
+    _seenLinks = LinkedHashSet<String>.from(
+      _seenLinks.skip(_seenLinks.length - _maxSeenLinks),
     );
   }
 
@@ -197,11 +206,7 @@ class RssService {
       await _processSection(feed, body);
     }
 
-    // Prune seen links to last 1000 to avoid unbounded growth
-    if (_seenLinks.length > 1000) {
-      _seenLinks =
-          LinkedHashSet<String>.from(_seenLinks.skip(_seenLinks.length - 1000));
-    }
+    _trimSeenLinks();
 
     await _saveSeen();
   }

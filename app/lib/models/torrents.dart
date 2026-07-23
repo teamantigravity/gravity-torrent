@@ -16,7 +16,7 @@ import 'package:gravity_torrent/services/speed_history_service.dart';
 
 const refreshIntervalSeconds = 5;
 
-enum Sort { addedDate, progress, size, eta }
+enum Sort { addedDate, progress, size, name, status, eta }
 
 class Filters {
   Set<String> labels = {};
@@ -190,16 +190,28 @@ class TorrentsModel extends ChangeNotifier {
     switch (sort) {
       case Sort.addedDate:
         torrentsSorted.sort((a, b) => a.addedDate.compareTo(b.addedDate));
+        break;
       case Sort.progress:
         torrentsSorted.sort((a, b) => a.progress.compareTo(b.progress));
+        break;
       case Sort.size:
         torrentsSorted.sort((a, b) => a.size.compareTo(b.size));
+        break;
+      case Sort.name:
+        torrentsSorted.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+        break;
+      case Sort.status:
+        torrentsSorted.sort((a, b) => a.status.index.compareTo(b.status.index));
+        break;
       case Sort.eta:
         torrentsSorted.sort((a, b) {
           final etaA = a.eta < 0 ? double.infinity : a.eta;
           final etaB = b.eta < 0 ? double.infinity : b.eta;
           return etaA.compareTo(etaB);
         });
+        break;
     }
 
     return reverseSort ? torrentsSorted.reversed.toList() : torrentsSorted;
@@ -224,6 +236,68 @@ class TorrentsModel extends ChangeNotifier {
   Future<void> removeAllTorrents(List<int> torrentIds, bool withData) async {
     await engine.removeTorrents(torrentIds, withData);
     await fetchTorrents();
+  }
+
+  Future<void> pauseSelected(Set<int> ids) async {
+    if (ids.isEmpty) return;
+    final toPause = torrents
+        .where(
+          (t) => ids.contains(t.id) && t.status != TorrentStatus.stopped,
+        )
+        .map((t) => t.id)
+        .toList();
+    if (toPause.isEmpty) return;
+    try {
+      await engine.pauseTorrents(toPause);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to pause selected torrents: $e');
+    }
+    unawaited(fetchTorrents());
+  }
+
+  Future<void> resumeSelected(Set<int> ids) async {
+    if (ids.isEmpty) return;
+    final toResume = torrents
+        .where(
+          (t) => ids.contains(t.id) && t.status == TorrentStatus.stopped,
+        )
+        .map((t) => t.id)
+        .toList();
+    if (toResume.isEmpty) return;
+    try {
+      await engine.resumeTorrents(toResume);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to resume selected torrents: $e');
+    }
+    unawaited(fetchTorrents());
+  }
+
+  Future<void> pauseAllTorrents() async {
+    final toPause = torrents
+        .where((t) => t.status != TorrentStatus.stopped)
+        .map((t) => t.id)
+        .toList();
+    if (toPause.isEmpty) return;
+    try {
+      await engine.pauseTorrents(toPause);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to pause all torrents: $e');
+    }
+    unawaited(fetchTorrents());
+  }
+
+  Future<void> resumeAllTorrents() async {
+    final toResume = torrents
+        .where((t) => t.status == TorrentStatus.stopped)
+        .map((t) => t.id)
+        .toList();
+    if (toResume.isEmpty) return;
+    try {
+      await engine.resumeTorrents(toResume);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to resume all torrents: $e');
+    }
+    unawaited(fetchTorrents());
   }
 
   Future<void> fetchTorrents() async {
@@ -393,6 +467,9 @@ class TorrentsModel extends ChangeNotifier {
           .recordTorrentStats(torrents)
           .catchError((Object e, StackTrace s) {
         if (kDebugMode) debugPrint('Analytics error: $e\n$s');
+      })
+          .whenComplete(() {
+        if (!_disposed) notifyListeners();
       }),
     );
   }

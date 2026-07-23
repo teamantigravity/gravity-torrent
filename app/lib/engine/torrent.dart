@@ -92,8 +92,17 @@ abstract class Torrent extends TorrentBase {
   // Start the torrent
   Future<void> start();
 
+  // Start the torrent immediately, bypassing the queue
+  Future<void> startNow();
+
   // Pause the torrent
   Future<void> stop();
+
+  // Force a re-check of the torrent data
+  Future<void> verify();
+
+  // Ask trackers for new peers
+  Future<void> reannounce();
 
   // Remove the torrent
   Future<void> remove(bool withData);

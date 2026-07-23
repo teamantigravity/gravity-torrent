@@ -144,6 +144,10 @@ class _FilesTabState extends State<FilesTab> {
           ),
         if (files.isNotEmpty)
           ListTile(
+            leading: const Icon(Icons.checklist),
+            title: Text(areAllFilesWanted
+                ? localizations.deselectAllFiles
+                : localizations.selectAllFiles),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -183,7 +187,7 @@ class _FilesTabState extends State<FilesTab> {
                         : percent < 100
                             ? Text('${percent.toString()} %')
                             : const Icon(Icons.download_done, size: 16),
-                    Text(' • ${prettyBytes(file.length.toDouble())}'),
+                    Text(' • ${prettyBytes(file.length.toDouble(), locale: localizations.localeName)}'),
                   ],
                 ),
                 trailing: Row(
@@ -214,20 +218,20 @@ class _FilesTabState extends State<FilesTab> {
                         },
                         itemBuilder: (context) {
                           return [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'open',
-                              child: Text('Open externally'),
+                              child: Text(localizations.openExternally),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'share',
-                              child: Text('Share'),
+                              child: Text(localizations.share),
                             ),
                             if (lookupMimeType(file.name)
                                     ?.startsWith('video/') ==
                                 true)
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'play_in_app',
-                                child: Text('Play in app'),
+                                child: Text(localizations.playInApp),
                               ),
                           ];
                         },

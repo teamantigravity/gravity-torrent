@@ -65,11 +65,139 @@ class _TorrentScreen extends State<TorrentsScreen>
     });
   }
 
+  void _toggleSelectAllVisible(List<int> visibleIds) {
+    setState(() {
+      if (visibleIds.every(_selectedTorrentIds.contains)) {
+        for (final id in visibleIds) {
+          _selectedTorrentIds.remove(id);
+        }
+      } else {
+        _selectedTorrentIds.addAll(visibleIds);
+      }
+      if (_selectedTorrentIds.isEmpty) {
+        _isSelectionMode = false;
+      }
+    });
+  }
+
   void _exitSelectionMode() {
     setState(() {
       _isSelectionMode = false;
       _selectedTorrentIds.clear();
     });
+  }
+
+  Widget _buildTorrentListView(
+    TorrentsModel torrentsModel,
+    BuildContext context,
+  ) {
+    final listView = ListView.builder(
+      itemCount: torrentsModel.displayedTorrents.length,
+      prototypeItem: const SizedBox(height: 72),
+      itemBuilder: (context, index) {
+        Torrent torrent = torrentsModel.displayedTorrents[index];
+        final percent = (torrent.progress) * 100;
+
+        if (isMobileSize(context)) {
+          // Disable slidable in selection mode
+          if (_isSelectionMode) {
+            return TorrentListTile(
+              torrent: torrent,
+              percent: percent,
+              isSelectionMode: _isSelectionMode,
+              isSelected: _selectedTorrentIds.contains(torrent.id),
+              onLongPress: () => _enterSelectionMode(torrent.id),
+              onSelectionChanged: () => _toggleSelection(torrent.id),
+            );
+          }
+
+          return Slidable(
+            key: Key(torrent.id.toString()),
+            endActionPane: ActionPane(
+              motion: const ScrollMotion(),
+              extentRatio: 0.8,
+              children: [
+                _buildActionDivider(),
+                SlidableAction(
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
+                  onPressed: (_) => showDeviceSheet(
+                    context,
+                    torrent.name,
+                    TorrentDetailsModalSheet(
+                      id: torrent.id,
+                      initialTab: 0,
+                      showOnlyPlayableFiles: true,
+                    ),
+                  ),
+                  icon: Icons.play_circle_outlined,
+                ),
+                _buildActionDivider(),
+                SlidableAction(
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
+                  onPressed: (_) =>
+                      shareLink(context, torrent.magnetLink),
+                  icon: Icons.share,
+                ),
+                if (isDesktop()) ...[
+                  _buildActionDivider(),
+                  SlidableAction(
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surface,
+                    onPressed: (_) => torrent.openFolder(context),
+                    icon: Icons.folder_outlined,
+                  ),
+                ],
+                _buildActionDivider(),
+                SlidableAction(
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
+                  onPressed: (_) => showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return RemoveTorrentDialog(torrent: torrent);
+                    },
+                  ),
+                  icon: Icons.delete_outline,
+                ),
+              ],
+            ),
+            child: TorrentListTile(
+              torrent: torrent,
+              percent: percent,
+              isSelectionMode: _isSelectionMode,
+              isSelected: _selectedTorrentIds.contains(torrent.id),
+              onLongPress: () => _enterSelectionMode(torrent.id),
+              onSelectionChanged: () => _toggleSelection(torrent.id),
+            ),
+          );
+        }
+
+        // Desktop
+        return TorrentListTile(
+          torrent: torrent,
+          percent: percent,
+          isSelectionMode: _isSelectionMode,
+          isSelected: _selectedTorrentIds.contains(torrent.id),
+          onLongPress: () => _enterSelectionMode(torrent.id),
+          onSelectionChanged: () => _toggleSelection(torrent.id),
+        );
+      },
+    );
+
+    if (isMobile()) {
+      return RefreshIndicator(
+        onRefresh: () => torrentsModel.fetchTorrents(),
+        child: listView,
+      );
+    }
+
+    return listView;
   }
 
   @override
@@ -115,24 +243,67 @@ class _TorrentScreen extends State<TorrentsScreen>
                       onPressed: _exitSelectionMode,
                       tooltip: localizations.cancel,
                     ),
+                    Checkbox(
+                      value: torrentsModel.displayedTorrents.isNotEmpty &&
+                          torrentsModel.displayedTorrents.every(
+                            (t) => _selectedTorrentIds.contains(t.id),
+                          ),
+                      onChanged: torrentsModel.displayedTorrents.isEmpty
+                          ? null
+                          : (_) => _toggleSelectAllVisible(
+                                torrentsModel.displayedTorrents
+                                    .map((t) => t.id)
+                                    .toList(),
+                              ),
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '${_selectedTorrentIds.length}',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: _selectedTorrentIds.isEmpty
-                          ? null
-                          : () async {
-                              final selectedTorrents = torrentsModel.torrents
-                                  .where(
-                                    (t) => _selectedTorrentIds.contains(t.id),
-                                  )
-                                  .toList();
+                    Builder(builder: (context) {
+                      final selectedTorrents = torrentsModel.torrents
+                          .where(
+                            (t) => _selectedTorrentIds.contains(t.id),
+                          )
+                          .toList();
+                      final canPause = selectedTorrents
+                          .any((t) => t.status != TorrentStatus.stopped);
+                      final canResume = selectedTorrents
+                          .any((t) => t.status == TorrentStatus.stopped);
 
-                              if (selectedTorrents.length == 1) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.pause),
+                            tooltip: localizations.pause,
+                            onPressed: canPause
+                                ? () async {
+                                    await torrentsModel
+                                        .pauseSelected(_selectedTorrentIds);
+                                    if (!mounted) return;
+                                  }
+                                : null,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.play_arrow),
+                            tooltip: localizations.resume,
+                            onPressed: canResume
+                                ? () async {
+                                    await torrentsModel
+                                        .resumeSelected(_selectedTorrentIds);
+                                    if (!mounted) return;
+                                  }
+                                : null,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: _selectedTorrentIds.isEmpty
+                                ? null
+                                : () async {
+                                    if (selectedTorrents.length == 1) {
                                 await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
@@ -156,9 +327,28 @@ class _TorrentScreen extends State<TorrentsScreen>
                             },
                       tooltip: localizations.remove,
                     ),
-                  ] else ...[
+                  ],
+                );
+              }),
+            ] else ...[
                     const SortButton(),
                     const FilterLabelsButton(),
+                    IconButton(
+                      icon: const Icon(Icons.pause),
+                      tooltip: localizations.pauseAllTorrents,
+                      onPressed: torrentsModel.torrents
+                              .any((t) => t.status != TorrentStatus.stopped)
+                          ? () async => await torrentsModel.pauseAllTorrents()
+                          : null,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.play_arrow),
+                      tooltip: localizations.resumeAllTorrents,
+                      onPressed: torrentsModel.torrents
+                              .any((t) => t.status == TorrentStatus.stopped)
+                          ? () async => await torrentsModel.resumeAllTorrents()
+                          : null,
+                    ),
                     const Spacer(),
                     TextSearch(onChange: torrentsModel.setFilterText),
                   ],
@@ -166,104 +356,7 @@ class _TorrentScreen extends State<TorrentsScreen>
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: torrentsModel.displayedTorrents.length,
-                prototypeItem: const SizedBox(height: 72),
-                itemBuilder: (context, index) {
-                  Torrent torrent = torrentsModel.displayedTorrents[index];
-                  final percent = (torrent.progress) * 100;
-
-                  if (isMobileSize(context)) {
-                    // Disable slidable in selection mode
-                    if (_isSelectionMode) {
-                      return TorrentListTile(
-                        torrent: torrent,
-                        percent: percent,
-                        isSelectionMode: _isSelectionMode,
-                        isSelected: _selectedTorrentIds.contains(torrent.id),
-                        onLongPress: () => _enterSelectionMode(torrent.id),
-                        onSelectionChanged: () => _toggleSelection(torrent.id),
-                      );
-                    }
-
-                    return Slidable(
-                      key: Key(torrent.id.toString()),
-                      endActionPane: ActionPane(
-                        motion: const ScrollMotion(),
-                        extentRatio: 0.8,
-                        children: [
-                          _buildActionDivider(),
-                          SlidableAction(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surface,
-                            onPressed: (_) => showDeviceSheet(
-                              context,
-                              torrent.name,
-                              TorrentDetailsModalSheet(
-                                id: torrent.id,
-                                initialTab: 0,
-                                showOnlyPlayableFiles: true,
-                              ),
-                            ),
-                            icon: Icons.play_circle_outlined,
-                          ),
-                          _buildActionDivider(),
-                          SlidableAction(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surface,
-                            onPressed: (_) =>
-                                shareLink(context, torrent.magnetLink),
-                            icon: Icons.share,
-                          ),
-                          if (isDesktop()) ...[
-                            _buildActionDivider(),
-                            SlidableAction(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.surface,
-                              onPressed: (_) => torrent.openFolder(context),
-                              icon: Icons.folder_outlined,
-                            ),
-                          ],
-                          _buildActionDivider(),
-                          SlidableAction(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surface,
-                            onPressed: (_) => showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return RemoveTorrentDialog(torrent: torrent);
-                              },
-                            ),
-                            icon: Icons.delete_outline,
-                          ),
-                        ],
-                      ),
-                      child: TorrentListTile(
-                        torrent: torrent,
-                        percent: percent,
-                        isSelectionMode: _isSelectionMode,
-                        isSelected: _selectedTorrentIds.contains(torrent.id),
-                        onLongPress: () => _enterSelectionMode(torrent.id),
-                        onSelectionChanged: () => _toggleSelection(torrent.id),
-                      ),
-                    );
-                  }
-
-                  // Desktop
-                  return TorrentListTile(
-                    torrent: torrent,
-                    percent: percent,
-                    isSelectionMode: _isSelectionMode,
-                    isSelected: _selectedTorrentIds.contains(torrent.id),
-                    onLongPress: () => _enterSelectionMode(torrent.id),
-                    onSelectionChanged: () => _toggleSelection(torrent.id),
-                  );
-                },
-              ),
+              child: _buildTorrentListView(torrentsModel, context),
             ),
             const AdBannerSlot(),
           ],

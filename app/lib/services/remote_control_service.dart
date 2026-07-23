@@ -235,6 +235,12 @@ class RemoteControlService {
       if (magnet == null || magnet.isEmpty) {
         return _jsonResponse({'ok': false, 'error': 'missing magnet'});
       }
+      if (!_isValidTorrentLink(magnet)) {
+        return _jsonResponse({
+          'ok': false,
+          'error': 'invalid torrent link',
+        });
+      }
       final engine = getIt<Engine>();
       final response = await engine.addTorrent(magnet, null, null);
       return _jsonResponse({'ok': response == TorrentAddedResponse.added});
@@ -295,6 +301,16 @@ class RemoteControlService {
       result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
     }
     return result == 0;
+  }
+
+  /// Rejects anything other than a magnet URI or a public .torrent URL.
+  bool _isValidTorrentLink(String link) {
+    final lower = link.trim().toLowerCase();
+    if (lower.startsWith('magnet:')) return true;
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return lower.endsWith('.torrent');
+    }
+    return false;
   }
 
   Response _jsonResponse(Map<String, dynamic> body) {

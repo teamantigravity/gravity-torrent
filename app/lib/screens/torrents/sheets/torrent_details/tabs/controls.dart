@@ -165,6 +165,74 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     }
   }
 
+  Future<void> _verify() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _saving = true);
+    try {
+      await widget.torrent.verify();
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        await context.read<TorrentsModel>().fetchTorrents();
+        messenger.showSnackBar(SnackBar(content: Text(l10n.verifyStarted)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _reannounce() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _saving = true);
+    try {
+      await widget.torrent.reannounce();
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        await context.read<TorrentsModel>().fetchTorrents();
+        messenger.showSnackBar(SnackBar(content: Text(l10n.reannounceStarted)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _startNow() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _saving = true);
+    try {
+      await widget.torrent.startNow();
+      if (mounted) await context.read<TorrentsModel>().fetchTorrents();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -176,13 +244,23 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       children: [
         ListTile(
           leading: Icon(isPaused ? Icons.play_arrow : Icons.pause),
-          title: Text(isPaused ? l10n.download : l10n.pause),
+          title: Text(isPaused ? l10n.resume : l10n.pause),
           subtitle: Text(l10n.torrentControlPauseHint),
           trailing: FilledButton.tonal(
             onPressed: _saving ? null : _togglePause,
-            child: Text(isPaused ? l10n.download : l10n.pause),
+            child: Text(isPaused ? l10n.resume : l10n.pause),
           ),
         ),
+        if (isPaused)
+          ListTile(
+            leading: const Icon(Icons.play_circle_filled),
+            title: Text(l10n.startNow),
+            subtitle: Text(l10n.torrentControlStartNowHint),
+            trailing: FilledButton.tonal(
+              onPressed: _saving ? null : _startNow,
+              child: Text(l10n.startNow),
+            ),
+          ),
         SwitchListTile(
           title: Text(l10n.sequentialDownload),
           subtitle: Text(
@@ -192,6 +270,23 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
           ),
           value: _sequential,
           onChanged: _saving ? null : _toggleSequential,
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.fact_check),
+          title: Text(l10n.verify),
+          trailing: FilledButton.tonal(
+            onPressed: _saving ? null : _verify,
+            child: Text(l10n.verify),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.refresh),
+          title: Text(l10n.reannounce),
+          trailing: FilledButton.tonal(
+            onPressed: _saving ? null : _reannounce,
+            child: Text(l10n.reannounce),
+          ),
         ),
         const Divider(),
         SwitchListTile(

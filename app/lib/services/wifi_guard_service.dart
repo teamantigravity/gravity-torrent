@@ -162,7 +162,9 @@ class WifiGuardService {
         if (torrent.status == TorrentStatus.downloading ||
             torrent.status == TorrentStatus.seeding ||
             torrent.status == TorrentStatus.queuedToDownload ||
-            torrent.status == TorrentStatus.queuedToSeed) {
+            torrent.status == TorrentStatus.queuedToSeed ||
+            torrent.status == TorrentStatus.queuedToCheck ||
+            torrent.status == TorrentStatus.checking) {
           try {
             await engine.pauseTorrent(torrent.id);
             _pausedByGuard.add(torrent.id);

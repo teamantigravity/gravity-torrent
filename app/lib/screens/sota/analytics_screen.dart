@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
@@ -19,6 +20,7 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool _loaded = false;
+  int _days = 7;
 
   @override
   void initState() {
@@ -27,19 +29,70 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Future<void> _load() async {
-    await AnalyticsService.instance.load();
+    try {
+      await AnalyticsService.instance.load();
+    } catch (e, s) {
+      if (kDebugMode) debugPrint('Failed to load analytics: $e\n$s');
+    }
     if (mounted) setState(() => _loaded = true);
+  }
+
+  Future<void> _refresh() async {
+    final model = context.read<TorrentsModel>();
+    await model.fetchTorrents();
+    await AnalyticsService.instance.load();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _clearHistory() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.clearHistory),
+        content: Text(l10n.clearHistoryConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.clear),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await AnalyticsService.instance.clearHistory();
+    if (mounted) setState(() {});
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.historyCleared)),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final history = AnalyticsService.instance.getLastDays(7);
+    // Rebuild when torrent/analytics data changes so charts stay live.
+    final _ = context.watch<TorrentsModel>();
+    final history = AnalyticsService.instance.getLastDays(_days);
 
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
-          : AppBar(title: Text(localizations.dataUsageDashboard)),
+          : AppBar(
+              title: Text(localizations.dataUsageDashboard),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.delete_sweep),
+                  tooltip: localizations.clearHistory,
+                  onPressed: _clearHistory,
+                ),
+              ],
+            ),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : history.isEmpty
@@ -65,7 +118,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ],
                   ),
                 )
-              : _buildContent(context, history),
+              : RefreshIndicator.adaptive(
+                  onRefresh: _refresh,
+                  child: _buildContent(context, history),
+                ),
     );
   }
 
@@ -103,8 +159,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(localizations.analyticsLast7Days,
-              style: Theme.of(context).textTheme.titleLarge),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _days == 7
+                      ? localizations.analyticsLast7Days
+                      : localizations.analyticsLast30Days,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              SegmentedButton<int>(
+                segments: [
+                  ButtonSegment(
+                    value: 7,
+                    label: Text(localizations.analytics7Days),
+                  ),
+                  ButtonSegment(
+                    value: 30,
+                    label: Text(localizations.analytics30Days),
+                  ),
+                ],
+                selected: {_days},
+                onSelectionChanged: (selected) {
+                  setState(() => _days = selected.first);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSummaryCards(context, history),
           const SizedBox(height: 16),
           SizedBox(
             height: 240,
@@ -168,7 +252,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         ),
                         subtitle: Text('${t.peersConnected} peers'),
                         trailing: Text(
-                          '${prettyBytes(t.downloadedEver.toDouble(), locale: 'en')}\u2193\n${prettyBytes(t.uploadedEver.toDouble(), locale: 'en')}\u2191',
+                          '${prettyBytes(t.downloadedEver.toDouble(), locale: localizations.localeName)}\u2193\n${prettyBytes(t.uploadedEver.toDouble(), locale: localizations.localeName)}\u2191',
                           textAlign: TextAlign.end,
                         ),
                       ),
@@ -179,6 +263,78 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSummaryCards(BuildContext context, List<DataUsageSnapshot> history) {
+    final localizations = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final totalDown = history.fold<int>(
+      0,
+      (sum, s) => sum + s.downloadedBytes,
+    );
+    final totalUp = history.fold<int>(
+      0,
+      (sum, s) => sum + s.uploadedBytes,
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    localizations.analyticsDownloaded,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    prettyBytes(
+                      totalDown.toDouble(),
+                      locale: localizations.localeName,
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    localizations.analyticsUploaded,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    prettyBytes(
+                      totalUp.toDouble(),
+                      locale: localizations.localeName,
+                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: colorScheme.secondary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

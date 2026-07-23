@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
@@ -41,14 +43,56 @@ class BlocklistService {
     if (uri.scheme != 'http' && uri.scheme != 'https') return false;
     if (uri.host.isEmpty) return false;
     // Block private/local network URLs to mitigate SSRF.
-    if (uri.host == 'localhost' ||
-        uri.host == '127.0.0.1' ||
-        uri.host.startsWith('192.168.') ||
-        uri.host.startsWith('10.') ||
-        uri.host.startsWith('172.')) {
-      return false;
+    return _isPublicHost(uri.host);
+  }
+
+  /// Returns true when [host] is a public, resolvable name or a public IP
+  /// address. Blocks localhost, private IPv4 ranges, and IPv6 unique-local /
+  /// link-local addresses.
+  static bool _isPublicHost(String host) {
+    final address = InternetAddress.tryParse(host);
+    if (address != null) {
+      return _isPublicAddress(address);
     }
+
+    final lower = host.toLowerCase();
+    if (lower == 'localhost' || !host.contains('.')) return false;
+
+    // Reject hostnames that are just an IPv4 literal with a port or other noise
+    // already handled by the IP path above.
     return true;
+  }
+
+  /// Returns true for public (non-loopback, non-private) IP addresses.
+  static bool _isPublicAddress(InternetAddress address) {
+    if (address.isLoopback) return false;
+
+    if (address.type == InternetAddressType.IPv4) {
+      final parts = address.address.split('.');
+      if (parts.length != 4) return false;
+      final first = int.tryParse(parts[0]);
+      final second = int.tryParse(parts[1]);
+      if (first == null || second == null) return false;
+
+      if (first == 10) return false; // 10/8
+      if (first == 172 && second >= 16 && second <= 31) return false; // 172.16/12
+      if (first == 192 && second == 168) return false; // 192.168/16
+      if (first == 169 && second == 254) return false; // link-local 169.254/16
+
+      return true;
+    }
+
+    if (address.type == InternetAddressType.IPv6) {
+      final bytes = address.rawAddress;
+      if (bytes.isEmpty) return false;
+      // fe80::/10
+      if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80) return false;
+      // fc00::/7
+      if ((bytes[0] & 0xfe) == 0xfc) return false;
+      return true;
+    }
+
+    return false;
   }
 
   Future<void> load() async {

@@ -190,8 +190,7 @@ Future<void> cancelDownloadProgressNotification() async {
   if (defaultTargetPlatform == TargetPlatform.android) {
     return;
   }
-  await (flutterLocalNotificationsPlugin as dynamic)
-      .cancel(_progressNotificationId);
+  await flutterLocalNotificationsPlugin.cancel(id: _progressNotificationId);
 }
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {

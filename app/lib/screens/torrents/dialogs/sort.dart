@@ -78,8 +78,20 @@ class _SortDialogState extends State<SortDialog> {
                 onChanged: _handleChange,
               ),
               RadioListTile<Sort>(
-                title: const Text('ETA'),
+                title: Text(localizations.name),
+                value: Sort.name,
+                groupValue: groupValue,
+                onChanged: _handleChange,
+              ),
+              RadioListTile<Sort>(
+                title: Text(localizations.eta),
                 value: Sort.eta,
+                groupValue: groupValue,
+                onChanged: _handleChange,
+              ),
+              RadioListTile<Sort>(
+                title: Text(localizations.state),
+                value: Sort.status,
                 groupValue: groupValue,
                 onChanged: _handleChange,
               ),

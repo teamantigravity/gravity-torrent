@@ -192,7 +192,9 @@ class SchedulerService {
           if (torrent.status == TorrentStatus.downloading ||
               torrent.status == TorrentStatus.seeding ||
               torrent.status == TorrentStatus.queuedToDownload ||
-              torrent.status == TorrentStatus.queuedToSeed) {
+              torrent.status == TorrentStatus.queuedToSeed ||
+              torrent.status == TorrentStatus.queuedToCheck ||
+              torrent.status == TorrentStatus.checking) {
             await engine.pauseTorrent(torrent.id);
             _pausedByScheduler.add(torrent.id);
           }
