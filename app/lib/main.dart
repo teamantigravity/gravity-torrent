@@ -38,6 +38,7 @@ import 'package:gravity_torrent/services/battery_service.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
 import 'package:gravity_torrent/services/torrent_notes_service.dart';
 import 'package:gravity_torrent/services/torrent_favorites_service.dart';
+import 'package:gravity_torrent/services/recent_download_directories_service.dart';
 import 'package:gravity_torrent/services/analytics_service.dart';
 import 'package:gravity_torrent/services/blocklist_service.dart';
 
@@ -109,6 +110,14 @@ Future<void> startServices(FeatureFlagsModel flags) async {
     await TorrentFavoritesService.instance.load();
   } catch (e) {
     if (kDebugMode) debugPrint('TorrentFavoritesService init failed: $e');
+  }
+
+  try {
+    await RecentDownloadDirectoriesService.instance.load();
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('RecentDownloadDirectoriesService init failed: $e');
+    }
   }
 
   try {

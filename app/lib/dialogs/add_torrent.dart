@@ -8,6 +8,7 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/session.dart';
 import 'package:gravity_torrent/models/torrents.dart';
+import 'package:gravity_torrent/services/recent_download_directories_service.dart';
 import 'package:gravity_torrent/utils/app_links.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:provider/provider.dart';
@@ -166,6 +167,10 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         listen: false,
       ).addTorrent(magnet, metainfo, pickedDownloadDir);
 
+      if (pickedDownloadDir?.isNotEmpty == true) {
+        await RecentDownloadDirectoriesService.instance.add(pickedDownloadDir!);
+      }
+
       if (!mounted) return;
 
       if (status == TorrentAddedResponse.duplicated) {
@@ -219,10 +224,46 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
     );
 
     if (selectedDirectory == null) return;
+    await RecentDownloadDirectoriesService.instance.add(selectedDirectory);
     if (!mounted) return;
     setState(() {
       pickedDownloadDir = selectedDirectory;
     });
+  }
+
+  Widget _buildRecentDirectoriesChipRow() {
+    final localizations = AppLocalizations.of(context)!;
+    final recentDirs = RecentDownloadDirectoriesService.instance.directories;
+
+    if (recentDirs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(localizations.recentDownloadDirectories),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: recentDirs.map((dir) {
+            return ActionChip(
+              label: Text(
+                dir,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onPressed: () {
+                setState(() {
+                  pickedDownloadDir = dir;
+                });
+              },
+              visualDensity: VisualDensity.compact,
+            );
+          }).toList(),
+        ),
+      ],
+    );
   }
 
   Widget _buildTorrentLinkInput() {
@@ -330,6 +371,8 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
                     ),
                   ],
                 ),
+              if (!isMobile()) const SizedBox(height: 8),
+              if (!isMobile()) _buildRecentDirectoriesChipRow(),
             ],
           ),
         ),

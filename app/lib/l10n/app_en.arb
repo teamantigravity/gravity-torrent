@@ -192,6 +192,7 @@
   "editTorrentNotes": "Edit note",
   "favorite": "Favorite",
   "unfavorite": "Unfavorite",
+  "recentDownloadDirectories": "Recent destinations",
   "minutesValue": "{count} minutes",
   "@minutesValue": {
     "placeholders": {
