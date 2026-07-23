@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/feature_flags.dart';
@@ -8,13 +9,13 @@ class AnalyticsOptInDialog extends StatelessWidget {
 
   void _handleRefuseClick(BuildContext context) {
     Provider.of<AppModel>(context, listen: false).setAnalyticsOptInDisplayed(true);
-    Provider.of<FeatureFlagsModel>(context, listen: false).setEnableAnalytics(false);
+    unawaited(Provider.of<FeatureFlagsModel>(context, listen: false).setEnableAnalytics(false));
     Navigator.of(context).pop();
   }
 
   void _handleAcceptClick(BuildContext context) {
     Provider.of<AppModel>(context, listen: false).setAnalyticsOptInDisplayed(true);
-    Provider.of<FeatureFlagsModel>(context, listen: false).setEnableAnalytics(true);
+    unawaited(Provider.of<FeatureFlagsModel>(context, listen: false).setEnableAnalytics(true));
     Navigator.of(context).pop();
   }
 
