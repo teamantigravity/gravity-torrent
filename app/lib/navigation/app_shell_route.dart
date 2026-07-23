@@ -228,7 +228,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       isTermsOfUseDialogDisplayed = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        showDialog(
+        unawaited(showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
@@ -239,7 +239,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
             isTermsOfUseDialogDisplayed = false;
             _onAppModelChanged(); // Trigger next check
           }
-        });
+        }));
       });
     }
   }
@@ -252,7 +252,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
       isAnalyticsOptInDialogDisplayed = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        showDialog(
+        unawaited(showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
@@ -263,7 +263,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
             isAnalyticsOptInDialogDisplayed = false;
             _onAppModelChanged(); // Trigger next check
           }
-        });
+        }));
       });
     }
   }

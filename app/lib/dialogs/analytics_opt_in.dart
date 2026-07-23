@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/feature_flags.dart';
 import 'package:provider/provider.dart';
