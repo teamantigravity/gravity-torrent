@@ -190,6 +190,8 @@
   "torrentNotes": "Notes",
   "torrentNotesHint": "Add a private note about this torrent",
   "editTorrentNotes": "Edit note",
+  "favorite": "Favorite",
+  "unfavorite": "Unfavorite",
   "minutesValue": "{count} minutes",
   "@minutesValue": {
     "placeholders": {

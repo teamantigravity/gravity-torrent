@@ -13,6 +13,7 @@ import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/notifications.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
 import 'package:gravity_torrent/services/speed_history_service.dart';
+import 'package:gravity_torrent/services/torrent_favorites_service.dart';
 
 const refreshIntervalSeconds = 5;
 
@@ -49,6 +50,7 @@ class TorrentsModel extends ChangeNotifier {
   Sort sort = Sort.addedDate;
   bool reverseSort = true;
   Filters filters = Filters(labels: {});
+  Set<int> _favorites = {};
   Timer? _timer;
   Timer? _searchDebounceTimer;
   bool _isFetching = false; // mutex to prevent concurrent fetches
@@ -107,6 +109,7 @@ class TorrentsModel extends ChangeNotifier {
     stopSeedingWhenComplete =
         await SharedPrefsStorage.getBool('stopSeedingWhenComplete') ??
             stopSeedingWhenComplete;
+    await _loadFavorites();
 
     try {
       final session = await engine.fetchSession();
@@ -185,36 +188,70 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   List<Torrent> _sortTorrents(List<Torrent> torrents) {
-    List<Torrent> torrentsSorted = List.from(torrents);
+    final pinned =
+        torrents.where((t) => _favorites.contains(t.id)).toList();
+    final unpinned =
+        torrents.where((t) => !_favorites.contains(t.id)).toList();
 
-    switch (sort) {
-      case Sort.addedDate:
-        torrentsSorted.sort((a, b) => a.addedDate.compareTo(b.addedDate));
-        break;
-      case Sort.progress:
-        torrentsSorted.sort((a, b) => a.progress.compareTo(b.progress));
-        break;
-      case Sort.size:
-        torrentsSorted.sort((a, b) => a.size.compareTo(b.size));
-        break;
-      case Sort.name:
-        torrentsSorted.sort(
-          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-        );
-        break;
-      case Sort.status:
-        torrentsSorted.sort((a, b) => a.status.index.compareTo(b.status.index));
-        break;
-      case Sort.eta:
-        torrentsSorted.sort((a, b) {
+    int comparator(Torrent a, Torrent b) {
+      switch (sort) {
+        case Sort.addedDate:
+          return a.addedDate.compareTo(b.addedDate);
+        case Sort.progress:
+          return a.progress.compareTo(b.progress);
+        case Sort.size:
+          return a.size.compareTo(b.size);
+        case Sort.name:
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        case Sort.status:
+          return a.status.index.compareTo(b.status.index);
+        case Sort.eta:
           final etaA = a.eta < 0 ? double.infinity : a.eta;
           final etaB = b.eta < 0 ? double.infinity : b.eta;
           return etaA.compareTo(etaB);
-        });
-        break;
+      }
     }
 
-    return reverseSort ? torrentsSorted.reversed.toList() : torrentsSorted;
+    int compare(Torrent a, Torrent b) {
+      final result = comparator(a, b);
+      return result == 0 ? a.id.compareTo(b.id) : result;
+    }
+
+    pinned.sort(compare);
+    unpinned.sort(compare);
+
+    final sorted = reverseSort
+        ? [...pinned.reversed, ...unpinned.reversed]
+        : [...pinned, ...unpinned];
+
+    return sorted;
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      await TorrentFavoritesService.instance.load();
+      _favorites = Set.from(TorrentFavoritesService.instance.favoriteIds);
+    } catch (e) {
+      if (kDebugMode) debugPrint('TorrentFavoritesService load failed: $e');
+    }
+  }
+
+  bool isFavorite(int torrentId) => _favorites.contains(torrentId);
+
+  Future<void> toggleFavorite(int torrentId) async {
+    try {
+      final newState = await TorrentFavoritesService.instance.toggle(torrentId);
+      if (newState) {
+        _favorites.add(torrentId);
+      } else {
+        _favorites.remove(torrentId);
+      }
+      processDisplayedTorrents();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('TorrentFavoritesService toggle failed: $e');
+      }
+    }
   }
 
   Future<TorrentAddedResponse> addTorrent(
@@ -493,6 +530,11 @@ class TorrentsModel extends ChangeNotifier {
 
   Future<void> setFilters(Filters updatedFilters) async {
     filters = updatedFilters;
+    processDisplayedTorrents();
+  }
+
+  Future<void> refreshFavorites() async {
+    await _loadFavorites();
     processDisplayedTorrents();
   }
 }

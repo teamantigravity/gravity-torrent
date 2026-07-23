@@ -98,6 +98,23 @@ class TorrentListTile extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
+              IconButton(
+                icon: Icon(
+                  torrentsModel.isFavorite(torrent.id)
+                      ? Icons.star
+                      : Icons.star_border,
+                  color: torrentsModel.isFavorite(torrent.id)
+                      ? Colors.amber
+                      : null,
+                ),
+                tooltip: torrentsModel.isFavorite(torrent.id)
+                    ? localizations.unfavorite
+                    : localizations.favorite,
+                onPressed: () => torrentsModel.toggleFavorite(torrent.id),
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
               TorrentHealthBadge(torrent: torrent),
             ],
           ),
