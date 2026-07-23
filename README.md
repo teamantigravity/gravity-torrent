@@ -100,6 +100,13 @@
 
 ---
 
+## Security & hardening
+
+- **PINs are never stored in plain text.** The privacy vault hashes the PIN with a per-PIN random salt using SHA-256, verifies with a constant-time comparison, and enforces a 5-attempt / 5-minute rate limit stored in secure keychain/keystore via `flutter_secure_storage`.
+- **Peer blocklist URLs are validated** before being saved or applied. Only `http`/`https` URLs with a public host are accepted, mitigating SSRF and accidental local-network probing.
+- **In-app update checks are hardened** with a 15-second HTTP timeout, explicit status-code checks, safe JSON parsing, and defensive semver tag handling so a malformed GitHub release can never crash the app.
+- **Static analysis is enforced** through `analysis_options.yaml` (`unawaited_futures`, `use_build_context_synchronously`, `close_sinks`, `cancel_subscriptions`, `avoid_dynamic_calls`, etc.) and runs in CI.
+
 ## Supported platforms
 
 | Platform | Status | Packaging |
