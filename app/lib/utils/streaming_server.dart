@@ -23,7 +23,7 @@ class StreamingServer {
 
   final bool allowNetworkAccess;
 
-  CancelableOperation? _cancelableOperation;
+  final Set<CancelableOperation> _activeRequests = {};
 
   StreamingServer({
     required this.filePath,
@@ -56,21 +56,20 @@ class StreamingServer {
       }
 
       await for (HttpRequest request in server) {
-        // Cancel the previous request
-        if (kDebugMode) {
-          debugPrint('streaming_server: cancel previous request...');
-        }
-        await _cancelableOperation?.cancel();
         final completer = CancelableCompleter();
+        late CancelableOperation operation;
 
         // Create new cancelable request
-        _cancelableOperation = CancelableOperation.fromFuture(
-          _handleRequest(request, completer),
+        operation = CancelableOperation.fromFuture(
+          _handleRequest(request, completer).whenComplete(() {
+            _activeRequests.remove(operation);
+          }),
           onCancel: () {
-            if (kDebugMode) debugPrint('Previous request cancelled.');
+            if (kDebugMode) debugPrint('Request cancelled.');
             completer.operation.cancel();
           },
         );
+        _activeRequests.add(operation);
       }
     } catch (e) {
       if (!_serverReadyCompleter.isCompleted) {
@@ -83,13 +82,19 @@ class StreamingServer {
   Future<void> stop() async {
     if (kDebugMode) debugPrint('streaming_server: stop');
     _stopped = true;
-    await _cancelableOperation?.cancel();
+    for (final op in _activeRequests.toList()) {
+      await op.cancel();
+    }
+    _activeRequests.clear();
     await _server?.close(force: true);
     _server = null;
   }
 
   void cancelRequest() {
-    _cancelableOperation?.cancel();
+    for (final op in _activeRequests.toList()) {
+      op.cancel();
+    }
+    _activeRequests.clear();
   }
 
   Future<String> getAddress() async {
@@ -352,6 +357,7 @@ class StreamingServer {
           torrentFile.beginPiece + (currentStart / torrent.pieceSize).floor();
       await _waitForPieces(
         from: piece,
+        count: 1,
         cancelableCompleter: cancelableCompleter,
       );
       if (kDebugMode) {

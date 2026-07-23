@@ -228,8 +228,6 @@ class SchedulerService {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('SchedulerService _resumeAll error: $e');
-    } finally {
-      _pausedByScheduler.clear();
     }
   }
 

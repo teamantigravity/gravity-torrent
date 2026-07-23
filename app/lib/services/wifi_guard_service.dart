@@ -73,6 +73,7 @@ class WifiGuardService {
     );
     // Re-seed the IP snapshot when switching modes.
     _lastIpAddresses = await _currentIpAddresses();
+    _pausedByGuard.clear();
   }
 
   void _subscribe() {
@@ -197,9 +198,10 @@ class WifiGuardService {
           _pausedByGuard.remove(id);
           continue;
         }
-        try {
-          await engine.resumeTorrent(id);
-        } catch (e) {
+          try {
+            await engine.resumeTorrent(id);
+            _pausedByGuard.remove(id);
+          } catch (e) {
           if (kDebugMode) {
             debugPrint('WifiGuardService: failed to resume $id: $e');
           }
@@ -212,8 +214,6 @@ class WifiGuardService {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('WifiGuardService _resumeAll error: $e');
-    } finally {
-      _pausedByGuard.clear();
     }
   }
 

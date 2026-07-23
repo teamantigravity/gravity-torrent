@@ -66,6 +66,9 @@ class PinService {
             SecureStorage.remove(_legacyPinKey),
           ]);
         }
+      } else if (_pinHash.isNotEmpty) {
+        _pinHash = '';
+        await SecureStorage.remove(_pinHashKey);
       }
     }
 

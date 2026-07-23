@@ -750,8 +750,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       secondary: const Icon(Icons.wifi),
                       title: Text(localizations.wifiOnlyMode),
                       subtitle: _featureSubtitle('enableWifiOnly', flags),
-                      value: flags.enableWifiOnly,
-                      onChanged: (v) => flags.setEnableWifiOnly(v),
+                      value: flags.enableWifiOnly &&
+                          WifiGuardService.instance.mode ==
+                              WifiGuardMode.wifiOnly,
+                      onChanged: (v) {
+                        if (v) {
+                          flags.setEnableWifiOnly(true);
+                          WifiGuardService.instance
+                              .setMode(WifiGuardMode.wifiOnly);
+                        } else {
+                          flags.setEnableWifiOnly(false);
+                        }
+                        setState(() {});
+                      },
+                    ),
+                    SwitchListTile(
+                      secondary: const Icon(Icons.security),
+                      title: Text(localizations.vpnKillSwitch),
+                      subtitle: Text(localizations.vpnKillSwitchDescription),
+                      value: flags.enableWifiOnly &&
+                          WifiGuardService.instance.mode ==
+                              WifiGuardMode.vpnKillSwitch,
+                      onChanged: (v) {
+                        if (v) {
+                          flags.setEnableWifiOnly(true);
+                          WifiGuardService.instance
+                              .setMode(WifiGuardMode.vpnKillSwitch);
+                        } else {
+                          flags.setEnableWifiOnly(false);
+                        }
+                        setState(() {});
+                      },
                     ),
                     SwitchListTile(
                       secondary: const Icon(Icons.shield_outlined),
@@ -771,26 +800,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             await BlocklistService.instance.updateNow();
                           } catch (_) {}
                         }
-                        setState(() {});
+                        if (mounted) {
+                          setState(() {});
+                        }
                       },
                     ),
-                    if (flags.enableWifiOnly)
-                      SwitchListTile(
-                        contentPadding:
-                            const EdgeInsets.only(left: 72, right: 16),
-                        title: Text(localizations.vpnKillSwitch),
-                        subtitle: Text(localizations.vpnKillSwitchDescription),
-                        value: WifiGuardService.instance.mode ==
-                            WifiGuardMode.vpnKillSwitch,
-                        onChanged: (v) {
-                          WifiGuardService.instance.setMode(
-                            v
-                                ? WifiGuardMode.vpnKillSwitch
-                                : WifiGuardMode.wifiOnly,
-                          );
-                          setState(() {});
-                        },
+                    SwitchListTile(
+                      secondary: const Icon(Icons.shield_outlined),
+                      title: Text(localizations.peerBlocklistManager),
+                      subtitle: Text(
+                        BlocklistService.instance.isEnabled
+                            ? localizations.peerBlocklistManagerActive(
+                                BlocklistService.instance.rulesCount,
+                              )
+                            : localizations.peerBlocklistManagerDisabled,
                       ),
+                      value: BlocklistService.instance.isEnabled,
+                      onChanged: (v) async {
+                        await BlocklistService.instance.setEnabled(v);
+                        if (v) {
+                          try {
+                            await BlocklistService.instance.updateNow();
+                          } catch (_) {}
+                        }
+                        if (mounted) {
+                          setState(() {});
+                        }
+                      },
+                    ),
                     if (isMobile()) ...[
                       SwitchListTile(
                         secondary: const Icon(Icons.battery_saver),

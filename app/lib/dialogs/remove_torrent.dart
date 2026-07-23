@@ -28,6 +28,12 @@ class RemoveTorrentDialog extends StatelessWidget {
       title: const Text('Remove Torrent'),
       actions: [
         TextButton(
+          child: const Text('Cancel'),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
           child: const Text('Delete files & torrent'),
           onPressed: () async {
             try {

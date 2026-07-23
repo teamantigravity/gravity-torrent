@@ -68,6 +68,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   bool _disposed = false;
   final GlobalKey _videoComponentKey = GlobalKey();
   Timer? _sleepTimer;
+  CancelableCompleter<void>? _loadingCompleter;
 
   void _closeVideoLoadingDialog() {
     if (_videoLoadingDialogContext != null &&
@@ -97,6 +98,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   void dispose() {
     _disposed = true;
     _sleepTimer?.cancel();
+    _loadingCompleter?.operation.cancel();
     unawaited(_disposePlayer());
     super.dispose();
   }
@@ -159,6 +161,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     // Preload video file (wait for first piece)
     if (widget.torrent.progress != 1) {
       final completer = CancelableCompleter<void>();
+      _loadingCompleter = completer;
       if (!mounted) return;
       onVideoLoading(completer);
 
@@ -197,6 +200,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     // Download subtitles
     if (widget.torrent.progress != 1) {
       final completer = CancelableCompleter<void>();
+      _loadingCompleter = completer;
       if (!mounted) return;
       onSubtitlesLoading(completer);
 
@@ -301,7 +305,14 @@ class TorrentPlayerState extends State<TorrentPlayer> {
           ],
         );
       },
-    );
+    ).then((_) {
+      if (!completer.isCanceled && !completer.isCompleted) {
+        completer.operation.cancel();
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      }
+    });
   }
 
   void onSubtitlesLoading(CancelableCompleter completer) {
@@ -330,7 +341,14 @@ class TorrentPlayerState extends State<TorrentPlayer> {
           ],
         );
       },
-    );
+    ).then((_) {
+      if (!completer.isCanceled && !completer.isCompleted) {
+        completer.operation.cancel();
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      }
+    });
   }
 
   onSubtitlesClick() {

@@ -55,8 +55,8 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(localizations.pinSaved)));
+        setState(() {});
       }
-      setState(() {});
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,38 +127,36 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
                   value: flags.enableAppLock,
                   onChanged: _toggleAppLock,
                 ),
-                if (flags.enableAppLock) ...[
-                  if (_biometricsAvailable)
-                    SwitchListTile(
-                      secondary: const Icon(Icons.fingerprint),
-                      title: Text(localizations.biometricUnlock),
-                      subtitle: Text(localizations.biometricUnlockDescription),
-                      value: lock.useBiometrics,
-                      onChanged: _toggleUseBiometrics,
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextField(
-                      controller: _pinController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      maxLength: 8,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: localizations.backupPin,
-                        hintText: localizations.backupPinHint,
-                        border: const OutlineInputBorder(),
-                      ),
+                if (_biometricsAvailable)
+                  SwitchListTile(
+                    secondary: const Icon(Icons.fingerprint),
+                    title: Text(localizations.biometricUnlock),
+                    subtitle: Text(localizations.biometricUnlockDescription),
+                    value: lock.useBiometrics,
+                    onChanged: _toggleUseBiometrics,
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _pinController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxLength: 8,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: localizations.backupPin,
+                      hintText: localizations.backupPinHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: FilledButton(
-                      onPressed: _setPin,
-                      child: Text(localizations.savePin),
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: FilledButton(
+                    onPressed: _setPin,
+                    child: Text(localizations.savePin),
                   ),
-                ],
+                ),
                 const SizedBox(height: 24),
                 Text(
                   localizations.privacyScore,
