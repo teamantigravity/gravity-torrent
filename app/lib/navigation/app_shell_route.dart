@@ -9,6 +9,7 @@ import 'package:gravity_torrent/dialogs/add_torrent.dart';
 import 'package:gravity_torrent/dialogs/confirm_exit.dart';
 import 'package:gravity_torrent/dialogs/quitting.dart';
 import 'package:gravity_torrent/dialogs/terms_of_use.dart';
+import 'package:gravity_torrent/dialogs/analytics_opt_in.dart';
 import 'package:gravity_torrent/dialogs/update_available.dart';
 import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/feature_flags.dart';
@@ -36,6 +37,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _appLinksSubscription;
   bool isTermsOfUseDialogDisplayed = false;
+  bool isAnalyticsOptInDialogDisplayed = false;
   bool hasShownUpdateDialog = false;
   bool showQuittingDialog = false;
   AppModel? _appModel;
@@ -71,9 +73,14 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     if (!mounted) return;
     final appModel = _appModel!;
     if (appModel.loaded && !_postLoadChecksDone) {
-      _postLoadChecksDone = true;
-      _openTermsOfUseDialog(appModel);
-      _checkForUpdate();
+      if (!appModel.termsOfUseAccepted) {
+        _openTermsOfUseDialog(appModel);
+      } else if (!appModel.analyticsOptInDisplayed) {
+        _openAnalyticsOptInDialog(appModel);
+      } else {
+        _postLoadChecksDone = true;
+        _checkForUpdate();
+      }
     }
     if (appModel.quitting && !showQuittingDialog) {
       _openQuittingDialog(appModel);
@@ -227,7 +234,36 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
           builder: (BuildContext context) {
             return const TermsOfUseDialog();
           },
-        );
+        ).then((_) {
+          if (mounted) {
+            isTermsOfUseDialogDisplayed = false;
+            _onAppModelChanged(); // Trigger next check
+          }
+        });
+      });
+    }
+  }
+
+  _openAnalyticsOptInDialog(AppModel appModel) {
+    var analyticsOptInDisplayed = appModel.analyticsOptInDisplayed;
+
+    if (!isAnalyticsOptInDialogDisplayed && !analyticsOptInDisplayed) {
+      // Avoid calling the dialog multiple times
+      isAnalyticsOptInDialogDisplayed = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const AnalyticsOptInDialog();
+          },
+        ).then((_) {
+          if (mounted) {
+            isAnalyticsOptInDialogDisplayed = false;
+            _onAppModelChanged(); // Trigger next check
+          }
+        });
       });
     }
   }
