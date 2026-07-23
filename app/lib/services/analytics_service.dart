@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// Daily data-usage snapshot.
@@ -24,7 +25,7 @@ class DataUsageSnapshot {
   factory DataUsageSnapshot.fromJson(Map<String, dynamic> json) {
     final dayRaw = json['day'];
     if (dayRaw is! String) {
-      throw FormatException('Missing or invalid day');
+      throw const FormatException('Missing or invalid day');
     }
     final day = DateTime.tryParse(dayRaw);
     if (day == null) {
@@ -147,14 +148,14 @@ class AnalyticsService {
 
   /// Record the latest cumulative per-torrent totals. The aggregate delta since
   /// the last sample is added to today's bucket.
-  Future<void> recordTorrentStats(List<dynamic> torrents) async {
+  Future<void> recordTorrentStats(List<Torrent> torrents) async {
     int deltaDown = 0;
     int deltaUp = 0;
 
     for (final t in torrents) {
-      final id = t.id as int;
-      final down = t.downloadedEver as int;
-      final up = t.uploadedEver as int;
+      final id = t.id;
+      final down = t.downloadedEver;
+      final up = t.uploadedEver;
 
       final lastD = _lastDownloadedByTorrent[id];
       final lastU = _lastUploadedByTorrent[id];
@@ -179,7 +180,7 @@ class AnalyticsService {
       _lastUploadedByTorrent[id] = up;
     }
 
-    final currentIds = torrents.map((t) => t.id as int).toSet();
+    final currentIds = torrents.map((t) => t.id).toSet();
     _lastDownloadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
     _lastUploadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
 

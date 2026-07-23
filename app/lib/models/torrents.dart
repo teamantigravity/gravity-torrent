@@ -68,7 +68,7 @@ class TorrentsModel extends ChangeNotifier {
   Future<void> _init() async {
     await _loadSettings();
     if (_disposed) return;
-    fetchTorrents();
+    await fetchTorrents();
     // Indefinitely refresh
     _timer = Timer.periodic(
       const Duration(seconds: refreshIntervalSeconds),
@@ -160,7 +160,7 @@ class TorrentsModel extends ChangeNotifier {
     if (_disposed) return;
     notifyListeners();
     // Refresh after state change
-    fetchTorrents();
+    unawaited(fetchTorrents());
   }
 
   List<Torrent> _filterTorrentsName(List<Torrent> torrents) {

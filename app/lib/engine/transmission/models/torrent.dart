@@ -214,9 +214,12 @@ class TransmissionTorrentModel {
         speedLimitUpEnabled =
             (json['upload_limited'] ?? json['uploadLimited']) as bool? ?? false,
         speedLimitDown =
-            ((json['download_limit'] ?? json['downloadLimit']) as num?)?.toInt() ?? 0,
+            ((json['download_limit'] ?? json['downloadLimit']) as num?)
+                    ?.toInt() ??
+                0,
         speedLimitUp =
-            ((json['upload_limit'] ?? json['uploadLimit']) as num?)?.toInt() ?? 0,
+            ((json['upload_limit'] ?? json['uploadLimit']) as num?)?.toInt() ??
+                0,
         doneDate = DateTime.fromMillisecondsSinceEpoch(
           ((json['doneDate'] as num?)?.toInt() ?? 0) * 1000,
         ),

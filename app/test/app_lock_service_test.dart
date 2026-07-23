@@ -43,9 +43,11 @@ void main() {
     test('does not store the raw PIN in preferences', () async {
       await AppLockService.instance.setPin('1234');
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getString('gravity_torrent_app_lock_pin');
-      expect(stored, isNotNull);
-      expect(stored, isNot(contains('1234')));
+      final hash = prefs.getString('gravity_torrent_app_lock_pin_hash');
+      final salt = prefs.getString('gravity_torrent_app_lock_pin_salt');
+      expect(hash, isNotNull);
+      expect(salt, isNotNull);
+      expect('$hash$salt', isNot(contains('1234')));
     });
 
     test('disabled app lock always authenticates', () async {
@@ -76,7 +78,8 @@ void main() {
       expect(AppLockService.instance.hasPin, isTrue);
     });
 
-    test('re-enabling app lock after disable authenticates with original PIN', () async {
+    test('re-enabling app lock after disable authenticates with original PIN',
+        () async {
       await AppLockService.instance.setPin('7777');
       await AppLockService.instance.setEnabled(true);
 

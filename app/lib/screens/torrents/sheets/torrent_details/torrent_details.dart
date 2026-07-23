@@ -19,7 +19,11 @@ class TorrentDetailsModalSheet extends StatelessWidget {
     required this.id,
     this.initialTab = 0,
     this.showOnlyPlayableFiles = false,
-  });
+  })  : assert(id > 0, 'Torrent ID must be positive'),
+        assert(
+          initialTab >= 0 && initialTab <= 3,
+          'Initial tab index must be between 0 and 3',
+        );
 
   @override
   Widget build(BuildContext context) {

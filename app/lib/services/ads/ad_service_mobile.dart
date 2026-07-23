@@ -38,7 +38,10 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   bool get canShowAds {
-    if (_disposed || !_platformSupported || !_initialized || _adFreeNotifier.value) {
+    if (_disposed ||
+        !_platformSupported ||
+        !_initialized ||
+        _adFreeNotifier.value) {
       return false;
     }
     if (!RemoteConfigService.instance.showAds) {

@@ -146,7 +146,8 @@ abstract class Torrent extends TorrentBase {
     // Want subtitles and set them to high priority
     final externalSubtitles = getExternalSubtitles(file, this);
     for (final (index, torrentFile) in files.indexed) {
-      if (externalSubtitles.firstWhereOrNull((f) => f.name == torrentFile.name) !=
+      if (externalSubtitles
+              .firstWhereOrNull((f) => f.name == torrentFile.name) !=
           null) {
         await toggleFileWanted(index, true);
         highPriorityFileIndices.add(index);

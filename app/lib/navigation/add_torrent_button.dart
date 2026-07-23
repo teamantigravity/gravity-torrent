@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/dialogs/add_torrent.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
@@ -14,12 +16,12 @@ class AddTorrentButton extends StatelessWidget {
 
     if (context.mounted) {
       AdServiceProvider.instance.showInterstitialIfReady();
-      showDialog(
+      unawaited(showDialog(
         context: context,
         builder: (BuildContext context) {
           return const AddTorrentDialog();
         },
-      );
+      ));
     }
   }
 

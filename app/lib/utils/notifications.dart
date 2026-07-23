@@ -167,11 +167,11 @@ showDownloadProgressNotification({
     );
   }
 
-  final NotificationDetails notificationDetails = NotificationDetails(
-    iOS: const DarwinNotificationDetails(
+  const NotificationDetails notificationDetails = NotificationDetails(
+    iOS: DarwinNotificationDetails(
       categoryIdentifier: 'download_progress',
     ),
-    macOS: const DarwinNotificationDetails(
+    macOS: DarwinNotificationDetails(
       categoryIdentifier: 'download_progress',
     ),
   );
@@ -190,7 +190,8 @@ Future<void> cancelDownloadProgressNotification() async {
   if (defaultTargetPlatform == TargetPlatform.android) {
     return;
   }
-  await (flutterLocalNotificationsPlugin as dynamic).cancel(_progressNotificationId);
+  await (flutterLocalNotificationsPlugin as dynamic)
+      .cancel(_progressNotificationId);
 }
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/file.dart';
@@ -202,7 +204,7 @@ class _FilesTabState extends State<FilesTab> {
                           final filePath =
                               path.join(widget.location, file.name);
                           if (value == 'open') {
-                            _openFile(file.name);
+                            await _openFile(file.name);
                           } else if (value == 'share') {
                             // ignore: deprecated_member_use
                             await Share.shareXFiles([XFile(filePath)]);
@@ -242,7 +244,7 @@ class _FilesTabState extends State<FilesTab> {
                     ),
                   ],
                 ),
-                onTap: completed ? () => _openFile(file.name) : null,
+                onTap: completed ? () => unawaited(_openFile(file.name)) : null,
               );
             },
           ),

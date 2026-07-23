@@ -138,7 +138,7 @@ class StreamingServer {
       if (kDebugMode) debugPrint('streaming_server: Request cancelled');
     } catch (e) {
       if (kDebugMode) {
-        debugPrint("streaming_server: Error processing request: $e");
+        debugPrint('streaming_server: Error processing request: $e');
       }
       try {
         request.response.statusCode = HttpStatus.internalServerError;

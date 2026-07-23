@@ -24,6 +24,7 @@ class BlocklistService {
   String _url = defaultUrl;
   DateTime? _lastUpdated;
   int _rulesCount = 0;
+  Completer<int>? _updateCompleter;
 
   bool get isEnabled => _enabled;
   bool get isUpdating => _updating;
@@ -31,10 +32,30 @@ class BlocklistService {
   DateTime? get lastUpdated => _lastUpdated;
   int get rulesCount => _rulesCount;
 
+  /// Validates that [url] is a safe HTTP/HTTPS URL. Empty string is allowed
+  /// and represents "no blocklist URL / disabled".
+  static bool isValidBlocklistUrl(String url) {
+    if (url.isEmpty) return true;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return false;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return false;
+    if (uri.host.isEmpty) return false;
+    // Block private/local network URLs to mitigate SSRF.
+    if (uri.host == 'localhost' ||
+        uri.host == '127.0.0.1' ||
+        uri.host.startsWith('192.168.') ||
+        uri.host.startsWith('10.') ||
+        uri.host.startsWith('172.')) {
+      return false;
+    }
+    return true;
+  }
+
   Future<void> load() async {
     if (_loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
-    _url = await SharedPrefsStorage.getString(_urlKey) ?? defaultUrl;
+    final storedUrl = await SharedPrefsStorage.getString(_urlKey) ?? defaultUrl;
+    _url = isValidBlocklistUrl(storedUrl) ? storedUrl : defaultUrl;
     final lastUpdatedStr = await SharedPrefsStorage.getString(_lastUpdatedKey);
     if (lastUpdatedStr != null) {
       _lastUpdated = DateTime.tryParse(lastUpdatedStr);
@@ -64,8 +85,12 @@ class BlocklistService {
 
   Future<void> setUrl(String url) async {
     await load();
-    _url = url;
-    await SharedPrefsStorage.setString(_urlKey, url);
+    final trimmed = url.trim();
+    if (!isValidBlocklistUrl(trimmed)) {
+      throw ArgumentError('Invalid or unsafe blocklist URL: $trimmed');
+    }
+    _url = trimmed;
+    await SharedPrefsStorage.setString(_urlKey, trimmed);
     if (_enabled) {
       await setEnabled(true);
     }
@@ -73,8 +98,14 @@ class BlocklistService {
 
   Future<int> updateNow() async {
     await load();
-    if (_updating) return _rulesCount;
+
+    // Wait for an in-progress update to finish rather than returning stale data.
+    if (_updateCompleter != null) {
+      return _updateCompleter!.future;
+    }
     if (!getIt.isRegistered<Engine>()) return _rulesCount;
+
+    _updateCompleter = Completer<int>();
     _updating = true;
 
     try {
@@ -97,12 +128,15 @@ class BlocklistService {
       if (kDebugMode) {
         debugPrint('BlocklistService: updated $count blocklist rules');
       }
+      _updateCompleter!.complete(count);
       return count;
     } catch (e) {
       if (kDebugMode) debugPrint('BlocklistService updateNow error: $e');
+      _updateCompleter!.completeError(e);
       rethrow;
     } finally {
       _updating = false;
+      _updateCompleter = null;
     }
   }
 }

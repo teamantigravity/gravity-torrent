@@ -189,7 +189,7 @@ void main() async {
       minimumSize: Size(360, 360),
     );
 
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
     });
@@ -242,7 +242,7 @@ void main() async {
       if (kDebugMode) debugPrint(e.toString());
     }
   } else if (Platform.isWindows) {
-    registerAppInRegistry();
+    await registerAppInRegistry();
   }
 
   runApp(GravityTorrent(featureFlags: featureFlags));
@@ -345,7 +345,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
     switch (state) {
       case AppLifecycleState.resumed:
         _lockDebounceTimer?.cancel();
-        if (kDebugMode) debugPrint("Application resumed");
+        if (kDebugMode) debugPrint('Application resumed');
         unawaited(processPendingNotificationAction());
         break;
 

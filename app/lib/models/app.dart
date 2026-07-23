@@ -49,7 +49,8 @@ class AppModel extends ChangeNotifier {
       checkForUpdate =
           await SharedPrefsStorage.getBool('checkForUpdate') ?? checkForUpdate;
       locale = await SharedPrefsStorage.getString('locale') ?? locale;
-      amoledBlack = await SharedPrefsStorage.getBool('amoledBlack') ?? amoledBlack;
+      amoledBlack =
+          await SharedPrefsStorage.getBool('amoledBlack') ?? amoledBlack;
 
       // Load app version
       try {

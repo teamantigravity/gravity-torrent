@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'shared_preferences.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// Thrown when secure storage (Keystore/Keychain) is unavailable and storing
 /// the value in plain [SharedPreferences] would be unsafe.

@@ -70,14 +70,16 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   Timer? _sleepTimer;
 
   void _closeVideoLoadingDialog() {
-    if (_videoLoadingDialogContext != null && _videoLoadingDialogContext!.mounted) {
+    if (_videoLoadingDialogContext != null &&
+        _videoLoadingDialogContext!.mounted) {
       Navigator.of(_videoLoadingDialogContext!).pop();
       _videoLoadingDialogContext = null;
     }
   }
 
   void _closeSubtitlesLoadingDialog() {
-    if (_subsLoadingDialogContext != null && _subsLoadingDialogContext!.mounted) {
+    if (_subsLoadingDialogContext != null &&
+        _subsLoadingDialogContext!.mounted) {
       Navigator.of(_subsLoadingDialogContext!).pop();
       _subsLoadingDialogContext = null;
     }
@@ -416,7 +418,9 @@ class TorrentPlayerState extends State<TorrentPlayer> {
                   Navigator.pop(dialogContext);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Sleep timer set for $minutes minutes')),
+                      SnackBar(
+                          content:
+                              Text('Sleep timer set for $minutes minutes')),
                     );
                   }
                 },
@@ -517,7 +521,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         }
         final streamUrl = await server?.getAddress() ?? '';
         if (!mounted) return;
-        showDialog<void>(
+        unawaited(showDialog<void>(
           context: context,
           builder: (dialogCtx) => SimpleDialog(
             title: Text(localizations.castToDevice),
@@ -536,7 +540,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
               );
             }).toList(),
           ),
-        );
+        ));
       },
     );
   }

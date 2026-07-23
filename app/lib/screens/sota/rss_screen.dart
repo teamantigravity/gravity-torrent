@@ -202,7 +202,8 @@ class _RssScreenState extends State<RssScreen> {
                                 setState(() {
                                   _feeds.removeAt(index);
                                 });
-                                await RssService.instance.removeFeed(feedToRemove);
+                                await RssService.instance
+                                    .removeFeed(feedToRemove);
                               },
                               child: SwitchListTile(
                                 secondary: const Icon(Icons.rss_feed),

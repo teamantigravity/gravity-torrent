@@ -119,6 +119,12 @@ class PurchaseServiceMobile implements PurchaseService {
       await AdServiceProvider.instance.setAdFree(true);
     }
   }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _updates.close();
+  }
 }
 
 PurchaseService createPurchaseService() {

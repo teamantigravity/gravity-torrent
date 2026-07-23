@@ -28,7 +28,7 @@ class SubtitlesServer {
       }
 
       await for (final HttpRequest request in server) {
-        handleRequest(request);
+        await handleRequest(request);
       }
     } catch (e) {
       if (!_serverReadyCompleter.isCompleted) {

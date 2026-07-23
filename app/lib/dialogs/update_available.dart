@@ -10,11 +10,11 @@ class UpdateAvailableDialog extends StatelessWidget {
 
   const UpdateAvailableDialog({super.key, required this.latestVersion});
 
-  _handleIgnoreClick(BuildContext context) {
+  void _handleIgnoreClick(BuildContext context) {
     Navigator.pop(context);
   }
 
-  _handleDownloadClick(context) async {
+  void _handleDownloadClick(BuildContext context) async {
     final result = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!context.mounted) return;
     if (!result) {

@@ -32,13 +32,13 @@ class TorrentGetRequestArguments {
           // means the server never recognizes the field and silently omits
           // it from the response, which made these values always read back
           // as false/0 regardless of their actual state.
-          TorrentField.sequentialDownload => "sequential_download",
-          TorrentField.leftUntilDone => "leftUntilDone",
-          TorrentField.sizeWhenDone => "sizeWhenDone",
-          TorrentField.speedLimitDownEnabled => "download_limited",
-          TorrentField.speedLimitUpEnabled => "upload_limited",
-          TorrentField.speedLimitDown => "download_limit",
-          TorrentField.speedLimitUp => "upload_limit",
+          TorrentField.sequentialDownload => 'sequential_download',
+          TorrentField.leftUntilDone => 'leftUntilDone',
+          TorrentField.sizeWhenDone => 'sizeWhenDone',
+          TorrentField.speedLimitDownEnabled => 'download_limited',
+          TorrentField.speedLimitUpEnabled => 'upload_limited',
+          TorrentField.speedLimitDown => 'download_limit',
+          TorrentField.speedLimitUp => 'upload_limit',
           _ => field.name,
         };
       }).toList(),

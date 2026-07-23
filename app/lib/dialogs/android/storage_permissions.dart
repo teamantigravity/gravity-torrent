@@ -11,7 +11,7 @@ class StoragePermissionDialog extends StatelessWidget {
 
   _requestPermission(BuildContext context) async {
     if (isPermanentlyDenied) {
-      openAppSettings();
+      await openAppSettings();
     } else {
       final sdkVersion = await getAndroidSdkVersion();
       if (Platform.isAndroid && sdkVersion != null && sdkVersion > 29) {

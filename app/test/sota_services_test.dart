@@ -213,9 +213,11 @@ void main() {
     test('does not store the raw PIN in preferences', () async {
       await AppLockService.instance.setPin('1234');
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getString('gravity_torrent_app_lock_pin');
-      expect(stored, isNotNull);
-      expect(stored, isNot(contains('1234')));
+      final hash = prefs.getString('gravity_torrent_app_lock_pin_hash');
+      final salt = prefs.getString('gravity_torrent_app_lock_pin_salt');
+      expect(hash, isNotNull);
+      expect(salt, isNotNull);
+      expect('$hash$salt', isNot(contains('1234')));
     });
   });
 }

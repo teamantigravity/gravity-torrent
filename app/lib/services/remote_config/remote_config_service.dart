@@ -59,7 +59,8 @@ class RemoteConfigService {
         showAds = json['show_ads'] as bool;
       }
       if (json.containsKey('sota_features') && json['sota_features'] is Map) {
-        final features = Map<String, dynamic>.from(json['sota_features'] as Map);
+        final features =
+            Map<String, dynamic>.from(json['sota_features'] as Map);
         featureFlags.clear();
         for (final entry in features.entries) {
           if (entry.value is bool) {

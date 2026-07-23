@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -15,24 +16,46 @@ const String _githubReleasesUrl =
 // version parsing fails and update checks silently do nothing.
 const String _rollingReleaseTag = 'latest-successful-build';
 
+// Maximum time to wait for the GitHub releases API before giving up.
+const Duration _httpTimeout = Duration(seconds: 15);
+
 // Returns the latest update version, or null
 Future<String?> checkForUpdate(String version) async {
-  if (await isDistributedFromAppStore()) return null;
-
   try {
-    final response = await http.get(Uri.parse(_githubReleasesUrl));
+    if (await isDistributedFromAppStore()) return null;
 
-    if (response.statusCode != 200) return null;
+    final response =
+        await http.get(Uri.parse(_githubReleasesUrl)).timeout(_httpTimeout);
 
-    final dynamic data = jsonDecode(response.body);
-    if (data is! List) return null;
+    if (response.statusCode != 200) {
+      if (kDebugMode) {
+        debugPrint(
+          'Update check failed: HTTP ${response.statusCode} — '
+          '${response.reasonPhrase}',
+        );
+      }
+      return null;
+    }
 
-    return latestUpgradeVersion(data, Version.parse(version));
-  } catch (e) {
-    debugPrint('Error checking for new release: $e');
+    final List<dynamic> releases;
+    try {
+      releases = jsonDecode(response.body) as List<dynamic>;
+    } on FormatException catch (e) {
+      if (kDebugMode) debugPrint('Update check: malformed JSON response — $e');
+      return null;
+    }
+
+    return latestUpgradeVersion(releases, Version.parse(version));
+  } on SocketException catch (e) {
+    if (kDebugMode) debugPrint('Update check: network error — $e');
+    return null;
+  } on TimeoutException catch (_) {
+    if (kDebugMode) debugPrint('Update check: request timed out');
+    return null;
+  } catch (e, s) {
+    if (kDebugMode) debugPrint('Update check: unexpected error — $e\n$s');
+    return null;
   }
-
-  return null;
 }
 
 // Selects the newest published semver release that is strictly greater than

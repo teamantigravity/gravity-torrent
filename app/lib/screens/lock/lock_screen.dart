@@ -44,7 +44,12 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   Future<void> _tryBiometricUnlock() async {
-    if (mounted) setState(() { _isLoading = true; _error = null; });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final ok = await AppLockService.instance.authenticateWithBiometrics();

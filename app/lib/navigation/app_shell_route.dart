@@ -112,7 +112,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     // Detect if current route is the player, and pop it
     Navigator.of(context).popUntil((route) => route.settings.name != 'player');
 
-    windowManager.hide();
+    unawaited(windowManager.hide());
   }
 
   _initWindowManager() async {
@@ -202,7 +202,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     if (!await checkAndRequestStoragePermissions(context)) return;
     if (!mounted) return;
 
-    showDialog(
+    unawaited(showDialog(
       context: context,
       builder: (BuildContext context) {
         return AddTorrentDialog(
@@ -210,7 +210,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
           initialContentPath: initialContentPath,
         );
       },
-    );
+    ));
   }
 
   _openTermsOfUseDialog(AppModel appModel) {

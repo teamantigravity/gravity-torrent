@@ -14,7 +14,7 @@ Future<void> registerAppInRegistry() async {
 Future<void> registerAppCmd() async {
   final appPath = Platform.resolvedExecutable;
 
-  final protocolRegKey = 'Software\\Classes\\$appName';
+  const protocolRegKey = 'Software\\Classes\\$appName';
   const protocolCmdRegKey = 'shell\\open\\command';
   final protocolCmdRegValue = RegistryValue.string('"$appPath" "%1"');
 
@@ -24,7 +24,7 @@ Future<void> registerAppCmd() async {
 
 Future<void> registerApp() async {
   const appRegKey = 'Software\\RegisteredApplications';
-  final appCapability = RegistryValue.string(appCapabilityPath);
+  const appCapability = RegistryValue.string(appCapabilityPath);
 
   final regKey = CURRENT_USER.create(appRegKey);
   regKey.setValue(appName, appCapability);
@@ -36,7 +36,7 @@ Future<void> registerCapabilities() async {
   );
   regKey.setValue(
     'ApplicationDescription',
-    RegistryValue.string('BitTorrent software'),
+    const RegistryValue.string('BitTorrent software'),
   );
 
   final fileRegKey = CURRENT_USER.create(
@@ -44,7 +44,7 @@ Future<void> registerCapabilities() async {
   );
   fileRegKey.setValue(
     '.torrent',
-    RegistryValue.string(appName),
+    const RegistryValue.string(appName),
   );
 
   final mimeRegKey = CURRENT_USER.create(
@@ -52,7 +52,7 @@ Future<void> registerCapabilities() async {
   );
   mimeRegKey.setValue(
     'application/x-bittorrent',
-    RegistryValue.string(appName),
+    const RegistryValue.string(appName),
   );
 
   final urlRegKey = CURRENT_USER.create(
@@ -61,7 +61,7 @@ Future<void> registerCapabilities() async {
 
   urlRegKey.setValue(
     'magnet',
-    RegistryValue.string(appName),
+    const RegistryValue.string(appName),
   );
 
   await registerScheme('gravitytorrent');
@@ -71,7 +71,7 @@ Future<void> registerScheme(String scheme) async {
   final appPath = Platform.resolvedExecutable;
 
   final protocolRegKey = 'Software\\Classes\\$scheme';
-  final protocolRegValue = RegistryValue.string('');
+  const protocolRegValue = RegistryValue.string('');
   const protocolCmdRegKey = 'shell\\open\\command';
   final protocolCmdRegValue = RegistryValue.string('"$appPath" "%1"');
 
