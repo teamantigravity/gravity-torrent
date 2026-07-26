@@ -263,7 +263,9 @@ void main() async {
   final receivePort = ReceivePort();
   IsolateNameServer.removePortNameMapping('notification_actions');
   IsolateNameServer.registerPortWithName(
-      receivePort.sendPort, 'notification_actions');
+    receivePort.sendPort,
+    'notification_actions',
+  );
   receivePort.listen((message) async {
     final actionId = message as String;
     if (actionId == 'exit') {
