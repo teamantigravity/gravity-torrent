@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -220,8 +221,8 @@ Future<void> _executeNotificationAction(String actionId, Engine engine) async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       await foreground.stopForegroundService();
     }
-    await SystemNavigator.pop();
-    return;
+    await engine.shutdown();
+    exit(0);
   }
 
   try {
