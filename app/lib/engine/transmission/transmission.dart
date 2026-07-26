@@ -598,7 +598,9 @@ class TransmissionEngine extends Engine {
     }
     // Saves transmission session settings to disk on a worker isolate so the
     // UI thread is not blocked by synchronous FFI disk writes.
-    final saveFuture = Isolate.run(() => flutter_libtransmission.saveSettings());
+    final saveFuture = Isolate.run(
+      () => flutter_libtransmission.saveSettings(),
+    );
     _activeSave = saveFuture;
     try {
       await saveFuture;

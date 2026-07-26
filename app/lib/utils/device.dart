@@ -30,7 +30,10 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
       isScrollControlled: true,
       useRootNavigator: true,
       constraints: BoxConstraints(
-        maxHeight: (MediaQuery.of(context).size.height - 64).clamp(100.0, double.infinity),
+        maxHeight: (MediaQuery.of(context).size.height - 64).clamp(
+          100.0,
+          double.infinity,
+        ),
         minWidth: MediaQuery.of(context).size.width,
       ),
       builder: (BuildContext context) {
