@@ -75,6 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> handlePickFolder(BuildContext context) async {
     final localizations = AppLocalizations.of(context);
 
+    String? selectedDirectory;
     bool pickerFailed = false;
     try {
       selectedDirectory = await FilePicker.getDirectoryPath(
