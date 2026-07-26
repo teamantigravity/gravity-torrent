@@ -126,7 +126,6 @@ Future<void> updateForegroundServiceNotification({
           payload: 'progress',
         );
   } on PlatformException catch (e) {
-    _foregroundServiceStarted = false;
     if (kDebugMode) {
       debugPrint('Foreground service notification update failed: $e');
     }

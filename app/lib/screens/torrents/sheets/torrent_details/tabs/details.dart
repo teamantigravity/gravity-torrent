@@ -414,10 +414,10 @@ class _DetailsTabState extends State<DetailsTab> {
                 final val = double.tryParse(newGoal);
                 if (val != null) {
                   await SeedRatioService.instance.setGoal(torrent.id, val);
-                  setState(() {});
+                  if (mounted) setState(() {});
                 } else if (newGoal.isEmpty) {
                   await SeedRatioService.instance.removeGoal(torrent.id);
-                  setState(() {});
+                  if (mounted) setState(() {});
                 }
               }
             } finally {

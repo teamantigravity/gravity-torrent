@@ -16,12 +16,12 @@ const subtitleExtensions = <String>{
 };
 
 int countSlashesRegex(String text) {
-  final regex = RegExp('/');
+  final regex = RegExp(r'[/\\]');
   return regex.allMatches(text).length;
 }
 
 String truncateFromLastSlash(String text) {
-  final int lastSlashIndex = text.lastIndexOf('/');
+  final int lastSlashIndex = text.lastIndexOf(RegExp(r'[/\\]'));
   if (lastSlashIndex != -1) {
     return text.substring(lastSlashIndex + 1);
   } else {
@@ -136,15 +136,13 @@ String? _normalizeLanguageTag(String tag) {
 }
 
 List<File> getExternalSubtitles(File file, Torrent torrent) {
-  final dirname = file.name.contains('/')
-      ? file.name.substring(0, file.name.lastIndexOf('/'))
-      : '';
+  final lastSlash = file.name.lastIndexOf(RegExp(r'[/\\]'));
+  final dirname = lastSlash != -1 ? file.name.substring(0, lastSlash) : '';
 
   return torrent.files.where((f) {
     if (!isSubtitleFileName(f.name)) return false;
-    final fDirname = f.name.contains('/')
-        ? f.name.substring(0, f.name.lastIndexOf('/'))
-        : '';
+    final fLastSlash = f.name.lastIndexOf(RegExp(r'[/\\]'));
+    final fDirname = fLastSlash != -1 ? f.name.substring(0, fLastSlash) : '';
     return fDirname == dirname;
   }).toList();
 }

@@ -63,7 +63,16 @@ Future<void> waitForPiecesList({
   await testPiecesComplete(null);
 
   if (!waitForPiecesCompleter.isCompleted) {
-    Timer.periodic(const Duration(seconds: 1), testPiecesComplete);
+    bool isFetching = false;
+    Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (isFetching) return;
+      isFetching = true;
+      try {
+        await testPiecesComplete(timer);
+      } finally {
+        isFetching = false;
+      }
+    });
   }
 
   return waitForPiecesCompleter.future;

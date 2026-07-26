@@ -279,6 +279,7 @@ class SchedulerService {
       if (toResume.isNotEmpty) {
         try {
           await engine.resumeTorrents(toResume);
+          _pausedByScheduler.clear();
         } catch (e) {
           if (kDebugMode) {
             debugPrint('SchedulerService failed to resume torrents: $e');

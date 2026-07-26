@@ -124,6 +124,7 @@ class _TorrentScreen extends State<TorrentsScreen> {
   }
 
   void _toggleSelectAllVisible(List<int> visibleIds) {
+    if (visibleIds.isEmpty) return;
     setState(() {
       if (visibleIds.every(_selectedTorrentIds.contains)) {
         for (final id in visibleIds) {
@@ -206,7 +207,14 @@ class _TorrentScreen extends State<TorrentsScreen> {
       );
     }
     if (!mounted) return;
-    _exitSelectionMode();
+    // Only exit selection mode if selected torrents were removed
+    final remainingModel = context.read<TorrentsModel>();
+    final anyRemoved = selectedTorrents.any(
+      (st) => !remainingModel.torrents.any((t) => t.id == st.id),
+    );
+    if (anyRemoved) {
+      _exitSelectionMode();
+    }
   }
 
   List<MapEntry<TorrentStatus?, String>> _statusFilterOptions(

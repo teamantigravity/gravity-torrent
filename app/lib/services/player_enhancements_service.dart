@@ -276,7 +276,9 @@ class PlayerEnhancementsService extends ChangeNotifier {
   void removeFromQueue(int index) {
     if (_disposed || index < 0 || index >= _queue.length) return;
     _queue.removeAt(index);
-    if (_currentIndex >= _queue.length) {
+    if (index < _currentIndex) {
+      _currentIndex--;
+    } else if (_currentIndex >= _queue.length) {
       _currentIndex = _queue.length - 1;
     }
     _safeNotify();

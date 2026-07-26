@@ -55,7 +55,7 @@ class StreamingServer {
     try {
       int offset = 0;
       for (final f in torrent.files) {
-        if (f.name == torrentFile.name) break;
+        if (identical(f, torrentFile) || f.name == torrentFile.name) break;
         offset += f.length;
       }
       _fileOffset ??= offset;

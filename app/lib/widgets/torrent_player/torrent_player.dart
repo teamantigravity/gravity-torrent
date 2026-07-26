@@ -137,11 +137,16 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       await server?.stop();
       await subsServer?.stop();
       _enhancements?.detachPlayer();
-      await player?.dispose();
-      // leave immersive mode
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     } catch (e) {
-      if (kDebugMode) debugPrint('Error disposing player: $e');
+      if (kDebugMode) debugPrint('Error stopping player: $e');
+    } finally {
+      try {
+        await player?.dispose();
+        // leave immersive mode
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      } catch (e) {
+        if (kDebugMode) debugPrint('Error disposing player: $e');
+      }
     }
   }
 

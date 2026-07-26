@@ -38,9 +38,9 @@ class RemoveTorrentDialog extends StatelessWidget {
         TextButton(
           child: Text(l.deleteFilesAndTorrent),
           onPressed: () async {
+            if (context.mounted) Navigator.of(context).pop();
             try {
               await _removeTorrent(torrentsModel, true);
-              if (context.mounted) Navigator.of(context).pop();
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -56,9 +56,9 @@ class RemoveTorrentDialog extends StatelessWidget {
         TextButton(
           child: Text(l.removeTorrentOnly),
           onPressed: () async {
+            if (context.mounted) Navigator.of(context).pop();
             try {
               await _removeTorrent(torrentsModel, false);
-              if (context.mounted) Navigator.of(context).pop();
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

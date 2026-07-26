@@ -85,13 +85,13 @@ class AutoExtractService extends ChangeNotifier {
                 '${targetFolder.parent.path}/${torrentName.replaceFirst(RegExp(r'\.gz$'), '')}';
             await targetFolder.parent.create(recursive: true);
             try {
-              final outputStream = OutputFileStream(outPath);
-              try {
-                const GZipDecoder().decodeStream(inputStream, outputStream);
-                await outputStream.close();
-              } finally {
-                await inputStream.close();
-              }
+            final outputStream = OutputFileStream(outPath);
+            try {
+              const GZipDecoder().decodeStream(inputStream, outputStream);
+            } finally {
+              await outputStream.close();
+              await inputStream.close();
+            }
               final outFile = File(outPath);
               if (!outFile.existsSync() || outFile.lengthSync() == 0) {
                 throw StateError('GZip decompression produced no output');

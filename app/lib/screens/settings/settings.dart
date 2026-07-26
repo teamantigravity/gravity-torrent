@@ -75,20 +75,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> handlePickFolder(BuildContext context) async {
     final localizations = AppLocalizations.of(context);
 
-    String? selectedDirectory;
+    bool pickerFailed = false;
     try {
       selectedDirectory = await FilePicker.getDirectoryPath(
         dialogTitle: localizations.downloadDirectoryPickerTitle,
       );
     } catch (e) {
+      pickerFailed = true;
       if (kDebugMode) {
         debugPrint('FilePicker.getDirectoryPath failed: $e');
       }
     }
 
-    // Fallback to a manual input dialog if the native picker is unavailable
-    // or the user cancels (e.g. on Linux without xdg-desktop-portal).
-    if (selectedDirectory == null || selectedDirectory.trim().isEmpty) {
+    // Fallback to a manual input dialog if the native picker failed
+    if (pickerFailed) {
       if (!context.mounted) return;
       selectedDirectory = await _showManualDownloadDirDialog(context);
     }
@@ -786,7 +786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           currentValue: BatteryService.instance.threshold,
                           onSave: (val) {
                             BatteryService.instance.setThreshold(val);
-                            setState(() {});
+                            if (mounted) setState(() {});
                           },
                         ),
                       );

@@ -619,12 +619,16 @@ class TorrentsModel extends ChangeNotifier {
       if (!file.wanted || file.bytesCompleted != file.length) continue;
       final filePath = p.normalize(p.join(torrent.location, file.name));
       if (_extractedPaths.contains(filePath)) continue;
-      _extractedPaths.add(filePath);
-      unawaited(_persistExtractedPaths());
-      await AutoExtractService.instance.handleTorrentCompletion(
-        torrent.name,
-        filePath,
-      );
+      try {
+        await AutoExtractService.instance.handleTorrentCompletion(
+          torrent.name,
+          filePath,
+        );
+        _extractedPaths.add(filePath);
+        unawaited(_persistExtractedPaths());
+      } catch (e) {
+        if (kDebugMode) debugPrint('AutoExtract error for $filePath: $e');
+      }
     }
   }
 

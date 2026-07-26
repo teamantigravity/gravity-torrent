@@ -143,7 +143,11 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
               }
             }
           }
-        } catch (_) {}
+        } catch (e, s) {
+          if (kDebugMode) {
+            debugPrint('Failed to check free space: $e\n$s');
+          }
+        }
       }
 
       int predictedSize = 500 * 1024 * 1024; // Fallback dummy size

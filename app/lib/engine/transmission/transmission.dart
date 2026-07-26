@@ -514,6 +514,7 @@ class TransmissionEngine extends Engine {
   Timer? _checkpointTimer;
   Timer? _saveDebounce;
   bool _closed = false;
+  Future<void>? _activeSave;
 
   void startCheckpointTimer() {
     _checkpointTimer?.cancel();
@@ -591,9 +592,21 @@ class TransmissionEngine extends Engine {
   @override
   Future<void> saveSession() async {
     if (_closed) return;
+    if (_activeSave != null) {
+      await _activeSave;
+      return;
+    }
     // Saves transmission session settings to disk on a worker isolate so the
     // UI thread is not blocked by synchronous FFI disk writes.
-    await Isolate.run(() => flutter_libtransmission.saveSettings());
+    final saveFuture = Isolate.run(() => flutter_libtransmission.saveSettings());
+    _activeSave = saveFuture;
+    try {
+      await saveFuture;
+    } finally {
+      if (_activeSave == saveFuture) {
+        _activeSave = null;
+      }
+    }
   }
 
   @override
@@ -619,6 +632,7 @@ class TransmissionEngine extends Engine {
     String? metainfo,
     String? downloadDir,
   ) async {
+    if (_closed) throw StateError('Engine is closed');
     final torrentAddRequest = TorrentAddRequest(
       arguments: TorrentAddRequestArguments(
         filename: filename,
@@ -629,9 +643,14 @@ class TransmissionEngine extends Engine {
     final jsonResponse = await flutter_libtransmission.requestAsync(
       jsonEncode(torrentAddRequest),
     );
-    final TorrentAddResponse response = TorrentAddResponse.fromJson(
-      (jsonDecode(jsonResponse) as Map<String, dynamic>),
-    );
+    final TorrentAddResponse response;
+    try {
+      response = TorrentAddResponse.fromJson(
+        (jsonDecode(jsonResponse) as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw TransmissionRpcError('Invalid add torrent response: $e');
+    }
 
     if (response.result != 'success') {
       throw TorrentAddError();
@@ -652,6 +671,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<List<Torrent>> fetchTorrents() async {
+    if (_closed) throw StateError('Engine is closed');
     final String res = await flutter_libtransmission.requestAsync(
       jsonEncode(
         TorrentGetRequest(
@@ -665,6 +685,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<Torrent> fetchTorrent(int id) async {
+    if (_closed) throw StateError('Engine is closed');
     final String res = await flutter_libtransmission.requestAsync(
       jsonEncode(
         TorrentGetRequest(
@@ -676,9 +697,14 @@ class TransmissionEngine extends Engine {
       ),
     );
 
-    final TorrentGetResponse decodedRes = TorrentGetResponse.fromJson(
-      (jsonDecode(res) as Map<String, dynamic>),
-    );
+    final TorrentGetResponse decodedRes;
+    try {
+      decodedRes = TorrentGetResponse.fromJson(
+        (jsonDecode(res) as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw TransmissionRpcError('Invalid fetch torrent response: $e');
+    }
 
     if (decodedRes.result != 'success') {
       throw TransmissionRpcError(decodedRes.result);
@@ -693,6 +719,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<Session> fetchSession() async {
+    if (_closed) throw StateError('Engine is closed');
     final SessionGetRequest sessionGetRequest = SessionGetRequest(
       arguments: SessionGetRequestArguments(
         fields: [

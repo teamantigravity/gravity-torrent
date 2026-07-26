@@ -54,10 +54,12 @@ class _CastControlSheetState extends State<CastControlSheet> {
           // The session can end while the sheet is open (for example when the
           // player is closed), so close rather than show dead controls.
           if (!casting.isCasting || device == null) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(localizations.castStoppedMessage),
-            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted && Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            });
+            return const SizedBox.shrink();
           }
 
           return Column(

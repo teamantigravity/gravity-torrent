@@ -150,6 +150,13 @@ abstract class Torrent extends TorrentBase {
 
   Future<void> startStreaming(File file) async {
     if (kDebugMode) debugPrint('starting streaming ${file.name}');
+    final fileIndex = files.indexWhere((f) => f.name == file.name);
+    if (fileIndex == -1) {
+      throw StateError(
+        'Streaming file ${file.name} not found in torrent $name',
+      );
+    }
+
     // File already completed
     if (file.bytesCompleted == file.length) {
       // Do nothing if file is already completed.
@@ -160,13 +167,6 @@ abstract class Torrent extends TorrentBase {
     await start();
 
     await SharedPrefsStorage.setBool(_streamingActiveKey, true);
-
-    final fileIndex = files.indexWhere((f) => f.name == file.name);
-    if (fileIndex == -1) {
-      throw StateError(
-        'Streaming file ${file.name} not found in torrent $name',
-      );
-    }
 
     // File indices for streaming file and detected associated subtitles
     final List<int> highPriorityFileIndices = [fileIndex];
@@ -192,6 +192,10 @@ abstract class Torrent extends TorrentBase {
 
   Future<void> stopStreaming() async {
     if (kDebugMode) debugPrint('stopping streaming');
+    final wasActive =
+        await SharedPrefsStorage.getBool(_streamingActiveKey) ?? false;
+    if (!wasActive) return;
+
     await setSequentialDownload(false);
 
     // Reset all files to normal priority

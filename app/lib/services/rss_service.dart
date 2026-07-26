@@ -288,7 +288,7 @@ class RssService {
         if (kDebugMode) debugPrint('RssService: auto-added $link');
       } catch (e) {
         if (kDebugMode) debugPrint('RssService: failed to add $link: $e');
-        _seenLinks.remove(link); // retry next poll
+        // Retain link in _seenLinks so broken items do not loop infinitely
       }
     }
   }
