@@ -281,7 +281,7 @@ void onForegroundNotificationResponse(NotificationResponse response) {
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   final actionId = response.actionId ?? response.payload;
   if (actionId == null) return;
   if (actionId == 'progress' || actionId == 'completed') return;
@@ -291,7 +291,7 @@ void onBackgroundNotificationResponse(NotificationResponse response) {
     port.send(actionId);
     return;
   }
-  
+
   // If the port doesn't exist, the main isolate might be dead.
   // If it's an exit action, we handle it directly to ensure the background isolate dies.
   if (actionId == 'exit') {

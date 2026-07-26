@@ -262,7 +262,8 @@ void main() async {
   // Register port for cross-isolate notification actions
   final receivePort = ReceivePort();
   IsolateNameServer.removePortNameMapping('notification_actions');
-  IsolateNameServer.registerPortWithName(receivePort.sendPort, 'notification_actions');
+  IsolateNameServer.registerPortWithName(
+      receivePort.sendPort, 'notification_actions');
   receivePort.listen((message) async {
     final actionId = message as String;
     if (actionId == 'exit') {
@@ -477,7 +478,8 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
       case AppLifecycleState.detached:
         _lockDebounceTimer?.cancel();
-        if (defaultTargetPlatform == TargetPlatform.android && isForegroundServiceStarted) {
+        if (defaultTargetPlatform == TargetPlatform.android &&
+            isForegroundServiceStarted) {
           // If the foreground service is active, deliberately keep the app and engine running
           // in the background even if the Flutter activity is detached from the recent apps list.
         } else {

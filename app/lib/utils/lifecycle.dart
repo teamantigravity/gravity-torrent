@@ -7,7 +7,8 @@ import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/navigation/router.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
-import 'package:gravity_torrent/platforms/android/foreground_service.dart' as foreground;
+import 'package:gravity_torrent/platforms/android/foreground_service.dart'
+    as foreground;
 import 'package:gravity_torrent/main.dart';
 import 'package:provider/provider.dart';
 
