@@ -16,7 +16,7 @@ class QuotaService {
   static const _enabledKey = 'gravity_torrent_quota_enabled';
 
   /// Default: 100 GB
-  static const int defaultQuotaBytes = 100 * 1024 * 1024 * 1024;
+  static const int defaultQuotaBytes = 107374182400;
 
   /// Warning threshold: 80 % of quota.
   static const double warningThreshold = 0.80;

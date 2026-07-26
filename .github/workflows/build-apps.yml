@@ -14,7 +14,12 @@ concurrency:
   group: build-apps-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
+  quality:
+    name: CI quality gate
+    uses: ./.github/workflows/ci.yml
+
   linux:
+    needs: quality
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -64,6 +69,7 @@ jobs:
           path: ~/artifacts/
 
   linux-arm64:
+    needs: quality
     runs-on: ubuntu-24.04-arm
     defaults:
       run:
@@ -113,6 +119,7 @@ jobs:
           path: ~/artifacts/
 
   windows:
+    needs: quality
     runs-on: windows-2022
     env:
       # Workaround for https://gitlab.kitware.com/cmake/cmake/-/issues/25936
@@ -136,6 +143,17 @@ jobs:
         with:
           channel: stable
           cache: true
+      - name: Install sccache
+        shell: pwsh
+        run: |
+          # Pre-install sccache so the ccache-action does not have to download
+          # it from GitHub releases, which is flaky on Windows runners.
+          if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+            choco install sccache -y --no-progress
+            $chocoBin = 'C:\ProgramData\chocolatey\bin'
+            Add-Content -Path $env:GITHUB_PATH -Value $chocoBin
+            $env:PATH = "$chocoBin;$env:PATH"
+          }
       - name: Set up sccache
         uses: hendrikmuhs/ccache-action@v1.2.14
         with:
@@ -202,6 +220,7 @@ jobs:
           path: artifacts
 
   macos:
+    needs: quality
     runs-on: macos-15
     env:
       # Should be same as defined in /app/macos/Runner.xcodeproj
@@ -276,6 +295,7 @@ jobs:
           path: ~/artifacts/
 
   android:
+    needs: quality
     runs-on: ubuntu-24.04
     env:
       VCPKG_MANIFEST_DIR: ${{ github.workspace }}/app
@@ -291,8 +311,31 @@ jobs:
 
       - name: Free Disk Space
         run: |
+          # Free up the large swathes of pre-installed tooling that this job does not
+          # need (Android SDK/NDK must stay; everything else can go).
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/julia*
+          sudo rm -rf /opt/az
+          sudo rm -rf /usr/local/graalvm
+          sudo rm -rf /usr/local/share/chromium*
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/share/miniconda
+          sudo rm -rf /usr/local/lib/heroku
+          sudo rm -rf /usr/local/lib/aws
+          sudo rm -rf /opt/microsoft
+          sudo rm -rf /opt/hostedtoolcache/PyPy
+          sudo rm -rf /opt/hostedtoolcache/Python
+          sudo rm -rf /opt/hostedtoolcache/Ruby
+          sudo rm -rf /opt/hostedtoolcache/go
+          sudo rm -rf /opt/hostedtoolcache/Java_Adopt_jdk
+          sudo apt-get clean
+          sudo apt-get autoremove -y || true
+          if command -v docker >/dev/null 2>&1; then
+            docker system prune -af || true
+          fi
 
       - name: Decode android-keystore.jks
         env:
@@ -366,6 +409,7 @@ jobs:
           path: ~/artifacts-aab/
 
   ios:
+    needs: quality
     runs-on: macos-15
     env:
       # Do not target simulator

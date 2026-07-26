@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:gravity_torrent/engine/file.dart' as torrent_file;
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
-import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/engine/transmission/models/session_get_request.dart';
 import 'package:gravity_torrent/engine/transmission/models/session_get_response.dart';
@@ -35,6 +35,12 @@ Future<Directory> getConfigDir() async {
     'transmission',
   );
   return Directory(configDir);
+}
+
+void _requestEngineCheckpoint() {
+  if (getIt.isRegistered<Engine>()) {
+    getIt<Engine>().requestCheckpoint();
+  }
 }
 
 const torrentGetFields = [
@@ -79,7 +85,9 @@ TransmissionTorrent createTransmissionTorrentFromJson(
     id: torrent.id,
     name: torrent.name,
     progress: torrent.sizeWhenDone > 0
-        ? (torrent.sizeWhenDone - torrent.leftUntilDone) / torrent.sizeWhenDone
+        ? ((torrent.sizeWhenDone - torrent.leftUntilDone) /
+                torrent.sizeWhenDone)
+            .clamp(0.0, 1.0)
         : 0.0,
     status: torrent.status,
     size: torrent.totalSize,
@@ -199,112 +207,159 @@ class TransmissionTorrent extends Torrent {
 
   @override
   Future<void> start() async {
-    var request = TorrentActionRequest(
+    final request = TorrentActionRequest(
       action: TorrentAction.start,
       arguments: TorrentActionRequestArguments(ids: [id]),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
   Future<void> stop() async {
-    var request = TorrentActionRequest(
+    final request = TorrentActionRequest(
       action: TorrentAction.stop,
       arguments: TorrentActionRequestArguments(ids: [id]),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> startNow() async {
+    final request = TorrentActionRequest(
+      action: TorrentAction.startNow,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> verify() async {
+    final request = TorrentActionRequest(
+      action: TorrentAction.verify,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> reannounce() async {
+    final request = TorrentActionRequest(
+      action: TorrentAction.reannounce,
+      arguments: TorrentActionRequestArguments(ids: [id]),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
   Future<void> remove(bool withData) async {
-    var request = TorrentRemoveRequest(
+    final request = TorrentRemoveRequest(
       arguments: TorrentRemoveRequestArguments(
         ids: [id],
         deleteLocalData: withData,
       ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future update(TorrentBase torrent) async {
-    var request = TorrentSetRequest(
+  Future<void> update(TorrentBase torrent) async {
+    final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(ids: [id], labels: torrent.labels),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future toggleFileWanted(int fileIndex, bool wanted) async {
-    var request = TorrentSetRequest(
+  Future<void> toggleFileWanted(int fileIndex, bool wanted) async {
+    final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
         filesWanted: wanted ? [fileIndex] : null,
         filesUnwanted: !wanted ? [fileIndex] : null,
       ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future toggleAllFilesWanted(bool wanted) async {
-    final filesIndexesNotCompleted = files.indexed
-        .where(
-          (indexedElement) =>
-              indexedElement.$2.bytesCompleted != indexedElement.$2.length,
-        )
-        .map((indexedElement) => indexedElement.$1)
-        .toList();
+  Future<void> toggleAllFilesWanted(bool wanted) async {
+    final allFileIndexes =
+        files.indexed.map((indexedElement) => indexedElement.$1).toList();
 
     final request = TorrentSetRequest(
       arguments: wanted
           ? TorrentSetRequestArguments(
               ids: [id],
-              filesWanted: filesIndexesNotCompleted,
+              filesWanted: allFileIndexes,
             )
           : TorrentSetRequestArguments(
               ids: [id],
-              filesUnwanted: filesIndexesNotCompleted,
+              filesUnwanted: allFileIndexes,
             ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future setSequentialDownload(bool sequential) async {
-    var request = TorrentSetRequest(
+  Future<void> setSequentialDownload(bool sequential) async {
+    final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
         sequentialDownload: sequential,
       ),
     );
 
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future setSequentialDownloadFromPiece(int piece) async {
+  Future<void> setSequentialDownloadFromPiece(int piece) async {
     debugPrint('setSequentialDownloadFromPiece $piece');
-    var request = TorrentSetRequest(
+    final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
         sequentialDownloadFromPiece: piece,
       ),
     );
 
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future setSpeedLimits({
+  Future<void> setSpeedLimits({
     required bool downloadEnabled,
     required bool uploadEnabled,
     int? downloadLimitKbps,
@@ -319,17 +374,19 @@ class TransmissionTorrent extends Torrent {
         speedLimitUp: uploadEnabled ? uploadLimitKbps : null,
       ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 
   @override
-  Future setFilesPriority({
+  Future<void> setFilesPriority({
     List<int>? priorityHigh,
     List<int>? priorityLow,
     List<int>? priorityNormal,
   }) async {
-    var request = TorrentSetRequest(
+    final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
         priorityHigh: priorityHigh,
@@ -338,8 +395,10 @@ class TransmissionTorrent extends Torrent {
       ),
     );
 
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    engine.requestCheckpoint();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
   }
 }
 
@@ -376,7 +435,7 @@ class TransmissionSession extends Session {
 
   @override
   Future<void> update(SessionBase session) async {
-    SessionSetRequest request = SessionSetRequest(
+    final SessionSetRequest request = SessionSetRequest(
       arguments: SessionSetRequestArguments(
         downloadDir: session.downloadDir,
         downloadQueueSize: session.downloadQueueSize,
@@ -406,15 +465,38 @@ class TransmissionSession extends Session {
       ),
     );
 
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
-    flutter_libtransmission.saveSettings();
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    // Persist settings on a background isolate so the UI thread is not
+    // blocked by the synchronous FFI disk write.
+    if (getIt.isRegistered<Engine>()) {
+      await getIt<Engine>().saveSession();
+    }
+  }
+}
+
+void _expectSuccess(String raw) {
+  try {
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final result = decoded['result'] as String? ?? '';
+    if (result != 'success') {
+      throw TransmissionRpcError(result);
+    }
+  } on FormatException catch (e) {
+    throw TransmissionRpcError('invalid response: $e');
+  } on TypeError catch (e) {
+    throw TransmissionRpcError('invalid response: $e');
   }
 }
 
 List<Torrent> _parseTorrentsResponse(String res) {
   final TorrentGetResponse decodedRes = TorrentGetResponse.fromJson(
-    jsonDecode(res),
+    (jsonDecode(res) as Map<String, dynamic>),
   );
+  if (decodedRes.result != 'success') {
+    throw TransmissionRpcError(decodedRes.result);
+  }
   return decodedRes.arguments.torrents
       .map((torrent) {
         try {
@@ -431,24 +513,60 @@ List<Torrent> _parseTorrentsResponse(String res) {
 class TransmissionEngine extends Engine {
   Timer? _checkpointTimer;
   Timer? _saveDebounce;
+  bool _closed = false;
 
   void startCheckpointTimer() {
     _checkpointTimer?.cancel();
     _checkpointTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
-      await saveSession();
+      try {
+        await saveSession();
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('TransmissionEngine checkpoint failed: $e\n$s');
+        }
+      }
     });
   }
 
   @override
   void requestCheckpoint() {
+    if (_closed) return;
     _saveDebounce?.cancel();
     _saveDebounce = Timer(const Duration(seconds: 3), () async {
-      await saveSession();
+      try {
+        await saveSession();
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('TransmissionEngine checkpoint failed: $e\n$s');
+        }
+      }
     });
+  }
+
+  Future<void> _initDefaultDesktopDownloadDir() async {
+    try {
+      final session = await fetchSession();
+      if (session.downloadDir != null && session.downloadDir!.isNotEmpty) {
+        return;
+      }
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final downloadsDir = Directory(path.join(documentsDir.path, 'Downloads'));
+      if (!downloadsDir.existsSync()) {
+        downloadsDir.createSync(recursive: true);
+      }
+      await session.update(SessionBase(downloadDir: downloadsDir.path));
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint(
+          'TransmissionEngine _initDefaultDesktopDownloadDir failed: $e\n$s',
+        );
+      }
+    }
   }
 
   @override
   init() async {
+    _closed = false;
     final configDir = await getConfigDir();
     flutter_libtransmission.initSession(configDir.path);
     if (Platform.isAndroid) {
@@ -460,6 +578,11 @@ class TransmissionEngine extends Engine {
       // Once done, restart session to reload torrents in error state
       await shutdown();
       flutter_libtransmission.initSession(configDir.path);
+      _closed = false;
+    }
+
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      await _initDefaultDesktopDownloadDir();
     }
 
     startCheckpointTimer();
@@ -467,15 +590,26 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> saveSession() async {
-    // Saves transmission session settings to disk
-    flutter_libtransmission.saveSettings();
+    if (_closed) return;
+    // Saves transmission session settings to disk on a worker isolate so the
+    // UI thread is not blocked by synchronous FFI disk writes.
+    await Isolate.run(() => flutter_libtransmission.saveSettings());
   }
 
   @override
   Future<void> shutdown() async {
+    if (_closed) return;
     _checkpointTimer?.cancel();
     _saveDebounce?.cancel();
-    await saveSession();
+    try {
+      // Flush settings before marking the engine closed so saveSession()
+      // actually writes to disk.
+      await saveSession();
+    } catch (e) {
+      // Ignore save errors during shutdown.
+      if (kDebugMode) debugPrint('TransmissionEngine shutdown save failed: $e');
+    }
+    _closed = true;
     await Isolate.run(() => flutter_libtransmission.closeSession());
   }
 
@@ -485,18 +619,18 @@ class TransmissionEngine extends Engine {
     String? metainfo,
     String? downloadDir,
   ) async {
-    var torrentAddRequest = TorrentAddRequest(
+    final torrentAddRequest = TorrentAddRequest(
       arguments: TorrentAddRequestArguments(
         filename: filename,
         metainfo: metainfo,
         downloadDir: downloadDir,
       ),
     );
-    var jsonResponse = await flutter_libtransmission.requestAsync(
+    final jsonResponse = await flutter_libtransmission.requestAsync(
       jsonEncode(torrentAddRequest),
     );
-    TorrentAddResponse response = TorrentAddResponse.fromJson(
-      jsonDecode(jsonResponse),
+    final TorrentAddResponse response = TorrentAddResponse.fromJson(
+      (jsonDecode(jsonResponse) as Map<String, dynamic>),
     );
 
     if (response.result != 'success') {
@@ -518,7 +652,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<List<Torrent>> fetchTorrents() async {
-    String res = await flutter_libtransmission.requestAsync(
+    final String res = await flutter_libtransmission.requestAsync(
       jsonEncode(
         TorrentGetRequest(
           arguments: TorrentGetRequestArguments(fields: torrentGetFields),
@@ -531,7 +665,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<Torrent> fetchTorrent(int id) async {
-    String res = await flutter_libtransmission.requestAsync(
+    final String res = await flutter_libtransmission.requestAsync(
       jsonEncode(
         TorrentGetRequest(
           arguments: TorrentGetRequestArguments(
@@ -543,8 +677,12 @@ class TransmissionEngine extends Engine {
     );
 
     final TorrentGetResponse decodedRes = TorrentGetResponse.fromJson(
-      jsonDecode(res),
+      (jsonDecode(res) as Map<String, dynamic>),
     );
+
+    if (decodedRes.result != 'success') {
+      throw TransmissionRpcError(decodedRes.result);
+    }
 
     final torrents = decodedRes.arguments.torrents;
     if (torrents.isEmpty) {
@@ -555,7 +693,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<Session> fetchSession() async {
-    SessionGetRequest sessionGetRequest = SessionGetRequest(
+    final SessionGetRequest sessionGetRequest = SessionGetRequest(
       arguments: SessionGetRequestArguments(
         fields: [
           SessionField.downloadDir,
@@ -588,13 +726,17 @@ class TransmissionEngine extends Engine {
         ],
       ),
     );
-    String res = await flutter_libtransmission.requestAsync(
+    final String res = await flutter_libtransmission.requestAsync(
       jsonEncode(sessionGetRequest),
     );
 
     final SessionGetResponse decodedRes = SessionGetResponse.fromJson(
-      jsonDecode(res),
+      (jsonDecode(res) as Map<String, dynamic>),
     );
+
+    if (decodedRes.result != 'success') {
+      throw TransmissionRpcError(decodedRes.result);
+    }
 
     return TransmissionSession(
       downloadDir: decodedRes.arguments.downloadDir,
@@ -628,8 +770,8 @@ class TransmissionEngine extends Engine {
   }
 
   @override
-  Future resetSettings() async {
-    flutter_libtransmission.resetSettings();
+  Future<void> resetSettings() async {
+    await Isolate.run(() => flutter_libtransmission.resetSettings());
     if (Platform.isAndroid) {
       await android.initDefaultDownloadDir(this);
     }
@@ -640,62 +782,72 @@ class TransmissionEngine extends Engine {
   }
 
   @override
-  Future setTorrentsLocation(
+  Future<void> setTorrentsLocation(
     TorrentSetLocationArguments torrentSetLocationArguments,
   ) async {
+    if (torrentSetLocationArguments.ids.isEmpty) return;
     final request = TorrentSetLocationRequest(
       arguments: torrentSetLocationArguments,
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
     requestCheckpoint();
   }
 
   @override
-  Future removeTorrents(List<int> torrentIds, bool withData) async {
-    var request = TorrentRemoveRequest(
+  Future<void> removeTorrents(List<int> torrentIds, bool withData) async {
+    if (torrentIds.isEmpty) return;
+    final request = TorrentRemoveRequest(
       arguments: TorrentRemoveRequestArguments(
         ids: torrentIds,
         deleteLocalData: withData,
       ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
     requestCheckpoint();
   }
 
   @override
-  Future pauseTorrent(int id) async {
+  Future<void> pauseTorrent(int id) async {
     return pauseTorrents([id]);
   }
 
   @override
-  Future pauseTorrents(List<int> ids) async {
+  Future<void> pauseTorrents(List<int> ids) async {
     if (ids.isEmpty) return;
-    var request = TorrentActionRequest(
+    final request = TorrentActionRequest(
       action: TorrentAction.stop,
       arguments: TorrentActionRequestArguments(ids: ids),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
     requestCheckpoint();
   }
 
   @override
-  Future resumeTorrent(int id) async {
+  Future<void> resumeTorrent(int id) async {
     return resumeTorrents([id]);
   }
 
   @override
-  Future resumeTorrents(List<int> ids) async {
+  Future<void> resumeTorrents(List<int> ids) async {
     if (ids.isEmpty) return;
-    var request = TorrentActionRequest(
+    final request = TorrentActionRequest(
       action: TorrentAction.start,
       arguments: TorrentActionRequestArguments(ids: ids),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
     requestCheckpoint();
   }
 
   @override
-  Future setTorrentSpeedLimit(
+  Future<void> setTorrentSpeedLimit(
     int id, {
     int? downloadLimit,
     int? uploadLimit,
@@ -711,29 +863,36 @@ class TransmissionEngine extends Engine {
         speedLimitUp: uploadEnabled ? uploadLimit : null,
       ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
     requestCheckpoint();
   }
 
   @override
-  Future setTorrentSequentialDownload(int id, bool sequential) async {
-    var request = TorrentSetRequest(
+  Future<void> setTorrentSequentialDownload(int id, bool sequential) async {
+    final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
         sequentialDownload: sequential,
       ),
     );
-    await flutter_libtransmission.requestAsync(jsonEncode(request));
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
     requestCheckpoint();
   }
 
   @override
   Future<int> updateBlocklist() async {
     final responseRaw = await flutter_libtransmission.requestAsync(
-      jsonEncode({'method': 'blocklist-update'}),
+      jsonEncode({'method': 'blocklist-update', 'arguments': {}}),
     );
     try {
       final decoded = jsonDecode(responseRaw) as Map<String, dynamic>;
+      if (decoded['result'] != 'success') {
+        return 0;
+      }
       final args = decoded['arguments'] as Map<String, dynamic>?;
       return (args?['blocklist-size'] as num?)?.toInt() ?? 0;
     } catch (_) {

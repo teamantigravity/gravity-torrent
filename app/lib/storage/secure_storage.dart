@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'shared_preferences.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// Thrown when secure storage (Keystore/Keychain) is unavailable and storing
 /// the value in plain [SharedPreferences] would be unsafe.
@@ -24,6 +24,7 @@ class SecureStorageException implements Exception {
 class SecureStorage {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
   static bool _testMode = false;
@@ -39,7 +40,7 @@ class SecureStorage {
   static bool get _useSharedPrefs => kIsWeb || _testMode;
 
   static Future<String?> getString(String key) async {
-    if (_useSharedPrefs) return await SharedPrefsStorage.getString(key);
+    if (_useSharedPrefs) return SharedPrefsStorage.getString(key);
 
     try {
       return await _storage.read(key: key);

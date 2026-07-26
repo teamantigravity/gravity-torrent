@@ -79,7 +79,8 @@ Future<void> updateForegroundServiceNotification({
   if (!_foregroundServiceStarted) {
     if (kDebugMode) {
       debugPrint(
-          'Foreground service not running; skipping notification update.');
+        'Foreground service not running; skipping notification update.',
+      );
     }
     return;
   }
@@ -103,7 +104,7 @@ Future<void> updateForegroundServiceNotification({
     ongoing: true,
     showProgress: count > 0,
     maxProgress: 100,
-    progress: progress,
+    progress: progress.clamp(0, 100),
     actions: const <AndroidNotificationAction>[
       AndroidNotificationAction('pause_all', 'Pause all'),
       AndroidNotificationAction('resume_all', 'Resume all'),

@@ -12,12 +12,28 @@ class PurchaseServiceProvider {
 
   static final PurchaseService instance = purchase_impl.createPurchaseService();
 
+  static StreamSubscription<List<PurchaseUpdate>>? _purchaseSub;
+
+  static bool _disposed = false;
+
   static void wirePurchaseStream() {
-    instance.purchaseUpdates.listen(_handlePurchases);
+    if (_disposed) return;
+    _purchaseSub?.cancel();
+    _purchaseSub = instance.purchaseUpdates.listen(_handlePurchases);
+  }
+
+  static Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    await _purchaseSub?.cancel();
+    _purchaseSub = null;
+    instance.dispose();
   }
 
   static Future<void> _handlePurchases(List<PurchaseUpdate> updates) async {
+    if (_disposed) return;
     for (final update in updates) {
+      if (_disposed) return;
       if (update.productId != kRemoveAdsProductId) continue;
       switch (update.status) {
         case PurchaseUpdateStatus.purchased:

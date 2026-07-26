@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/app.dart';
@@ -20,33 +19,30 @@ class _ThemeSelectorState extends State<ThemeSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Consumer<AppModel>(
       builder: (context, app, child) {
-        var groupValue = app.theme;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            RadioListTile<ThemeMode>(
-              title: Text(localizations.system),
-              value: ThemeMode.system,
-              groupValue: groupValue,
-              onChanged: handleChange,
-            ),
-            RadioListTile<ThemeMode>(
-              title: Text(localizations.light),
-              value: ThemeMode.light,
-              groupValue: groupValue,
-              onChanged: handleChange,
-            ),
-            RadioListTile<ThemeMode>(
-              title: Text(localizations.dark),
-              value: ThemeMode.dark,
-              groupValue: groupValue,
-              onChanged: handleChange,
-            ),
-          ],
+        return RadioGroup<ThemeMode>(
+          groupValue: app.theme,
+          onChanged: handleChange,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              RadioListTile<ThemeMode>(
+                title: Text(localizations.system),
+                value: ThemeMode.system,
+              ),
+              RadioListTile<ThemeMode>(
+                title: Text(localizations.light),
+                value: ThemeMode.light,
+              ),
+              RadioListTile<ThemeMode>(
+                title: Text(localizations.dark),
+                value: ThemeMode.dark,
+              ),
+            ],
+          ),
         );
       },
     );

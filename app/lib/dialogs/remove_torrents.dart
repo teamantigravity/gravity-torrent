@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:provider/provider.dart';
@@ -21,21 +22,21 @@ class RemoveTorrentsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final torrentsModel = context.read<TorrentsModel>();
+    final count = torrents.length;
     return AlertDialog(
-      title: Text('Remove ${torrents.length} Torrents'),
-      content: Text(
-        'Are you sure you want to remove ${torrents.length} torrents?',
-      ),
+      title: Text(l.removeTorrents(count)),
+      content: Text(l.removeTorrentsConfirmation(count)),
       actions: [
         TextButton(
-          child: const Text('Cancel'),
+          child: Text(l.cancel),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         TextButton(
-          child: const Text('Delete files & torrents'),
+          child: Text(l.deleteFilesAndTorrents),
           onPressed: () async {
             try {
               await _removeTorrents(torrentsModel, true);
@@ -44,7 +45,7 @@ class RemoveTorrentsDialog extends StatelessWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Could not remove torrents: $e'),
+                    content: Text(l.removeTorrentsError(e.toString())),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -53,7 +54,7 @@ class RemoveTorrentsDialog extends StatelessWidget {
           },
         ),
         TextButton(
-          child: const Text('Remove torrents only'),
+          child: Text(l.removeTorrentsOnly),
           onPressed: () async {
             try {
               await _removeTorrents(torrentsModel, false);
@@ -62,7 +63,7 @@ class RemoveTorrentsDialog extends StatelessWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Could not remove torrents: $e'),
+                    content: Text(l.removeTorrentsError(e.toString())),
                     backgroundColor: Colors.orange,
                   ),
                 );

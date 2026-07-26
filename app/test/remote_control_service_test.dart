@@ -47,8 +47,10 @@ void main() {
       expect(service.isPrivateIp(InternetAddress('fd00::1')), isTrue);
       expect(service.isPrivateIp(InternetAddress('fc00::1')), isTrue);
       expect(service.isPrivateIp(InternetAddress('::1')), isTrue);
-      expect(service.isPrivateIp(InternetAddress('2001:4860:4860::8888')),
-          isFalse);
+      expect(
+        service.isPrivateIp(InternetAddress('2001:4860:4860::8888')),
+        isFalse,
+      );
     });
   });
 }

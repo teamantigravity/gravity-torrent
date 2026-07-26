@@ -34,7 +34,7 @@ class _BlocklistUrlDialogState extends State<BlocklistUrlDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(localizations.blocklistUrl),
       content: Column(

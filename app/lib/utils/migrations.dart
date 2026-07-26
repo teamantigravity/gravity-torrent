@@ -1,17 +1,28 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:gravity_torrent/main.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
+
+const _streamingActiveKey = 'streaming_active';
 
 /// Run all migrations for app updates.
 /// This should be called on app startup after engine initialization.
 Future<void> runMigrations() async {
-  await resetAllFilePriorities();
+  final wasStreaming =
+      await SharedPrefsStorage.getBool(_streamingActiveKey) ?? false;
+  if (wasStreaming) {
+    await resetAllFilePriorities();
+    await SharedPrefsStorage.setBool(_streamingActiveKey, false);
+  }
 }
 
 /// Reset all file priorities to normal on startup.
-/// This ensures that if the app crashed during streaming, file priorities
-/// are restored to normal state.
+/// This is only run after an unclean shutdown while a streaming session was
+/// active, so user-chosen priorities are not reset on a normal launch.
 Future<void> resetAllFilePriorities() async {
+  if (!getIt.isRegistered<Engine>()) return;
+  final engine = getIt<Engine>();
   try {
     final torrents = await engine.fetchTorrents();
     debugPrint('Resetting file priorities for ${torrents.length} torrents');

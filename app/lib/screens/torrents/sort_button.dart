@@ -4,7 +4,7 @@ import 'package:gravity_torrent/screens/torrents/dialogs/sort.dart';
 class SortButton extends StatelessWidget {
   const SortButton({super.key});
 
-  _handleButtonClick(BuildContext context) {
+  static void showSortDialog(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -16,7 +16,7 @@ class SortButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: () => _handleButtonClick(context),
+      onPressed: () => showSortDialog(context),
       icon: const Icon(Icons.sort),
     );
   }

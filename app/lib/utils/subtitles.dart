@@ -21,7 +21,7 @@ int countSlashesRegex(String text) {
 }
 
 String truncateFromLastSlash(String text) {
-  int lastSlashIndex = text.lastIndexOf('/');
+  final int lastSlashIndex = text.lastIndexOf('/');
   if (lastSlashIndex != -1) {
     return text.substring(lastSlashIndex + 1);
   } else {
@@ -136,25 +136,26 @@ String? _normalizeLanguageTag(String tag) {
 }
 
 List<File> getExternalSubtitles(File file, Torrent torrent) {
-  final slashesCount = countSlashesRegex(file.name);
-  final externalSubtitlesFiles = torrent.files
-      .where(
-        (f) =>
-            slashesCount == countSlashesRegex(f.name) &&
-            isSubtitleFileName(f.name),
-      )
-      .toList();
+  final dirname = file.name.contains('/')
+      ? file.name.substring(0, file.name.lastIndexOf('/'))
+      : '';
 
-  return externalSubtitlesFiles;
+  return torrent.files.where((f) {
+    if (!isSubtitleFileName(f.name)) return false;
+    final fDirname = f.name.contains('/')
+        ? f.name.substring(0, f.name.lastIndexOf('/'))
+        : '';
+    return fDirname == dirname;
+  }).toList();
 }
 
 Future<void> downloadSubtitles(
   File file,
   Torrent torrent, {
-  CancelableCompleter? cancelableCompleter,
+  CancelableCompleter<void>? cancelableCompleter,
 }) async {
   final List<File> subtitles = getExternalSubtitles(file, torrent);
-  for (var sub in subtitles) {
+  for (final sub in subtitles) {
     if (cancelableCompleter?.isCanceled ?? false) return;
     await torrent.setSequentialDownloadFromPiece(sub.beginPiece);
     await _waitForFileComplete(
@@ -168,11 +169,11 @@ Future<void> downloadSubtitles(
 Future<void> _waitForFileComplete({
   required Torrent torrent,
   required String fileName,
-  CancelableCompleter? cancelableCompleter,
+  CancelableCompleter<void>? cancelableCompleter,
 }) async {
   final file = torrent.files.firstWhereOrNull((f) => f.name == fileName);
   if (file == null) return;
-  final pieceCount = file.endPiece - file.beginPiece;
+  final pieceCount = file.endPiece - file.beginPiece + 1;
   await waitForPieces(
     torrent: torrent,
     file: file,

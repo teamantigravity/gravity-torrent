@@ -37,7 +37,7 @@ class _RatioInputDialogState extends State<RatioInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(localizations.seedRatioLimit),
       content: Form(

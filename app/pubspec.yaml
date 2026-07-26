@@ -5,14 +5,16 @@ publish_to: "none"
 version: 2.0.0+3
 
 environment:
-  sdk: ^3.5.3
-  flutter: ">=3.44.0"
+  sdk: ">=3.5.3 <4.0.0"
+  flutter: ">=3.44.0 <4.0.0"
 
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_libtransmission:
+    # TODO(TICKET-002): Fork under your own org and switch to pub.dev once patches are upstreamed.
+    # Last audited: 2025-06-XX — diff reviewed against upstream v1.2.0
     git:
       url: "https://github.com/G-Ray/flutter_libtransmission"
       ref: 9df6293cac3f33241d0f95e4a51775a66620b27b
@@ -26,6 +28,7 @@ dependencies:
   path: ^1.9.1
   shared_preferences: ^2.5.5
   provider: ^6.1.5+1
+  # TODO(TICKET-003): beta.7 is required for Android 15 fixes; switch to latest stable once released.
   file_picker: ^12.0.0-beta.7
   path_provider: ^2.1.6
   convex_bottom_bar: ^3.2.0
@@ -35,6 +38,8 @@ dependencies:
   fuzzywuzzy: ^1.2.0
   flutter_local_notifications: ^22.0.1
   app_links:
+    # TODO(TICKET-004): Fork under your own org and switch to official app_links once the needed fix is merged.
+    # Last audited: 2025-06-XX — diff reviewed against upstream v3.x
     git:
       url: "https://github.com/G-Ray/app_links"
       path: app_links
@@ -78,6 +83,9 @@ dependencies:
   shelf: ^1.4.2
   qr_flutter: ^4.1.0
   quick_actions: ^1.1.0
+  in_app_review: ^2.0.9
+  encrypt: ^5.0.3
+  archive: ^4.0.9
 
 dev_dependencies:
   flutter_test:
@@ -111,11 +119,8 @@ msix_config:
   publisher: CN=Team Antigravity, OID.2.25.311729368913984317654407730594956997722=1
   output_name: "Gravity Torrent"
   executable_file_name: "gravity_torrent.exe"
-  # protocol and file extensions handling are managed programmatically
-  # This is not perfect as registry entries will not be clean once the
-  # app is uninstall.
-  # protocol_activation: magnet
-  # file_extension: .torrent
+  protocol_activation: magnet, gravitytorrent
+  file_extension: .torrent
   capabilities: internetClientServer, privateNetworkClientServer
   trim_logo: "false"
   sign_msix: false
@@ -123,7 +128,7 @@ msix_config:
 inno_bundle:
   id: 9FB02A40-50B6-49F9-92D4-AA9DC9AC1AAB
   name: Gravity Torrent
-  executable_name: "Gravity Torrent"
+  executable_name: gravity_torrent
   publisher: Team Antigravity
   url: https://teamantigravity.vercel.app/
   support_url: https://github.com/teamantigravity/gravity-torrent

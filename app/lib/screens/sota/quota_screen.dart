@@ -29,14 +29,23 @@ class _QuotaScreenState extends State<QuotaScreen> {
   }
 
   Future<void> _load() async {
-    await QuotaService.instance.load();
-    await AnalyticsService.instance.load();
-    if (mounted) {
-      setState(() {
-        _quotaGb = (QuotaService.instance.quotaBytes / (1024 * 1024 * 1024))
-            .clamp(_minGb, _maxGb);
-        _loaded = true;
-      });
+    try {
+      await QuotaService.instance.load();
+      await AnalyticsService.instance.load();
+      if (mounted) {
+        setState(() {
+          _quotaGb = (QuotaService.instance.quotaBytes / (1024 * 1024 * 1024))
+              .clamp(_minGb, _maxGb);
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('QuotaScreen load error: $e\\n$stack');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loaded = true;
+        });
+      }
     }
   }
 
@@ -53,7 +62,7 @@ class _QuotaScreenState extends State<QuotaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(

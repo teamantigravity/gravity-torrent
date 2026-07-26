@@ -7,12 +7,13 @@ import 'package:mime/mime.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/engine/file.dart' as torrent_file;
+import 'package:gravity_torrent/utils/secure_token.dart';
 import 'package:gravity_torrent/utils/torrent_utils.dart';
 
 /// Server to stream a file
 class StreamingServer {
   HttpServer? _server;
-  final Completer _serverReadyCompleter = Completer();
+  final Completer<void> _serverReadyCompleter = Completer<void>();
   bool _stopped = false;
 
   String filePath;
@@ -20,10 +21,21 @@ class StreamingServer {
   final Torrent torrent;
   final torrent_file.File torrentFile;
   late File _file;
+  int? _fileOffset;
 
+  /// When true the server listens on all IPv4 interfaces so other devices on
+  /// the LAN (for example a DLNA renderer) can fetch the stream. Otherwise it
+  /// is reachable only from this device.
   final bool allowNetworkAccess;
 
-  CancelableOperation? _cancelableOperation;
+  /// Unguessable path prefix acting as a capability token.
+  ///
+  /// Binding to `0.0.0.0` would otherwise let *any* host on the network read
+  /// the torrent's contents, so every request must present this token. It is
+  /// generated per server instance and never persisted.
+  final String pathToken;
+
+  final Set<CancelableOperation<void>> _activeRequests = {};
 
   StreamingServer({
     required this.filePath,
@@ -31,58 +43,83 @@ class StreamingServer {
     required this.torrent,
     required this.torrentFile,
     this.allowNetworkAccess = false,
-  });
+    String? pathToken,
+  }) : pathToken = pathToken ?? generateSecureRandomToken(length: 16);
+
+  /// Returns true when [requestPath] presents the capability token.
+  @visibleForTesting
+  bool isAuthorizedPath(String requestPath) =>
+      pathCarriesToken(requestPath, pathToken);
 
   Future<void> start() async {
-    _file = File(filePath);
-    final address = allowNetworkAccess
-        ? InternetAddress.anyIPv4
-        : InternetAddress.loopbackIPv4;
-    final server = await HttpServer.bind(address, 0);
-    _server = server;
-    if (_stopped) {
-      // stop() was called before bind completed.
-      await server.close(force: true);
-      return;
-    }
-    if (!_serverReadyCompleter.isCompleted) {
-      _serverReadyCompleter.complete();
-    }
-    if (kDebugMode) {
-      debugPrint(
-        'streaming_server: starting streaming server on ${await getAddress()}',
-      );
-    }
-
-    await for (HttpRequest request in server) {
-      // Cancel the previous request
-      if (kDebugMode) {
-        debugPrint('streaming_server: cancel previous request...');
+    try {
+      int offset = 0;
+      for (final f in torrent.files) {
+        if (f.name == torrentFile.name) break;
+        offset += f.length;
       }
-      await _cancelableOperation?.cancel();
-      final completer = CancelableCompleter();
+      _fileOffset ??= offset;
 
-      // Create new cancelable request
-      _cancelableOperation = CancelableOperation.fromFuture(
-        _handleRequest(request, completer),
-        onCancel: () {
-          if (kDebugMode) debugPrint('Previous request cancelled.');
-          completer.operation.cancel();
-        },
-      );
+      _file = File(filePath);
+      final address = allowNetworkAccess
+          ? InternetAddress.anyIPv4
+          : InternetAddress.loopbackIPv4;
+      final server = await HttpServer.bind(address, 0);
+      _server = server;
+      if (_stopped) {
+        // stop() was called before bind completed.
+        await server.close(force: true);
+        return;
+      }
+      if (!_serverReadyCompleter.isCompleted) {
+        _serverReadyCompleter.complete();
+      }
+      if (kDebugMode) {
+        debugPrint(
+          'streaming_server: starting streaming server on ${await getAddress()}',
+        );
+      }
+
+      await for (final HttpRequest request in server) {
+        final completer = CancelableCompleter<void>();
+        late CancelableOperation<void> operation;
+
+        // Create new cancelable request
+        operation = CancelableOperation.fromFuture(
+          _handleRequest(request, completer).whenComplete(() {
+            _activeRequests.remove(operation);
+          }),
+          onCancel: () {
+            if (kDebugMode) debugPrint('Request cancelled.');
+            completer.operation.cancel();
+          },
+        );
+        _activeRequests.add(operation);
+      }
+    } catch (e) {
+      if (!_serverReadyCompleter.isCompleted) {
+        _serverReadyCompleter.completeError(e);
+      }
+      rethrow;
     }
   }
 
   Future<void> stop() async {
     if (kDebugMode) debugPrint('streaming_server: stop');
     _stopped = true;
-    await _cancelableOperation?.cancel();
+    for (final op in _activeRequests.toList()) {
+      await op.cancel();
+    }
+    _activeRequests.clear();
     await _server?.close(force: true);
     _server = null;
   }
 
   void cancelRequest() {
-    _cancelableOperation?.cancel();
+    for (final op in _activeRequests.toList()) {
+      op.cancel();
+    }
+    _activeRequests.clear();
   }
 
   Future<String> getAddress() async {
@@ -112,18 +149,28 @@ class StreamingServer {
           }
           if (host != '0.0.0.0' && host != '::') break;
         }
-      } catch (_) {}
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('StreamingServer: NetworkInterface.list failed: $e');
+        }
+      }
     }
-    return 'http://$host:${server.port}';
+    return 'http://$host:${server.port}/$pathToken';
   }
 
   Future<void> _handleRequest(
     HttpRequest request,
-    CancelableCompleter cancelableCompleter,
+    CancelableCompleter<void> cancelableCompleter,
   ) async {
     try {
-      if (request.method == 'GET') {
+      if (!isAuthorizedPath(request.uri.path)) {
+        // Deliberately a 404 rather than a 403 so a scanner cannot tell that a
+        // stream exists behind an unknown token.
+        request.response.statusCode = HttpStatus.notFound;
+      } else if (request.method == 'GET') {
         await _handleGetRequest(request, cancelableCompleter);
+      } else if (request.method == 'HEAD') {
+        await _handleHeadRequest(request);
       } else {
         request.response.statusCode = HttpStatus.methodNotAllowed;
       }
@@ -131,18 +178,44 @@ class StreamingServer {
       if (kDebugMode) debugPrint('streaming_server: Request cancelled');
     } catch (e) {
       if (kDebugMode) {
-        debugPrint("streaming_server: Error processing request: $e");
+        debugPrint('streaming_server: Error processing request: $e');
       }
-      request.response.statusCode = HttpStatus.internalServerError;
+      try {
+        request.response.statusCode = HttpStatus.internalServerError;
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('StreamingServer: failed to set error status: $e');
+        }
+      }
     } finally {
-      await request.response.close();
+      try {
+        await request.response.close();
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('StreamingServer: failed to close response: $e');
+        }
+      }
       cancelableCompleter.complete();
     }
   }
 
+  Future<void> _handleHeadRequest(HttpRequest request) async {
+    if (kDebugMode) debugPrint('streaming_server: _handleHeadRequest');
+    final fileSize = torrentFile.length;
+    request.response.statusCode = HttpStatus.ok;
+    final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
+    try {
+      request.response.headers.contentType = ContentType.parse(mimeType);
+    } on FormatException {
+      request.response.headers.contentType = ContentType.binary;
+    }
+    request.response.headers.contentLength = fileSize;
+    request.response.headers.set('Accept-Ranges', 'bytes');
+  }
+
   Future<void> _handleGetRequest(
     HttpRequest request,
-    CancelableCompleter cancelableCompleter,
+    CancelableCompleter<void> cancelableCompleter,
   ) async {
     // Wait for at least first piece
     if (kDebugMode) debugPrint('streaming_server: _handleGetRequest');
@@ -173,12 +246,16 @@ class StreamingServer {
   Future<void> _sendFullFile(
     HttpRequest request,
     int fileSize,
-    CancelableCompleter cancelableCompleter,
+    CancelableCompleter<void> cancelableCompleter,
   ) async {
     if (kDebugMode) debugPrint('streaming_server: _sendFullFile');
     request.response.statusCode = HttpStatus.ok;
     final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
-    request.response.headers.contentType = ContentType.parse(mimeType);
+    try {
+      request.response.headers.contentType = ContentType.parse(mimeType);
+    } on FormatException {
+      request.response.headers.contentType = ContentType.binary;
+    }
     request.response.headers.contentLength = fileSize;
 
     await _pipeFileRangeInBlocks(
@@ -195,7 +272,7 @@ class StreamingServer {
     HttpRequest request,
     int fileSize,
     String rangeHeader,
-    CancelableCompleter cancelableCompleter,
+    CancelableCompleter<void> cancelableCompleter,
   ) async {
     if (kDebugMode) debugPrint('streaming_server: _handleRangeRequest');
     final rangeRegex = RegExp(r'bytes=(\d*)-(\d*)');
@@ -212,23 +289,38 @@ class StreamingServer {
     int start = 0;
     int end = fileSize - 1;
 
-    if (startStr != null && startStr.isNotEmpty) {
-      start = int.parse(startStr);
-    }
-
-    if (endStr != null && endStr.isNotEmpty) {
+    try {
       if (startStr != null && startStr.isNotEmpty) {
-        end = int.parse(endStr);
-      } else {
-        // Suffix range: bytes=-N
-        final suffixLength = int.parse(endStr);
-        start = fileSize - suffixLength;
-        if (start < 0) start = 0;
-        end = fileSize - 1;
+        start = int.parse(startStr);
       }
+
+      if (endStr != null && endStr.isNotEmpty) {
+        if (startStr != null && startStr.isNotEmpty) {
+          end = int.parse(endStr);
+        } else {
+          // Suffix range: bytes=-N
+          final suffixLength = int.parse(endStr);
+          start = fileSize - suffixLength;
+          if (start < 0) start = 0;
+          end = fileSize - 1;
+        }
+      }
+    } on FormatException {
+      request.response.statusCode = HttpStatus.badRequest;
+      return;
     }
 
-    if (start < 0 || start >= fileSize || start > end) {
+    if (start < 0 || start >= fileSize) {
+      request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+      request.response.headers.set('Content-Range', 'bytes */$fileSize');
+      return;
+    }
+
+    if (end >= fileSize) {
+      end = fileSize - 1;
+    }
+
+    if (start > end) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
       request.response.headers.set('Content-Range', 'bytes */$fileSize');
       return;
@@ -238,14 +330,18 @@ class StreamingServer {
 
     request.response.statusCode = HttpStatus.partialContent;
     final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
-    request.response.headers.contentType = ContentType.parse(mimeType);
+    try {
+      request.response.headers.contentType = ContentType.parse(mimeType);
+    } on FormatException {
+      request.response.headers.contentType = ContentType.binary;
+    }
     request.response.headers.contentLength = contentLength;
     request.response.headers.set(
       'Content-Range',
       'bytes $start-$end/$fileSize',
     );
 
-    final piece = (start / torrent.pieceSize).floor();
+    final piece = ((_fileOffset ?? 0) + start) ~/ torrent.pieceSize;
 
     if (kDebugMode) {
       debugPrint(
@@ -269,7 +365,7 @@ class StreamingServer {
     final neededPiecesCount = count ?? (bufferSize / torrent.pieceSize).ceil();
     final firstPiece = from ?? torrentFile.beginPiece;
     final lastPiece = torrentFile.endPiece;
-    for (int i = 0; i < neededPiecesCount && firstPiece + i < lastPiece; i++) {
+    for (int i = 0; i < neededPiecesCount && firstPiece + i <= lastPiece; i++) {
       neededPieces.add(firstPiece + i);
     }
 
@@ -279,7 +375,7 @@ class StreamingServer {
   Future<void> _waitForPieces({
     int? from,
     int? count,
-    CancelableCompleter? cancelableCompleter,
+    CancelableCompleter<void>? cancelableCompleter,
   }) async {
     final neededPieces = _computeNeededPieces(from, count);
     if (kDebugMode) debugPrint('streaming_server: neededPieces $neededPieces');
@@ -305,7 +401,7 @@ class StreamingServer {
     int start,
     int end,
     int blockSize,
-    CancelableCompleter cancelableCompleter,
+    CancelableCompleter<void> cancelableCompleter,
   ) async {
     if (kDebugMode) {
       debugPrint(
@@ -327,9 +423,10 @@ class StreamingServer {
         currentEnd = end;
       }
 
-      final piece = (currentStart / torrent.pieceSize).floor();
+      final piece = ((_fileOffset ?? 0) + currentStart) ~/ torrent.pieceSize;
       await _waitForPieces(
         from: piece,
+        count: 1,
         cancelableCompleter: cancelableCompleter,
       );
       if (kDebugMode) {

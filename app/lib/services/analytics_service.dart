@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// Daily data-usage snapshot.
@@ -24,7 +26,7 @@ class DataUsageSnapshot {
   factory DataUsageSnapshot.fromJson(Map<String, dynamic> json) {
     final dayRaw = json['day'];
     if (dayRaw is! String) {
-      throw FormatException('Missing or invalid day');
+      throw const FormatException('Missing or invalid day');
     }
     final day = DateTime.tryParse(dayRaw);
     if (day == null) {
@@ -48,22 +50,44 @@ class AnalyticsService {
   static final AnalyticsService instance = AnalyticsService._();
 
   static const _storageKey = 'gravity_torrent_analytics_history';
+  static const _baselinesKey = 'gravity_torrent_analytics_baselines';
   static const _maxDays = 90;
 
   List<DataUsageSnapshot> _history = [];
   bool _loaded = false;
-  int _lastRawDownloaded = -1;
-  int _lastRawUploaded = -1;
+  Map<int, int> _lastDownloadedByTorrent = {};
+  Map<int, int> _lastUploadedByTorrent = {};
+  int? _lastDownloadedTotal;
+  int? _lastUploadedTotal;
+
+  Future<void>? _lock;
 
   @visibleForTesting
   void reset() {
     _loaded = false;
     _history = [];
-    _lastRawDownloaded = -1;
-    _lastRawUploaded = -1;
+    _lastDownloadedByTorrent = {};
+    _lastUploadedByTorrent = {};
+    _lastDownloadedTotal = null;
+    _lastUploadedTotal = null;
   }
 
-  Future<void> load() async {
+  /// Clears all stored analytics history and per-torrent baselines.
+  Future<void> clearHistory() async => _withLock(() => _clearHistoryImpl());
+
+  Future<void> _clearHistoryImpl() async {
+    _history = [];
+    _lastDownloadedByTorrent = {};
+    _lastUploadedByTorrent = {};
+    _lastDownloadedTotal = null;
+    _lastUploadedTotal = null;
+    await SharedPrefsStorage.remove(_storageKey);
+    await SharedPrefsStorage.remove(_baselinesKey);
+  }
+
+  Future<void> load() async => _withLock(() => _loadImpl());
+
+  Future<void> _loadImpl() async {
     if (_loaded) return;
     try {
       final raw = await SharedPrefsStorage.getString(_storageKey);
@@ -74,7 +98,9 @@ class AnalyticsService {
               .whereType<Map<String, dynamic>>()
               .map((e) {
                 try {
-                  return DataUsageSnapshot.fromJson(e);
+                  return DataUsageSnapshot.fromJson(
+                    Map<String, dynamic>.from(e),
+                  );
                 } catch (e, s) {
                   if (kDebugMode) {
                     debugPrint('Skipping invalid analytics snapshot: $e\n$s');
@@ -93,38 +119,116 @@ class AnalyticsService {
       _history = [];
     }
     _history.sort((a, b) => a.day.compareTo(b.day));
+    await _loadBaselinesImpl();
     _loaded = true;
   }
 
-  Future<void> save() async {
+  Future<void> save() async => _withLock(() => _saveImpl());
+
+  Future<void> _saveImpl() async {
     final raw = jsonEncode(_history.map((e) => e.toJson()).toList());
     await SharedPrefsStorage.setString(_storageKey, raw);
   }
 
-  /// Record the latest cumulative totals. The delta since the last sample is
-  /// added to today's bucket.
+  /// Record the latest cumulative session totals. The delta since the last
+  /// sample is added to today's bucket.
   Future<void> recordTotals({
     required int downloadedBytes,
     required int uploadedBytes,
+  }) async =>
+      _withLock(
+        () => _recordTotalsImpl(
+          downloadedBytes: downloadedBytes,
+          uploadedBytes: uploadedBytes,
+        ),
+      );
+
+  Future<void> _recordTotalsImpl({
+    required int downloadedBytes,
+    required int uploadedBytes,
   }) async {
-    await load();
-    final today = DateTime.now();
-    final key = DateTime(today.year, today.month, today.day);
+    await _loadImpl();
 
-    // Compute deltas using the last raw cumulative values, not the history bucket.
-    final deltaDown = _lastRawDownloaded < 0
-        ? 0 // First ever call — don't count existing downloads as "new"
-        : downloadedBytes >= _lastRawDownloaded
-            ? downloadedBytes - _lastRawDownloaded
-            : downloadedBytes; // counter reset after engine restart
-    final deltaUp = _lastRawUploaded < 0
-        ? 0
-        : uploadedBytes >= _lastRawUploaded
-            ? uploadedBytes - _lastRawUploaded
-            : uploadedBytes;
+    int deltaDown = 0;
+    int deltaUp = 0;
 
-    _lastRawDownloaded = downloadedBytes;
-    _lastRawUploaded = uploadedBytes;
+    final lastD = _lastDownloadedTotal;
+    final lastU = _lastUploadedTotal;
+
+    if (lastD == null) {
+      // First sample for this session, establish the baseline.
+    } else if (downloadedBytes >= lastD) {
+      deltaDown = downloadedBytes - lastD;
+    } else {
+      // Counter reset: treat the new total as fresh progress.
+      deltaDown = downloadedBytes;
+    }
+
+    if (lastU == null) {
+      // First sample for this session, establish the baseline.
+    } else if (uploadedBytes >= lastU) {
+      deltaUp = uploadedBytes - lastU;
+    } else {
+      // Counter reset: treat the new total as fresh progress.
+      deltaUp = uploadedBytes;
+    }
+
+    _lastDownloadedTotal = downloadedBytes;
+    _lastUploadedTotal = uploadedBytes;
+
+    await _recordDeltasImpl(deltaDown, deltaUp);
+  }
+
+  /// Record the latest cumulative per-torrent totals. The aggregate delta since
+  /// the last sample is added to today's bucket.
+  Future<void> recordTorrentStats(List<Torrent> torrents) async =>
+      _withLock(() => _recordTorrentStatsImpl(torrents));
+
+  Future<void> _recordTorrentStatsImpl(List<Torrent> torrents) async {
+    await _loadImpl();
+    int deltaDown = 0;
+    int deltaUp = 0;
+
+    for (final t in torrents) {
+      final id = t.id;
+      final down = t.downloadedEver;
+      final up = t.uploadedEver;
+
+      final lastD = _lastDownloadedByTorrent[id];
+      final lastU = _lastUploadedByTorrent[id];
+
+      if (lastD == null) {
+        // First time seeing this torrent this session, don't count existing
+      } else if (down >= lastD) {
+        deltaDown += down - lastD;
+      } else {
+        deltaDown += down;
+      }
+
+      if (lastU == null) {
+        // First time seeing this torrent
+      } else if (up >= lastU) {
+        deltaUp += up - lastU;
+      } else {
+        deltaUp += up;
+      }
+
+      _lastDownloadedByTorrent[id] = down;
+      _lastUploadedByTorrent[id] = up;
+    }
+
+    final currentIds = torrents.map((t) => t.id).toSet();
+    _lastDownloadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
+    _lastUploadedByTorrent.removeWhere((id, _) => !currentIds.contains(id));
+
+    await _recordDeltasImpl(deltaDown, deltaUp);
+    await _saveBaselinesImpl();
+  }
+
+  Future<void> _recordDeltasImpl(int deltaDown, int deltaUp) async {
+    await _loadImpl();
+    final now = DateTime.now();
+    final key = DateTime(now.year, now.month, now.day);
 
     // Keep only the last [_maxDays] days
     final excess = _history.length - _maxDays;
@@ -136,7 +240,7 @@ class AnalyticsService {
 
     // Skip writing if both deltas are zero to avoid spurious entries.
     if (deltaDown == 0 && deltaUp == 0) {
-      if (trimmed) await save();
+      if (trimmed) await _saveImpl();
       return;
     }
 
@@ -159,7 +263,59 @@ class AnalyticsService {
       );
     }
 
-    await save();
+    await _saveImpl();
+  }
+
+  Future<void> _loadBaselinesImpl() async {
+    try {
+      final raw = await SharedPrefsStorage.getString(_baselinesKey);
+      if (raw == null || raw.isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+
+      final down = decoded['down'];
+      final up = decoded['up'];
+      _lastDownloadedByTorrent = {};
+      _lastUploadedByTorrent = {};
+      if (down is Map) {
+        for (final entry in down.entries) {
+          final id = int.tryParse(entry.key.toString());
+          final value = (entry.value as num?)?.toInt();
+          if (id != null && value != null) {
+            _lastDownloadedByTorrent[id] = value;
+          }
+        }
+      }
+      if (up is Map) {
+        for (final entry in up.entries) {
+          final id = int.tryParse(entry.key.toString());
+          final value = (entry.value as num?)?.toInt();
+          if (id != null && value != null) {
+            _lastUploadedByTorrent[id] = value;
+          }
+        }
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load analytics baselines: $e\n$s');
+      }
+      _lastDownloadedByTorrent = {};
+      _lastUploadedByTorrent = {};
+    }
+  }
+
+  Future<void> _saveBaselinesImpl() async {
+    final payload = {
+      'down': {
+        for (final e in _lastDownloadedByTorrent.entries)
+          e.key.toString(): e.value,
+      },
+      'up': {
+        for (final e in _lastUploadedByTorrent.entries)
+          e.key.toString(): e.value,
+      },
+    };
+    await SharedPrefsStorage.setString(_baselinesKey, jsonEncode(payload));
   }
 
   List<DataUsageSnapshot> get history => List.unmodifiable(_history);
@@ -178,5 +334,21 @@ class AnalyticsService {
     final now = DateTime.now();
     final key = DateTime(now.year, now.month, now.day);
     return last.day == key ? last : null;
+  }
+
+  /// Serialize async operations so loads, saves and recordings do not overlap.
+  Future<T> _withLock<T>(Future<T> Function() task) {
+    final previous = _lock;
+    final current = Future<T>(() async {
+      if (previous != null) await previous;
+      return task();
+    });
+    _lock = current;
+    unawaited(
+      current.whenComplete(() {
+        if (_lock == current) _lock = null;
+      }),
+    );
+    return current;
   }
 }

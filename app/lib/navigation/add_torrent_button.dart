@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/dialogs/add_torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/haptic_service.dart';
 import 'package:gravity_torrent/ui/adaptive/breakpoints.dart';
@@ -14,24 +17,25 @@ class AddTorrentButton extends StatelessWidget {
 
     if (context.mounted) {
       AdServiceProvider.instance.showInterstitialIfReady();
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return const AddTorrentDialog();
-        },
+      unawaited(
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return const AddTorrentDialog();
+          },
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return FloatingActionButton(
-      backgroundColor: const Color(0xFF4285F4),
-      foregroundColor: Colors.white,
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
       onPressed: () => _handleClick(context),
-      tooltip: 'Pick a Torrent',
-      shape:
-          AdaptiveBreakpoints.isCompact(context) ? const CircleBorder() : null,
+      tooltip: AppLocalizations.of(context).pickTorrent,
       elevation: (AdaptiveBreakpoints.isCompact(context)) ? 0 : null,
       child: const Icon(Icons.add),
     );

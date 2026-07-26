@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart';
 import 'package:gravity_torrent/engine/file.dart';
-import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/subtitles.dart';
 
 // Torrent statuses
@@ -57,6 +57,21 @@ abstract class Torrent extends TorrentBase {
   final int speedLimitUp;
   final DateTime doneDate;
 
+  /// Info hash extracted from the magnet link, if available.
+  String? get hash {
+    if (magnetLink.isEmpty) return null;
+    try {
+      final uri = Uri.parse(magnetLink);
+      final xt = uri.queryParameters['xt'];
+      if (xt != null && xt.startsWith('urn:btih:')) {
+        return xt.substring(9);
+      }
+    } catch (_) {
+      // Ignore malformed magnet links.
+    }
+    return null;
+  }
+
   Torrent({
     required super.id,
     required super.labels,
@@ -92,35 +107,46 @@ abstract class Torrent extends TorrentBase {
   // Start the torrent
   Future<void> start();
 
+  // Start the torrent immediately, bypassing the queue
+  Future<void> startNow();
+
   // Pause the torrent
   Future<void> stop();
+
+  // Force a re-check of the torrent data
+  Future<void> verify();
+
+  // Ask trackers for new peers
+  Future<void> reannounce();
 
   // Remove the torrent
   Future<void> remove(bool withData);
 
   // Update torrent data
-  Future update(TorrentBase torrent);
+  Future<void> update(TorrentBase torrent);
 
-  Future toggleFileWanted(int fileIndex, bool wanted);
+  Future<void> toggleFileWanted(int fileIndex, bool wanted);
 
-  Future toggleAllFilesWanted(bool wanted);
+  Future<void> toggleAllFilesWanted(bool wanted);
 
-  Future setSequentialDownload(bool sequential);
+  Future<void> setSequentialDownload(bool sequential);
 
-  Future setSequentialDownloadFromPiece(int sequentialDownloadFromPiece);
+  Future<void> setSequentialDownloadFromPiece(int sequentialDownloadFromPiece);
 
-  Future setSpeedLimits({
+  Future<void> setSpeedLimits({
     required bool downloadEnabled,
     required bool uploadEnabled,
     int? downloadLimitKbps,
     int? uploadLimitKbps,
   });
 
-  Future setFilesPriority({
+  Future<void> setFilesPriority({
     List<int>? priorityHigh,
     List<int>? priorityLow,
     List<int>? priorityNormal,
   });
+
+  static const _streamingActiveKey = 'streaming_active';
 
   Future<void> startStreaming(File file) async {
     if (kDebugMode) debugPrint('starting streaming ${file.name}');
@@ -132,6 +158,8 @@ abstract class Torrent extends TorrentBase {
 
     // Be sure torrent is active
     await start();
+
+    await SharedPrefsStorage.setBool(_streamingActiveKey, true);
 
     final fileIndex = files.indexWhere((f) => f.name == file.name);
     if (fileIndex == -1) {
@@ -145,8 +173,9 @@ abstract class Torrent extends TorrentBase {
 
     // Want subtitles and set them to high priority
     final externalSubtitles = getExternalSubtitles(file, this);
-    for (final (index, file) in files.indexed) {
-      if (externalSubtitles.firstWhereOrNull((f) => f.name == file.name) !=
+    for (final (index, torrentFile) in files.indexed) {
+      if (externalSubtitles
+              .firstWhereOrNull((f) => f.name == torrentFile.name) !=
           null) {
         await toggleFileWanted(index, true);
         highPriorityFileIndices.add(index);
@@ -168,31 +197,45 @@ abstract class Torrent extends TorrentBase {
     // Reset all files to normal priority
     final allFileIndices = List.generate(files.length, (index) => index);
     await setFilesPriority(priorityNormal: allFileIndices);
+
+    await SharedPrefsStorage.setBool(_streamingActiveKey, false);
   }
 
   bool hasLoadedPieces(List<int> piecesToTest) {
     return piecesToTest.every((p) => p >= 0 && p < pieces.length && pieces[p]);
   }
 
-  Future openFolder(BuildContext context) async {
-    if (!isDesktop()) return;
-
+  Future<void> openFolder(BuildContext context) async {
     late OpenResult result;
     String folderPath;
 
-    if (files.isEmpty) {
-      folderPath = location;
-    } else if (files.length == 1) {
-      folderPath = dirname(join(location, files.first.name));
-    } else {
-      // Torrent file names always use POSIX (forward-slash) separators, so
-      // split with the POSIX context regardless of the host platform.
-      var folderName = posix.split(files.first.name).first;
-      if (folderName == '.' || folderName.isEmpty) {
-        folderPath = location;
-      } else {
-        folderPath = normalize(join(location, folderName));
+    // Determine the common parent directory of every file in the torrent.
+    // Torrent file names always use POSIX (forward-slash) separators, so
+    // split with the POSIX context regardless of the host platform.
+    String? commonFolder;
+    for (final file in files) {
+      final parts = posix.split(file.name);
+      if (parts.isEmpty) {
+        commonFolder = null;
+        break;
       }
+      final first = parts.first;
+      if (first == '.' || first.isEmpty || first == '/') {
+        commonFolder = null;
+        break;
+      }
+      if (commonFolder == null) {
+        commonFolder = first;
+      } else if (commonFolder != first) {
+        commonFolder = null;
+        break;
+      }
+    }
+
+    if (commonFolder != null && commonFolder.isNotEmpty) {
+      folderPath = normalize(join(location, commonFolder));
+    } else {
+      folderPath = location;
     }
 
     try {
@@ -202,12 +245,12 @@ abstract class Torrent extends TorrentBase {
     }
 
     if (result.type != ResultType.done) {
-      var errorMessage = switch (result.type) {
+      final errorMessage = switch (result.type) {
         ResultType.noAppToOpen => 'No app to open',
         ResultType.fileNotFound => 'Not found',
         ResultType.permissionDenied => 'Permission denied',
         // It seems fileNotFound is not returned on linux
-        ResultType.error => await Directory(folderPath).exists() == false
+        ResultType.error => Directory(folderPath).existsSync() == false
             ? 'Folder not found'
             : result.message.isNotEmpty
                 ? result.message

@@ -27,6 +27,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   }
 
   Future<void> _refresh() async {
+    if (!mounted) return;
     setState(() {
       _running = RemoteControlService.instance.isRunning;
       _address = _running ? RemoteControlService.instance.localAddress : '';
@@ -46,7 +47,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
@@ -96,20 +97,28 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                   ),
                   IconButton(
                     icon: Icon(
-                        _tokenVisible ? Icons.visibility_off : Icons.visibility,
-                        size: 16),
-                    tooltip: _tokenVisible ? 'Hide token' : 'Show token',
+                      _tokenVisible ? Icons.visibility_off : Icons.visibility,
+                      size: 16,
+                    ),
+                    tooltip: _tokenVisible
+                        ? localizations.hideToken
+                        : localizations.showToken,
                     onPressed: () =>
                         setState(() => _tokenVisible = !_tokenVisible),
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy, size: 16),
-                    tooltip: 'Copy token',
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _token));
+                    tooltip: localizations.copyToken,
+                    onPressed: () async {
+                      try {
+                        await Clipboard.setData(ClipboardData(text: _token));
+                      } catch (_) {
+                        return;
+                      }
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Token copied to clipboard'),
+                        SnackBar(
+                          content: Text(localizations.tokenCopied),
                         ),
                       );
                     },
@@ -118,11 +127,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
               ),
             ],
             if (!isMobile())
-              const Padding(
-                padding: EdgeInsets.only(top: 16.0),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
                 child: Text(
-                  'Note: camera-based QR scanning is available on mobile devices.',
-                  style: TextStyle(color: Colors.grey),
+                  localizations.qrScanningMobileOnly,
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ),
           ],

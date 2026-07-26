@@ -12,10 +12,16 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
-  // Handle 'open with' for .torrent file
-  override func application(_ application: NSApplication, open urls: [URL]) {
-    if (!urls.isEmpty) {
-      AppLinks.shared.handleLink(link: urls.first!.path)
+  // Handle opening a single .torrent / magnet file.
+  override func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+    AppLinks.shared.handleLink(link: filename)
+    return true
+  }
+
+  // Handle opening multiple files.
+  override func application(_ sender: NSApplication, openFiles filenames: [String]) {
+    for filename in filenames {
+      AppLinks.shared.handleLink(link: filename)
     }
   }
 }

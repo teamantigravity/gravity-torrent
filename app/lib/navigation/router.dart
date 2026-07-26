@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/navigation/app_shell_route.dart';
+import 'package:gravity_torrent/screens/onboarding/onboarding_screen.dart';
 import 'package:gravity_torrent/screens/settings/settings.dart';
 import 'package:gravity_torrent/screens/sota/analytics_screen.dart';
 import 'package:gravity_torrent/screens/sota/privacy_vault_screen.dart';
@@ -12,6 +14,7 @@ import 'package:gravity_torrent/screens/settings/upgrade_page.dart';
 import 'package:gravity_torrent/screens/torrents/torrents.dart';
 import 'package:gravity_torrent/screens/sota/backup_screen.dart';
 import 'package:gravity_torrent/screens/sota/player_screen.dart';
+import 'package:gravity_torrent/services/onboarding_service.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -21,7 +24,18 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 final router = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/torrents',
+  redirect: (context, state) {
+    if (OnboardingService.shouldShowOnboarding &&
+        state.uri.toString() != '/onboarding') {
+      return '/onboarding';
+    }
+    return null;
+  },
   routes: [
+    GoRoute(
+      path: '/onboarding',
+      builder: (_, __) => const OnboardingScreen(),
+    ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => AppShellRoute(child: child),
@@ -40,7 +54,7 @@ final router = GoRouter(
           pageBuilder: (context, state) {
             return NoTransitionPage(
               key: state.pageKey,
-              child: const Center(child: SettingsScreen()),
+              child: const SettingsScreen(),
             );
           },
         ),
@@ -80,9 +94,23 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/player',
+      name: 'player',
       builder: (context, state) {
-        final extra = state.extra as Map<String, String>;
-        return PlayerScreen(url: extra['url']!, title: extra['title']!);
+        final extra = state.extra;
+        final map =
+            extra is Map<String, dynamic> ? extra : const <String, dynamic>{};
+        final url = map['url']?.toString() ?? '';
+        final title = map['title']?.toString() ?? '';
+
+        if (url.isEmpty) {
+          return Scaffold(
+            body: Center(
+              child: Text(AppLocalizations.of(context).noMediaUrl),
+            ),
+          );
+        }
+
+        return PlayerScreen(url: url, title: title);
       },
     ),
   ],

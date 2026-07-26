@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/navigation/router.dart';
-import 'package:gravity_torrent/utils/device.dart';
 import 'package:provider/provider.dart';
-import 'package:window_manager/window_manager.dart';
 
-void closeApp([BuildContext? context]) async {
+Future<void> closeApp([BuildContext? context]) async {
   final ctx = context ?? rootNavigatorKey.currentContext;
   if (ctx == null) return;
   final appModel = Provider.of<AppModel>(ctx, listen: false);
@@ -14,12 +12,5 @@ void closeApp([BuildContext? context]) async {
   torrentModel.stopTimer();
   appModel.setQuitting(true);
 
-  if (isDesktop()) {
-    bool isPreventClose = await windowManager.isPreventClose();
-    if (isPreventClose) {
-      await appModel.quitGracefully();
-    }
-  } else {
-    await appModel.quitGracefully();
-  }
+  await appModel.quitGracefully();
 }

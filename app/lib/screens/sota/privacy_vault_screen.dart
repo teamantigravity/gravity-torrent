@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/feature_flags.dart';
@@ -27,9 +26,14 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
   }
 
   Future<void> _load() async {
-    await AppLockService.instance.load();
-    _biometricsAvailable = await AppLockService.instance.canUseBiometrics();
-    if (mounted) setState(() => _loaded = true);
+    try {
+      await AppLockService.instance.load();
+      _biometricsAvailable = await AppLockService.instance.canUseBiometrics();
+    } catch (e, stack) {
+      debugPrint('PrivacyVaultScreen load error: $e\\n$stack');
+    } finally {
+      if (mounted) setState(() => _loaded = true);
+    }
   }
 
   @override
@@ -39,7 +43,7 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
   }
 
   Future<void> _setPin() async {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final pin = _pinController.text.trim();
     if (pin.length < 4) {
       if (mounted) {
@@ -56,8 +60,8 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(localizations.pinSaved)));
+        setState(() {});
       }
-      setState(() {});
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -68,7 +72,7 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
   }
 
   Future<void> _toggleAppLock(bool value) async {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     if (value && !AppLockService.instance.hasPin) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,13 +85,9 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
     final flags = Provider.of<FeatureFlagsModel>(context, listen: false);
     await flags.setEnableAppLock(value);
 
-    if (!value) {
-      try {
-        await AppLockService.instance.clearPin();
-      } catch (e) {
-        if (kDebugMode) debugPrint('Failed to clear PIN: $e');
-      }
-    }
+    // Note: we intentionally keep the PIN in secure storage when the lock is
+    // disabled. The hash is inert without the lock being active, and preserving
+    // it lets the user re-enable lock without having to set a new PIN each time.
 
     if (mounted) setState(() {});
   }
@@ -99,7 +99,7 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final lock = AppLockService.instance;
     final flags = Provider.of<FeatureFlagsModel>(context);
 
@@ -132,38 +132,36 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
                   value: flags.enableAppLock,
                   onChanged: _toggleAppLock,
                 ),
-                if (flags.enableAppLock) ...[
-                  if (_biometricsAvailable)
-                    SwitchListTile(
-                      secondary: const Icon(Icons.fingerprint),
-                      title: Text(localizations.biometricUnlock),
-                      subtitle: Text(localizations.biometricUnlockDescription),
-                      value: lock.useBiometrics,
-                      onChanged: _toggleUseBiometrics,
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextField(
-                      controller: _pinController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      maxLength: 8,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: localizations.backupPin,
-                        hintText: localizations.backupPinHint,
-                        border: const OutlineInputBorder(),
-                      ),
+                if (_biometricsAvailable)
+                  SwitchListTile(
+                    secondary: const Icon(Icons.fingerprint),
+                    title: Text(localizations.biometricUnlock),
+                    subtitle: Text(localizations.biometricUnlockDescription),
+                    value: lock.useBiometrics,
+                    onChanged: _toggleUseBiometrics,
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _pinController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxLength: 8,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: localizations.backupPin,
+                      hintText: localizations.backupPinHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: FilledButton(
-                      onPressed: _setPin,
-                      child: Text(localizations.savePin),
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: FilledButton(
+                    onPressed: _setPin,
+                    child: Text(localizations.savePin),
                   ),
-                ],
+                ),
                 const SizedBox(height: 24),
                 Text(
                   localizations.privacyScore,
@@ -192,7 +190,7 @@ class _PrivacyScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final color = score >= 90
         ? Colors.green
         : score >= 70

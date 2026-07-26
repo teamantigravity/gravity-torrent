@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -7,20 +8,20 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/utils/secure_token.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
-/// Local, token-authenticated remote control server.
-///
-/// Binds to a local-network interface (not the public internet) and exposes a
-/// small REST API for pause/resume and listing torrents. No copyrighted
-/// torrent searching, indexing, or promotion is performed; the user fully
-/// controls every transfer.
+export 'package:gravity_torrent/utils/secure_token.dart'
+    show generateSecureRandomToken;
+
 class RemoteControlService {
   RemoteControlService._();
   static final RemoteControlService instance = RemoteControlService._();
 
   HttpServer? _server;
+  bool _starting = false;
+  bool _disposed = false;
   String _token = '';
   String _localAddress = '';
   String _qrPayload = '';
@@ -33,18 +34,23 @@ class RemoteControlService {
   int get port => _port;
 
   Future<void> start({int port = 0}) async {
-    if (_server != null) return;
-
-    _token = _generateToken();
-    final ip = await _localIp();
-    // Bind to the private/local address. If no private address is available,
-    // fall back to loopback so we never bind to a public interface.
-    final bindAddress =
-        InternetAddress.tryParse(ip) ?? InternetAddress.loopbackIPv4;
-    _server = await shelf_io.serve(_handler, bindAddress, port, shared: true);
-    _port = _server!.port;
-    _localAddress = 'http://${formatHostForUrl(ip)}:$_port';
-    _qrPayload = jsonEncode({'url': _localAddress, 'token': _token});
+    if (kIsWeb || _server != null || _starting) return;
+    _starting = true;
+    try {
+      _token = _generateToken();
+      final ip = await _localIp();
+      if (_disposed) return;
+      // Bind to the private/local address. If no private address is available,
+      // fall back to loopback so we never bind to a public interface.
+      final bindAddress =
+          InternetAddress.tryParse(ip) ?? InternetAddress.loopbackIPv4;
+      _server = await shelf_io.serve(_handler, bindAddress, port, shared: true);
+      _port = _server!.port;
+      _localAddress = 'http://${formatHostForUrl(ip)}:$_port';
+      _qrPayload = jsonEncode({'url': _localAddress, 'token': _token});
+    } finally {
+      _starting = false;
+    }
   }
 
   /// Wraps an IPv6 address in square brackets so the `:port` suffix is
@@ -56,20 +62,27 @@ class RemoteControlService {
   }
 
   Future<void> stop() async {
+    if (_disposed) return;
     await _server?.close();
     _server = null;
     _port = 0;
   }
 
+  void dispose() {
+    _disposed = true;
+    unawaited(stop());
+  }
+
   Future<void> setEnabled(bool value) async {
-    if (value && _server == null) {
+    if (_disposed) return;
+    if (value && _server == null && !_starting) {
       try {
         await start();
       } catch (e) {
         if (kDebugMode) debugPrint('RemoteControlService start failed: $e');
         rethrow;
       }
-    } else if (!value && _server != null) {
+    } else if (!value && (_server != null || _starting)) {
       await stop();
     }
   }
@@ -147,18 +160,9 @@ class RemoteControlService {
     final path = request.url.path;
     final method = request.method;
 
-    // Handle CORS preflight
-    if (method == 'OPTIONS') {
-      return Response.ok(
-        '',
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-        },
-      );
-    }
-
+    // No CORS headers are emitted on purpose. This API is meant for the
+    // companion client, and allowing cross-origin browser access would let any
+    // web page a user visits probe and drive their local torrent session.
     if (path == 'health' && method == 'GET') {
       return _jsonResponse({
         'ok': isRunning,
@@ -168,6 +172,9 @@ class RemoteControlService {
     }
 
     if (path == 'torrents' && method == 'GET') {
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       final payload = torrents
@@ -186,25 +193,45 @@ class RemoteControlService {
     }
 
     if (path == 'pause' && method == 'POST') {
-      await _forEachActive((engine, torrent) async {
-        if (torrent.status == TorrentStatus.downloading ||
-            torrent.status == TorrentStatus.seeding) {
-          await engine.pauseTorrent(torrent.id);
-        }
-      });
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
+      final engine = getIt<Engine>();
+      final torrents = await engine.fetchTorrents();
+      final toPause = torrents
+          .where(
+            (t) =>
+                t.status == TorrentStatus.downloading ||
+                t.status == TorrentStatus.seeding,
+          )
+          .map((t) => t.id)
+          .toList();
+      if (toPause.isNotEmpty) {
+        await engine.pauseTorrents(toPause);
+      }
       return _jsonResponse({'ok': true});
     }
 
     if (path == 'resume' && method == 'POST') {
-      await _forEachActive((engine, torrent) async {
-        if (torrent.status == TorrentStatus.stopped) {
-          await engine.resumeTorrent(torrent.id);
-        }
-      });
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
+      final engine = getIt<Engine>();
+      final torrents = await engine.fetchTorrents();
+      final toResume = torrents
+          .where((t) => t.status == TorrentStatus.stopped)
+          .map((t) => t.id)
+          .toList();
+      if (toResume.isNotEmpty) {
+        await engine.resumeTorrents(toResume);
+      }
       return _jsonResponse({'ok': true});
     }
 
     if (path == 'add' && method == 'POST') {
+      if (!getIt.isRegistered<Engine>()) {
+        return _jsonResponse({'ok': false, 'error': 'engine not ready'});
+      }
       if (!(await QuotaService.instance.canAddTorrent())) {
         return _jsonResponse({
           'ok': false,
@@ -212,10 +239,22 @@ class RemoteControlService {
         });
       }
       final body = await request.readAsString();
-      final params = Uri.splitQueryString(body);
-      final magnet = params['magnet'];
+      String? magnet;
+      try {
+        final json = jsonDecode(body);
+        if (json is Map) magnet = json['magnet']?.toString();
+      } catch (_) {
+        final params = Uri.splitQueryString(body);
+        magnet = params['magnet'];
+      }
       if (magnet == null || magnet.isEmpty) {
         return _jsonResponse({'ok': false, 'error': 'missing magnet'});
+      }
+      if (!_isValidTorrentLink(magnet)) {
+        return _jsonResponse({
+          'ok': false,
+          'error': 'invalid torrent link',
+        });
       }
       final engine = getIt<Engine>();
       final response = await engine.addTorrent(magnet, null, null);
@@ -231,6 +270,9 @@ class RemoteControlService {
   Middleware get _tokenAuthMiddleware {
     return (Handler innerHandler) {
       return (Request request) async {
+        // Every method, including OPTIONS, must authenticate. An unauthenticated
+        // preflight escape hatch would be an auth bypass for a service reachable
+        // from the whole local network.
         final provided = _extractToken(request);
         if (provided == null || !_constantTimeCompare(provided, _token)) {
           return Response.forbidden(
@@ -243,8 +285,9 @@ class RemoteControlService {
     };
   }
 
-  /// Extracts the bearer token from the `Authorization` header or the
-  /// `token` query parameter. Returns `null` if neither is present.
+  /// Extracts the bearer token from the `Authorization` header only.
+  /// Query-string tokens are intentionally rejected so tokens are not leaked
+  /// via browser history, referrers, or server logs.
   String? _extractToken(Request request) {
     String? authHeader;
     for (final entry in request.headers.entries) {
@@ -261,17 +304,41 @@ class RemoteControlService {
       // Also allow a raw token in the Authorization header.
       return authHeader.trim();
     }
-    return request.url.queryParameters['token'];
+    return null;
   }
 
   /// Constant-time string comparison to mitigate timing attacks.
+  ///
+  /// Iterates over the maximum length so that an attacker cannot learn the
+  /// secret token's length from a short-circuiting comparison.
   bool _constantTimeCompare(String a, String b) {
-    if (a.length != b.length) return false;
-    var result = 0;
-    for (var i = 0; i < a.length; i++) {
-      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    final maxLength = max(a.length, b.length);
+    var result = a.length ^ b.length;
+    for (var i = 0; i < maxLength; i++) {
+      final ac = i < a.length ? a.codeUnitAt(i) : 0;
+      final bc = i < b.length ? b.codeUnitAt(i) : 0;
+      result |= ac ^ bc;
     }
     return result == 0;
+  }
+
+  /// Rejects anything other than a magnet URI or a public .torrent URL.
+  ///
+  /// The path component is checked so that private-tracker query parameters
+  /// such as `?passkey=...` are preserved and accepted.
+  bool _isValidTorrentLink(String link) {
+    final trimmed = link.trim();
+    final lower = trimmed.toLowerCase();
+    if (lower.startsWith('magnet:')) return true;
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      try {
+        final uri = Uri.parse(trimmed);
+        return uri.path.toLowerCase().endsWith('.torrent');
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
   }
 
   Response _jsonResponse(Map<String, dynamic> body) {
@@ -279,27 +346,7 @@ class RemoteControlService {
       jsonEncode(body),
       headers: {
         'content-type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
       },
     );
   }
-
-  Future<void> _forEachActive(
-    Future<void> Function(Engine engine, Torrent torrent) action,
-  ) async {
-    final engine = getIt<Engine>();
-    final torrents = await engine.fetchTorrents();
-    for (final torrent in torrents) {
-      await action(engine, torrent);
-    }
-  }
-}
-
-/// Generates a URL-safe, cryptographically secure random token.
-///
-/// [length] is the number of raw bytes before base64-url encoding.
-String generateSecureRandomToken({int length = 32}) {
-  final random = Random.secure();
-  final bytes = List<int>.generate(length, (_) => random.nextInt(256));
-  return base64Url.encode(bytes).replaceAll('=', '');
 }

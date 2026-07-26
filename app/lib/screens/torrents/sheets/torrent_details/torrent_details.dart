@@ -19,7 +19,11 @@ class TorrentDetailsModalSheet extends StatelessWidget {
     required this.id,
     this.initialTab = 0,
     this.showOnlyPlayableFiles = false,
-  });
+  })  : assert(id > 0, 'Torrent ID must be positive'),
+        assert(
+          initialTab >= 0 && initialTab <= 3,
+          'Initial tab index must be between 0 and 3',
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -53,42 +57,49 @@ class TorrentDetailsModalSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
-    return DefaultTabController(
+    final content = DefaultTabController(
       length: 4, // Number of tabs
       initialIndex: initialTab,
-      child: Expanded(
-        child: Material(
-          child: Column(
-            children: [
-              TabBar(
-                tabs: [
-                  Tab(text: localizations.files),
-                  Tab(text: localizations.tags),
-                  Tab(text: localizations.controls),
-                  Tab(text: localizations.details),
+      child: Material(
+        child: Column(
+          children: [
+            TabBar(
+              tabs: [
+                Tab(text: localizations.files),
+                Tab(text: localizations.tags),
+                Tab(text: localizations.controls),
+                Tab(text: localizations.details),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  FilesTab(
+                    torrent: torrent,
+                    location: torrent.location,
+                    showOnlyPlayable: showOnlyPlayableFiles,
+                  ),
+                  TagsTab(torrent: torrent),
+                  TorrentControlsTab(torrent: torrent),
+                  DetailsTab(torrent: torrent),
                 ],
               ),
-              Expanded(
-                child: TabBarView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    FilesTab(
-                      torrent: torrent,
-                      location: torrent.location,
-                      showOnlyPlayable: showOnlyPlayableFiles,
-                    ),
-                    TagsTab(torrent: torrent),
-                    TorrentControlsTab(torrent: torrent),
-                    DetailsTab(torrent: torrent),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+
+    if (MediaQuery.sizeOf(context).width < 450) {
+      return SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: content,
+      );
+    } else {
+      return content;
+    }
   }
 }

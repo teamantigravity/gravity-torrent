@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/app.dart';
@@ -14,7 +13,7 @@ class LocaleSelector extends StatefulWidget {
 }
 
 class _LocaleSelectorState extends State<LocaleSelector> {
-  handleChange(String? locale) {
+  void handleChange(String? locale) {
     if (locale == null) return;
     Provider.of<AppModel>(context, listen: false).setLocale(locale);
     Navigator.of(context).pop();
@@ -24,21 +23,22 @@ class _LocaleSelectorState extends State<LocaleSelector> {
   Widget build(BuildContext context) {
     return Consumer<AppModel>(
       builder: (context, app, child) {
-        var groupValue = app.locale;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ...AppLocalizations.supportedLocales.map((locale) {
-              return RadioListTile<String>(
-                title: Text(
-                  localeNames[locale.toString()] ?? locale.toString(),
-                ),
-                value: locale.toString(),
-                groupValue: groupValue,
-                onChanged: handleChange,
-              );
-            }),
-          ],
+        return RadioGroup<String>(
+          groupValue: app.locale,
+          onChanged: handleChange,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...AppLocalizations.supportedLocales.map((locale) {
+                return RadioListTile<String>(
+                  title: Text(
+                    localeNames[locale.toString()] ?? locale.toString(),
+                  ),
+                  value: locale.toString(),
+                );
+              }),
+            ],
+          ),
         );
       },
     );

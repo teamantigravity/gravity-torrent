@@ -10,8 +10,14 @@ class TagsTab extends StatelessWidget {
 
   const TagsTab({super.key, required this.torrent});
 
-  _handleAddLabel(BuildContext context, String label) async {
-    TorrentBase torrentUpdate = TorrentBase(
+  Future<void> _handleAddLabel(BuildContext context, String label) async {
+    final isDuplicate = torrent.labels?.any(
+          (l) => l.toLowerCase() == label.toLowerCase(),
+        ) ??
+        false;
+    if (isDuplicate) return;
+
+    final TorrentBase torrentUpdate = TorrentBase(
       id: torrent.id,
       labels: [...torrent.labels ?? [], label],
     );
@@ -22,7 +28,7 @@ class TagsTab extends StatelessWidget {
   }
 
   _handleSelectLabel(BuildContext context, String label, bool selected) async {
-    var torrentUpdate = TorrentBase(
+    final torrentUpdate = TorrentBase(
       id: torrent.id,
       labels: selected
           ? [...?torrent.labels, label]
@@ -42,7 +48,7 @@ class TagsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Consumer<TorrentsModel>(
       builder: (context, torrentsModel, child) => ListView(

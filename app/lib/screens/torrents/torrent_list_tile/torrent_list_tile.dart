@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gravity_torrent/dialogs/remove_torrent.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
+import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
 import 'package:gravity_torrent/screens/torrents/torrent_list_tile/torrent_status.dart';
@@ -12,6 +14,8 @@ import 'package:gravity_torrent/utils/device.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:provider/provider.dart';
 
+enum _TorrentCopyAction { magnetLink, infoHash, name }
+
 class TorrentListTile extends StatelessWidget {
   const TorrentListTile({
     super.key,
@@ -19,6 +23,7 @@ class TorrentListTile extends StatelessWidget {
     required this.percent,
     this.isSelectionMode = false,
     this.isSelected = false,
+    this.compact = false,
     this.onLongPress,
     this.onSelectionChanged,
   });
@@ -27,16 +32,21 @@ class TorrentListTile extends StatelessWidget {
   final double percent;
   final bool isSelectionMode;
   final bool isSelected;
+  final bool compact;
   final VoidCallback? onLongPress;
   final VoidCallback? onSelectionChanged;
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
+    final showHealthBadge = context.watch<AppModel>().showTorrentHealthBadge;
 
     return Consumer<TorrentsModel>(
       builder: (context, torrentsModel, child) {
         return ListTile(
+          dense: compact,
+          visualDensity:
+              compact ? VisualDensity.compact : VisualDensity.standard,
           contentPadding: !isMobileSize(context)
               ? const EdgeInsets.only(left: 16, right: 16)
               : null,
@@ -64,18 +74,28 @@ class TorrentListTile extends StatelessWidget {
                     children: [
                       CircularProgressIndicator(
                         value: torrent.progress,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF4285F4),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
                         ),
                         strokeWidth: 4,
                       ),
                       Center(
                         child: IconButton(
                           onPressed: () async {
-                            torrent.status == TorrentStatus.stopped
-                                ? await torrent.start()
-                                : await torrent.stop();
-                            await torrentsModel.fetchTorrents();
+                            try {
+                              torrent.status == TorrentStatus.stopped
+                                  ? await torrent.start()
+                                  : await torrent.stop();
+                              await torrentsModel.fetchTorrents();
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(localizations.error),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
                           },
                           icon: torrent.status == TorrentStatus.stopped
                               ? const Icon(Icons.play_arrow)
@@ -98,7 +118,21 @@ class TorrentListTile extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              TorrentHealthBadge(torrent: torrent),
+              IconButton(
+                icon: Icon(
+                  torrentsModel.isFavorite(torrent.id)
+                      ? Icons.star
+                      : Icons.star_border,
+                  color: torrentsModel.isFavorite(torrent.id)
+                      ? Colors.amber
+                      : null,
+                ),
+                tooltip: torrentsModel.isFavorite(torrent.id)
+                    ? localizations.unfavorite
+                    : localizations.favorite,
+                onPressed: () => torrentsModel.toggleFavorite(torrent.id),
+              ),
+              if (showHealthBadge) TorrentHealthBadge(torrent: torrent),
             ],
           ),
           trailing: (!isMobileSize(context))
@@ -126,12 +160,71 @@ class TorrentListTile extends StatelessWidget {
                       onPressed: () => shareLink(context, torrent.magnetLink),
                       icon: const Icon(Icons.share),
                     ),
-                    if (isDesktop())
-                      IconButton(
-                        tooltip: localizations.openFolder,
-                        onPressed: () => torrent.openFolder(context),
-                        icon: const Icon(Icons.folder_outlined),
-                      ),
+                    PopupMenuButton<_TorrentCopyAction>(
+                      icon: const Icon(Icons.copy),
+                      tooltip: localizations.copy,
+                      onSelected: (action) async {
+                        if (!context.mounted) return;
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+                        final text = switch (action) {
+                          _TorrentCopyAction.magnetLink => torrent.magnetLink,
+                          _TorrentCopyAction.infoHash => torrent.hash ?? '-',
+                          _TorrentCopyAction.name => torrent.name,
+                        };
+                        await Clipboard.setData(ClipboardData(text: text));
+                        if (!scaffoldMessenger.mounted) return;
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              switch (action) {
+                                _TorrentCopyAction.magnetLink =>
+                                  localizations.magnetLinkCopied,
+                                _TorrentCopyAction.infoHash =>
+                                  localizations.hashCopied,
+                                _TorrentCopyAction.name =>
+                                  localizations.copiedToClipboard,
+                              },
+                            ),
+                            backgroundColor: Colors.lightGreen,
+                          ),
+                        );
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: _TorrentCopyAction.magnetLink,
+                          child: ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.copy),
+                            title: Text(localizations.copyMagnetLink),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: _TorrentCopyAction.infoHash,
+                          child: ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.tag),
+                            title: Text(
+                              '${localizations.copy} ${localizations.hash.toLowerCase()}',
+                            ),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: _TorrentCopyAction.name,
+                          child: ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.text_snippet),
+                            title: Text(
+                              '${localizations.copy} ${localizations.name.toLowerCase()}',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      tooltip: localizations.openFolder,
+                      onPressed: () => torrent.openFolder(context),
+                      icon: const Icon(Icons.folder_outlined),
+                    ),
                     IconButton(
                       tooltip: localizations.remove,
                       onPressed: () => showDialog(
@@ -145,67 +238,104 @@ class TorrentListTile extends StatelessWidget {
                   ],
                 )
               : null,
-          subtitle: Row(
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: TorrentStatusText(torrent: torrent, percent: percent),
-              ),
-              Expanded(
-                child: Text(
-                  prettyBytes(torrent.size.toDouble()),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Expanded(
+                    child:
+                        TorrentStatusText(torrent: torrent, percent: percent),
                   ),
-                ),
-              ),
-              Expanded(
-                child: torrent.progress != 1
-                    ? Row(
-                        children: [
-                          const Icon(
-                            Icons.arrow_circle_down,
-                            size: 16,
-                            color: Colors.lightGreen,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              overflow: TextOverflow.ellipsis,
-                              '${prettyBytes(torrent.rateDownload.toDouble())}/s',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : const SizedBox(width: 0),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.arrow_circle_up,
-                      size: 16,
-                      color: Color(0xFF4285F4),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+                  Expanded(
+                    child: Text(
+                      prettyBytes(
+                        torrent.size.toDouble(),
+                        locale: localizations.localeName,
+                      ),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                         overflow: TextOverflow.ellipsis,
-                        '${prettyBytes(torrent.rateUpload.toDouble())}/s',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: torrent.progress != 1
+                        ? Row(
+                            children: [
+                              const Icon(
+                                Icons.arrow_circle_down,
+                                size: 16,
+                                color: Colors.lightGreen,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  overflow: TextOverflow.ellipsis,
+                                  '${prettyBytes(
+                                    torrent.rateDownload.toDouble(),
+                                    locale: localizations.localeName,
+                                  )}/s',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const SizedBox(width: 0),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.arrow_circle_up,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            overflow: TextOverflow.ellipsis,
+                            '${prettyBytes(
+                              torrent.rateUpload.toDouble(),
+                              locale: localizations.localeName,
+                            )}/s',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              if (context.watch<AppModel>().showTorrentLabels &&
+                  (torrent.labels?.isNotEmpty ?? false))
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Wrap(
+                    spacing: 4.0,
+                    runSpacing: 4.0,
+                    children: torrent.labels!
+                        .map(
+                          (label) => Chip(
+                            label: Text(
+                              label,
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
             ],
           ),
         );

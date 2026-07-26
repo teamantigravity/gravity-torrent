@@ -74,6 +74,26 @@ void main() {
       final json = request.toJson()['arguments'] as Map<String, dynamic>;
       expect(json.isEmpty, isTrue);
     });
+
+    test('encodes download directory only when non-empty', () {
+      final request = SessionSetRequest(
+        arguments: SessionSetRequestArguments(downloadDir: '/downloads'),
+      );
+      var json = request.toJson()['arguments'] as Map<String, dynamic>;
+      expect(json['download-dir'], '/downloads');
+
+      final emptyRequest = SessionSetRequest(
+        arguments: SessionSetRequestArguments(downloadDir: ''),
+      );
+      json = emptyRequest.toJson()['arguments'] as Map<String, dynamic>;
+      expect(json.containsKey('download-dir'), isFalse);
+
+      final nullRequest = SessionSetRequest(
+        arguments: SessionSetRequestArguments(),
+      );
+      json = nullRequest.toJson()['arguments'] as Map<String, dynamic>;
+      expect(json.containsKey('download-dir'), isFalse);
+    });
   });
 
   group('EncryptionMode', () {

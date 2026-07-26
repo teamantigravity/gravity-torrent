@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/transmission/models/torrent.dart';
 
 class TorrentGetResponse {
@@ -24,9 +25,19 @@ class TorrentGetResponseArguments {
       : torrents = json['torrents'] is List<dynamic>
             ? (json['torrents'] as List<dynamic>)
                 .whereType<Map<String, dynamic>>()
-                .map(
-                  (j) => TransmissionTorrentModel.fromJson(j),
-                )
+                .map((j) {
+                  try {
+                    return TransmissionTorrentModel.fromJson(
+                      Map<String, dynamic>.from(j),
+                    );
+                  } catch (e, s) {
+                    if (kDebugMode) {
+                      debugPrint('Failed to parse torrent model: $e\n$s');
+                    }
+                    return null;
+                  }
+                })
+                .whereType<TransmissionTorrentModel>()
                 .toList()
             : [];
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final Uri url = Uri.parse(
@@ -10,17 +11,18 @@ class UpdateAvailableDialog extends StatelessWidget {
 
   const UpdateAvailableDialog({super.key, required this.latestVersion});
 
-  _handleIgnoreClick(BuildContext context) {
+  void _handleIgnoreClick(BuildContext context) {
+    if (!context.mounted) return;
     Navigator.pop(context);
   }
 
-  _handleDownloadClick(context) async {
+  Future<void> _handleDownloadClick(BuildContext context) async {
     final result = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!context.mounted) return;
     if (!result) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open the release page'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).couldNotOpenReleasePage),
           backgroundColor: Colors.orange,
         ),
       );

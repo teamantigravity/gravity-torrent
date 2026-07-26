@@ -4,15 +4,15 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
 
 initDefaultDownloadDir(Engine engine) async {
-  var session = await engine.fetchSession();
-  var downloadDir = await ExternalPath.getExternalStoragePublicDirectory(
+  final session = await engine.fetchSession();
+  final downloadDir = await ExternalPath.getExternalStoragePublicDirectory(
     ExternalPath.DIRECTORY_DOWNLOAD,
   );
 
   // Default download directory set by transmission is not correct.
   // See tr_getDefaultDownloadDir() in platform.cc
   if (session.downloadDir != downloadDir) {
-    var sessionUpdate = SessionBase(downloadDir: downloadDir);
+    final sessionUpdate = SessionBase(downloadDir: downloadDir);
     await session.update(sessionUpdate);
   }
 }

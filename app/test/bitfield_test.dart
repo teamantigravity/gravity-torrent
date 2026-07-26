@@ -6,17 +6,18 @@ import 'package:test/test.dart';
 void main() {
   group('convertBitfieldToBoolList', () {
     test('full bitfield', () {
-      Uint8List bitfield = Uint8List.fromList([255, 255]);
-      int pieceCount = 16;
-      List<bool> expected = List.filled(16, true);
+      final Uint8List bitfield = Uint8List.fromList([255, 255]);
+      const int pieceCount = 16;
+      final List<bool> expected = List.filled(16, true);
 
       expect(convertBitfieldToBoolList(bitfield, pieceCount), equals(expected));
     });
 
     test('partial bitfield', () {
-      Uint8List bitfield = Uint8List.fromList([192, 0]); // 11000000 00000000
-      int pieceCount = 16;
-      List<bool> expected = [
+      final Uint8List bitfield =
+          Uint8List.fromList([192, 0]); // 11000000 00000000
+      const int pieceCount = 16;
+      final List<bool> expected = [
         true,
         true,
         false,
@@ -39,25 +40,25 @@ void main() {
     });
 
     test('bitfield with fewer pieces than available bits', () {
-      Uint8List bitfield = Uint8List.fromList([255, 255]);
-      int pieceCount = 10;
-      List<bool> expected = List.filled(10, true);
+      final Uint8List bitfield = Uint8List.fromList([255, 255]);
+      const int pieceCount = 10;
+      final List<bool> expected = List.filled(10, true);
 
       expect(convertBitfieldToBoolList(bitfield, pieceCount), equals(expected));
     });
 
     test('empty bitfield pads to pieceCount with false', () {
-      Uint8List bitfield = Uint8List.fromList([]);
-      int pieceCount = 10;
-      List<bool> expected = List.filled(10, false);
+      final Uint8List bitfield = Uint8List.fromList([]);
+      const int pieceCount = 10;
+      final List<bool> expected = List.filled(10, false);
 
       expect(convertBitfieldToBoolList(bitfield, pieceCount), equals(expected));
     });
 
     test('one byte bitfield, some missing', () {
-      Uint8List bitfield = Uint8List.fromList([170]); // 10101010
-      int pieceCount = 8;
-      List<bool> expected = [
+      final Uint8List bitfield = Uint8List.fromList([170]); // 10101010
+      const int pieceCount = 8;
+      final List<bool> expected = [
         true,
         false,
         true,
@@ -72,9 +73,9 @@ void main() {
     });
 
     test('pieceCount greater than bitfield length pads missing pieces', () {
-      Uint8List bitfield = Uint8List.fromList([255]);
-      int pieceCount = 9;
-      List<bool> expected = [
+      final Uint8List bitfield = Uint8List.fromList([255]);
+      const int pieceCount = 9;
+      final List<bool> expected = [
         true,
         true,
         true,
