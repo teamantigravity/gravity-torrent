@@ -38,36 +38,36 @@ class RemoveTorrentsDialog extends StatelessWidget {
         TextButton(
           child: Text(l.deleteFilesAndTorrents),
           onPressed: () async {
-            if (context.mounted) Navigator.of(context).pop();
+            final messenger = ScaffoldMessenger.of(context);
+            final errorTextBuilder = l.removeTorrentsError;
+            Navigator.of(context).pop();
             try {
               await _removeTorrents(torrentsModel, true);
             } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l.removeTorrentsError(e.toString())),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(errorTextBuilder(e.toString())),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           },
         ),
         TextButton(
           child: Text(l.removeTorrentsOnly),
           onPressed: () async {
-            if (context.mounted) Navigator.of(context).pop();
+            final messenger = ScaffoldMessenger.of(context);
+            final errorTextBuilder = l.removeTorrentsError;
+            Navigator.of(context).pop();
             try {
               await _removeTorrents(torrentsModel, false);
             } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l.removeTorrentsError(e.toString())),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(errorTextBuilder(e.toString())),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           },
         ),
