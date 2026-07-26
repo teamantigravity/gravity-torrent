@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:gravity_torrent/platforms/android/foreground_service.dart'
 import 'package:gravity_torrent/services/notification_channel_service.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/lifecycle.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 enum NotificationsDetailsTypes { downloadsCompletedAndroidNotificationDetails }
@@ -197,6 +199,11 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
     return;
   }
 
+  if (actionId == 'exit') {
+    await closeApp();
+    return;
+  }
+
   if (!getIt.isRegistered<Engine>()) {
     if (kDebugMode) {
       debugPrint(
@@ -208,19 +215,16 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
   }
 
   final engine = getIt<Engine>();
-  await _executeNotificationAction(actionId, engine);
+  await executeNotificationAction(actionId, engine);
 }
 
 Future<void> _storePendingNotificationAction(String actionId) async {
   await SharedPrefsStorage.setString(_pendingNotificationActionKey, actionId);
 }
 
-Future<void> _executeNotificationAction(String actionId, Engine engine) async {
+Future<void> executeNotificationAction(String actionId, Engine engine) async {
   if (actionId == 'exit') {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      await foreground.stopForegroundService();
-    }
-    await SystemNavigator.pop();
+    await closeApp();
     return;
   }
 
@@ -267,7 +271,7 @@ Future<void> processPendingNotificationAction() async {
   }
 
   final engine = getIt<Engine>();
-  await _executeNotificationAction(actionId, engine);
+  await executeNotificationAction(actionId, engine);
 }
 
 void onForegroundNotificationResponse(NotificationResponse response) {
@@ -277,5 +281,23 @@ void onForegroundNotificationResponse(NotificationResponse response) {
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  final actionId = response.actionId ?? response.payload;
+  if (actionId == null) return;
+  if (actionId == 'progress' || actionId == 'completed') return;
+
+  final port = IsolateNameServer.lookupPortByName('notification_actions');
+  if (port != null) {
+    port.send(actionId);
+    return;
+  }
+  
+  // If the port doesn't exist, the main isolate might be dead.
+  // If it's an exit action, we handle it directly to ensure the background isolate dies.
+  if (actionId == 'exit') {
+    unawaited(closeApp());
+    return;
+  }
+
   unawaited(_handleNotificationResponse(response));
 }

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -257,6 +259,28 @@ void main() async {
 
   await _bootstrap();
 
+  // Register port for cross-isolate notification actions
+  final receivePort = ReceivePort();
+  IsolateNameServer.removePortNameMapping('notification_actions');
+  IsolateNameServer.registerPortWithName(receivePort.sendPort, 'notification_actions');
+  receivePort.listen((message) async {
+    final actionId = message as String;
+    if (actionId == 'exit') {
+      await stopServices();
+      if (getIt.isRegistered<Engine>()) {
+        await getIt<Engine>().shutdown();
+      }
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await stopForegroundService();
+      }
+      exit(0);
+    } else {
+      if (getIt.isRegistered<Engine>()) {
+        await executeNotificationAction(actionId, getIt<Engine>());
+      }
+    }
+  });
+
   // Initialize the media session for background audio on supported platforms.
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
     try {
@@ -453,7 +477,12 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
       case AppLifecycleState.detached:
         _lockDebounceTimer?.cancel();
-        unawaited(_shutdownServices());
+        if (defaultTargetPlatform == TargetPlatform.android && isForegroundServiceStarted) {
+          // If the foreground service is active, deliberately keep the app and engine running
+          // in the background even if the Flutter activity is detached from the recent apps list.
+        } else {
+          unawaited(_shutdownServices());
+        }
         break;
     }
   }

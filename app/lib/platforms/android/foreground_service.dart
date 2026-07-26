@@ -9,6 +9,7 @@ FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 bool _foregroundServiceStarted = false;
+bool get isForegroundServiceStarted => _foregroundServiceStarted;
 
 const androidNotificationDetails = AndroidNotificationDetails(
   'foreground_service_channel',
