@@ -29,24 +29,34 @@ void main() {
     test('isPrivateIp treats IPv4-mapped loopback as private', () {
       final service = RemoteControlService.instance;
       final address = InternetAddress('::ffff:127.0.0.1');
-      expect(service.isPrivateIp(address), isTrue,
-          reason: 'IPv4-mapped loopback should not be bound',);
+      expect(
+        service.isPrivateIp(address),
+        isTrue,
+        reason: 'IPv4-mapped loopback should not be bound',
+      );
     });
 
     test('isValidBlocklistUrl rejects localhost variants and private ranges',
         () {
-      expect(BlocklistService.isValidBlocklistUrl('http://127.0.0.1/list.txt'),
-          isFalse,);
-      expect(BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
-          isFalse,
-          reason: 'localhost with trailing dot is still localhost',);
       expect(
-          BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
-          isFalse,);
+        BlocklistService.isValidBlocklistUrl('http://127.0.0.1/list.txt'),
+        isFalse,
+      );
       expect(
-          BlocklistService.isValidBlocklistUrl(
-              'http://[::ffff:127.0.0.1]/list.txt',),
-          isFalse,);
+        BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
+        isFalse,
+        reason: 'localhost with trailing dot is still localhost',
+      );
+      expect(
+        BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
+        isFalse,
+      );
+      expect(
+        BlocklistService.isValidBlocklistUrl(
+          'http://[::ffff:127.0.0.1]/list.txt',
+        ),
+        isFalse,
+      );
     });
 
     test('RSS isTorrentLink accepts .torrent URLs with query or fragment', () {
@@ -66,10 +76,16 @@ void main() {
 
     test('pathCarriesToken rejects token in query or fragment', () {
       const token = 'abc123';
-      expect(pathCarriesToken('/$token?other=abc123', token), isTrue,
-          reason: 'query string after the token is allowed',);
-      expect(pathCarriesToken('/$token#abc123', token), isTrue,
-          reason: 'fragment after the token is allowed',);
+      expect(
+        pathCarriesToken('/$token?other=abc123', token),
+        isTrue,
+        reason: 'query string after the token is allowed',
+      );
+      expect(
+        pathCarriesToken('/$token#abc123', token),
+        isTrue,
+        reason: 'fragment after the token is allowed',
+      );
       expect(pathCarriesToken('/other?token=$token', token), isFalse);
       expect(pathCarriesToken('/other#token=$token', token), isFalse);
     });

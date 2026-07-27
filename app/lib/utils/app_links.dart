@@ -13,8 +13,7 @@ final appUri = const String.fromEnvironment('APP_URL').isNotEmpty
     : 'http://localhost:3000/';
 
 String createAppLink(String link) {
-  final fragmentUri =
-      Uri(queryParameters: {'magnet': link}).toString();
+  final fragmentUri = Uri(queryParameters: {'magnet': link}).toString();
   final Uri uri = Uri(fragment: fragmentUri);
   final String uriString = uri.toString();
   // uri.toString() is '#?magnet=...' when the fragment is non-empty.

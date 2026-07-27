@@ -375,8 +375,8 @@ class StreamingServer {
   List<int> _computeNeededPieces(int? from, int? count) {
     final List<int> neededPieces = [];
     final pieceSize = torrent.pieceSize;
-    final neededPiecesCount = count ??
-        (pieceSize > 0 ? (bufferSize / pieceSize).ceil() : 1);
+    final neededPiecesCount =
+        count ?? (pieceSize > 0 ? (bufferSize / pieceSize).ceil() : 1);
     final firstPiece = from ?? torrentFile.beginPiece;
     final lastPiece = torrentFile.endPiece;
     for (int i = 0; i < neededPiecesCount && firstPiece + i <= lastPiece; i++) {

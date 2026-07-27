@@ -224,10 +224,7 @@ abstract class Torrent extends TorrentBase {
         break;
       }
       final first = parts.first;
-      if (first == '.' ||
-          first.isEmpty ||
-          first == '/' ||
-          first == '..') {
+      if (first == '.' || first.isEmpty || first == '/' || first == '..') {
         commonFolder = null;
         break;
       }
