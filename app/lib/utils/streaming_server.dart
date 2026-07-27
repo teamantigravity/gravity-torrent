@@ -68,6 +68,11 @@ class StreamingServer {
       _server = server;
       if (_stopped) {
         // stop() was called before bind completed.
+        if (!_serverReadyCompleter.isCompleted) {
+          _serverReadyCompleter.completeError(
+            StateError('StreamingServer was stopped before it could start'),
+          );
+        }
         await server.close(force: true);
         return;
       }
@@ -110,6 +115,13 @@ class StreamingServer {
     for (final op in _activeRequests.toList()) {
       await op.cancel();
     }
+    await Future.wait(
+      _activeRequests.map((op) async {
+        try {
+          await op.value;
+        } catch (_) {}
+      }).toList(),
+    );
     _activeRequests.clear();
     await _server?.close(force: true);
     _server = null;
@@ -362,7 +374,9 @@ class StreamingServer {
 
   List<int> _computeNeededPieces(int? from, int? count) {
     final List<int> neededPieces = [];
-    final neededPiecesCount = count ?? (bufferSize / torrent.pieceSize).ceil();
+    final pieceSize = torrent.pieceSize;
+    final neededPiecesCount = count ??
+        (pieceSize > 0 ? (bufferSize / pieceSize).ceil() : 1);
     final firstPiece = from ?? torrentFile.beginPiece;
     final lastPiece = torrentFile.endPiece;
     for (int i = 0; i < neededPiecesCount && firstPiece + i <= lastPiece; i++) {

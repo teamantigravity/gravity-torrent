@@ -13,11 +13,15 @@ final appUri = const String.fromEnvironment('APP_URL').isNotEmpty
     : 'http://localhost:3000/';
 
 String createAppLink(String link) {
-  final Uri uri =
-      Uri(fragment: Uri(queryParameters: {'magnet': link}).toString());
-  final String fragmentString = encodeToBase64(
-    uri.toString().substring(2),
-  ); // Remove leading #?
+  final fragmentUri =
+      Uri(queryParameters: {'magnet': link}).toString();
+  final Uri uri = Uri(fragment: fragmentUri);
+  final String uriString = uri.toString();
+  // uri.toString() is '#?magnet=...' when the fragment is non-empty.
+  final payload = uriString.startsWith('#?')
+      ? uriString.substring(2)
+      : (uriString.startsWith('#') ? uriString.substring(1) : fragmentUri);
+  final String fragmentString = encodeToBase64(payload);
   final appLink = Uri.encodeFull('$appUri#$fragmentString');
 
   return appLink;
@@ -42,7 +46,16 @@ String? getTorrentLink(String appLink) {
 }
 
 bool isAppLink(String appLink) {
-  return appLink.startsWith(appUri);
+  try {
+    final uri = Uri.parse(appLink);
+    final base = Uri.parse(appUri);
+    return uri.scheme == base.scheme &&
+        uri.host == base.host &&
+        uri.port == base.port &&
+        uri.path == base.path;
+  } catch (_) {
+    return false;
+  }
 }
 
 Future<void> shareLink(BuildContext context, String magnetLink) async {

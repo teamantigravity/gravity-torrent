@@ -493,10 +493,17 @@ class TorrentsModel extends ChangeNotifier {
               _notifiedCompletedIds.add(torrent.id);
               unawaited(_persistNotifiedCompletedIds());
               if (hasLoaded) {
-                final addedDate = DateTime.fromMillisecondsSinceEpoch(
-                  torrent.addedDate * 1000,
-                );
-                final duration = addedDate.year > 2000
+                DateTime? addedDate;
+                try {
+                  addedDate = DateTime.fromMillisecondsSinceEpoch(
+                    torrent.addedDate * 1000,
+                  );
+                } catch (e) {
+                  if (kDebugMode) {
+                    debugPrint('Invalid addedDate for notification: $e');
+                  }
+                }
+                final duration = addedDate != null && addedDate.year > 2000
                     ? torrent.doneDate.difference(addedDate)
                     : null;
                 await showCompletedNotification(
@@ -615,9 +622,17 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   Future<void> _autoExtractCompletedFiles(Torrent torrent) async {
+    final baseDir = p.normalize(p.absolute(torrent.location));
     for (final file in torrent.files) {
       if (!file.wanted || file.bytesCompleted != file.length) continue;
       final filePath = p.normalize(p.join(torrent.location, file.name));
+      // Reject any path that resolves outside the download directory.
+      if (!p.isWithin(baseDir, filePath) && filePath != baseDir) {
+        if (kDebugMode) {
+          debugPrint('AutoExtract skipped path-traversal file: $filePath');
+        }
+        continue;
+      }
       if (_extractedPaths.contains(filePath)) continue;
       try {
         await AutoExtractService.instance.handleTorrentCompletion(

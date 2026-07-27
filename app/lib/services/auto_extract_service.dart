@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:archive/archive_io.dart';
+import 'package:path/path.dart' as p;
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 class AutoExtractService extends ChangeNotifier {
@@ -66,7 +67,21 @@ class AutoExtractService extends ChangeNotifier {
           ? File(filePath).parent.path
           : _destinationFolder;
 
-      final targetFolder = Directory('$destDir/$torrentName');
+      // Sanitize the torrent name so it cannot escape the destination dir.
+      final safeName = p.basename(
+        torrentName.replaceAll('..', '_').replaceAll(RegExp(r'[\\/]'), '_'),
+      );
+      final targetFolder = Directory(p.join(destDir, safeName));
+      final baseDir = p.normalize(p.absolute(destDir));
+      final targetPath = p.normalize(p.absolute(targetFolder.path));
+      if (!p.isWithin(baseDir, targetPath) && targetPath != baseDir) {
+        if (kDebugMode) {
+          debugPrint(
+            'AutoExtractService: skipping path-traversal target $targetPath',
+          );
+        }
+        return;
+      }
 
       try {
         await targetFolder.create(recursive: true);
@@ -81,8 +96,10 @@ class AutoExtractService extends ChangeNotifier {
           if (lowerPath.endsWith('.gz') && !lowerPath.endsWith('.tar.gz')) {
             // Single gzipped file - handled via streaming
             final inputStream = InputFileStream(filePath);
-            final outPath =
-                '${targetFolder.parent.path}/${torrentName.replaceFirst(RegExp(r'\.gz$'), '')}';
+            final outPath = p.join(
+              targetFolder.parent.path,
+              safeName.replaceFirst(RegExp(r'\.gz$'), ''),
+            );
             await targetFolder.parent.create(recursive: true);
             try {
               final outputStream = OutputFileStream(outPath);

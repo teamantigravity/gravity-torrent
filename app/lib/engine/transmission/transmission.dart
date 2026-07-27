@@ -594,7 +594,6 @@ class TransmissionEngine extends Engine {
     if (_closed) return;
     if (_activeSave != null) {
       await _activeSave;
-      return;
     }
     // Saves transmission session settings to disk on a worker isolate so the
     // UI thread is not blocked by synchronous FFI disk writes.
@@ -800,6 +799,9 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> resetSettings() async {
+    final pending = _activeSave;
+    _activeSave = null;
+    if (pending != null) await pending;
     await Isolate.run(() => flutter_libtransmission.resetSettings());
     if (Platform.isAndroid) {
       await android.initDefaultDownloadDir(this);
@@ -814,6 +816,7 @@ class TransmissionEngine extends Engine {
   Future<void> setTorrentsLocation(
     TorrentSetLocationArguments torrentSetLocationArguments,
   ) async {
+    if (_closed) throw StateError('Engine is closed');
     if (torrentSetLocationArguments.ids.isEmpty) return;
     final request = TorrentSetLocationRequest(
       arguments: torrentSetLocationArguments,
@@ -826,6 +829,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> removeTorrents(List<int> torrentIds, bool withData) async {
+    if (_closed) throw StateError('Engine is closed');
     if (torrentIds.isEmpty) return;
     final request = TorrentRemoveRequest(
       arguments: TorrentRemoveRequestArguments(
@@ -841,11 +845,13 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> pauseTorrent(int id) async {
+    if (_closed) throw StateError('Engine is closed');
     return pauseTorrents([id]);
   }
 
   @override
   Future<void> pauseTorrents(List<int> ids) async {
+    if (_closed) throw StateError('Engine is closed');
     if (ids.isEmpty) return;
     final request = TorrentActionRequest(
       action: TorrentAction.stop,
@@ -859,11 +865,13 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> resumeTorrent(int id) async {
+    if (_closed) throw StateError('Engine is closed');
     return resumeTorrents([id]);
   }
 
   @override
   Future<void> resumeTorrents(List<int> ids) async {
+    if (_closed) throw StateError('Engine is closed');
     if (ids.isEmpty) return;
     final request = TorrentActionRequest(
       action: TorrentAction.start,
@@ -881,6 +889,7 @@ class TransmissionEngine extends Engine {
     int? downloadLimit,
     int? uploadLimit,
   }) async {
+    if (_closed) throw StateError('Engine is closed');
     final downloadEnabled = downloadLimit != null && downloadLimit > 0;
     final uploadEnabled = uploadLimit != null && uploadLimit > 0;
     final request = TorrentSetRequest(
@@ -900,6 +909,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> setTorrentSequentialDownload(int id, bool sequential) async {
+    if (_closed) throw StateError('Engine is closed');
     final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
@@ -914,6 +924,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<int> updateBlocklist() async {
+    if (_closed) throw StateError('Engine is closed');
     final responseRaw = await flutter_libtransmission.requestAsync(
       jsonEncode({'method': 'blocklist-update', 'arguments': {}}),
     );

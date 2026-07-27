@@ -6,8 +6,12 @@ import 'dart:math';
 /// [length] is the number of raw bytes drawn from [Random.secure] before
 /// base64-url encoding, so the returned string is longer than [length].
 String generateSecureRandomToken({int length = 32}) {
+  final effectiveLength = length > 0 ? length : 32;
   final random = Random.secure();
-  final bytes = List<int>.generate(length, (_) => random.nextInt(256));
+  final bytes = List<int>.generate(
+    effectiveLength,
+    (_) => random.nextInt(256),
+  );
   return base64Url.encode(bytes).replaceAll('=', '');
 }
 
@@ -23,6 +27,9 @@ bool pathCarriesToken(String requestPath, String token) {
   while (path.startsWith('/')) {
     path = path.substring(1);
   }
+  // The capability token is a path segment; anything after ? or # is not
+  // part of the path and must not influence the match.
+  path = path.split(RegExp(r'[?#]')).first;
   final slash = path.indexOf('/');
   final segment = slash == -1 ? path : path.substring(0, slash);
   return segment == token;

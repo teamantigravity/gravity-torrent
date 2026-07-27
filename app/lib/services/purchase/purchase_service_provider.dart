@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/purchase/purchase_service.dart';
 import 'package:gravity_torrent/services/purchase/purchase_service_stub.dart'
@@ -19,7 +20,14 @@ class PurchaseServiceProvider {
   static void wirePurchaseStream() {
     if (_disposed) return;
     _purchaseSub?.cancel();
-    _purchaseSub = instance.purchaseUpdates.listen(_handlePurchases);
+    _purchaseSub = instance.purchaseUpdates.listen(
+      _handlePurchases,
+      onError: (Object error, StackTrace stackTrace) {
+        if (kDebugMode) {
+          debugPrint('Purchase stream error: $error\n$stackTrace');
+        }
+      },
+    );
   }
 
   static Future<void> dispose() async {
@@ -30,11 +38,17 @@ class PurchaseServiceProvider {
     instance.dispose();
   }
 
-  static Future<void> _handlePurchases(List<PurchaseUpdate> updates) async {
+  static void _handlePurchases(List<PurchaseUpdate> updates) {
     if (_disposed) return;
     for (final update in updates) {
-      if (_disposed) return;
-      if (update.productId != kRemoveAdsProductId) continue;
+      unawaited(_processUpdate(update));
+    }
+  }
+
+  static Future<void> _processUpdate(PurchaseUpdate update) async {
+    if (_disposed) return;
+    if (update.productId != kRemoveAdsProductId) return;
+    try {
       switch (update.status) {
         case PurchaseUpdateStatus.purchased:
         case PurchaseUpdateStatus.restored:
@@ -49,6 +63,8 @@ class PurchaseServiceProvider {
             await instance.completePurchase(update);
           }
       }
+    } catch (e, s) {
+      if (kDebugMode) debugPrint('Purchase processing error: $e\n$s');
     }
   }
 }

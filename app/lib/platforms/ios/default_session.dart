@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +12,8 @@ initDefaultDownloadDir(Engine engine) async {
   final session = await engine.fetchSession();
   final documentsDir = await getApplicationDocumentsDirectory();
   final downloadDir = join(documentsDir.path, 'Downloads');
+
+  await Directory(downloadDir).create(recursive: true);
 
   debugPrint('Settings default directory $downloadDir');
 
@@ -26,12 +30,16 @@ initDefaultDownloadDir(Engine engine) async {
   final torrents = await engine.fetchTorrents();
   final torrentsIds = torrents.map((t) => t.id).toList();
   if (torrentsIds.isNotEmpty) {
-    await engine.setTorrentsLocation(
-      TorrentSetLocationArguments(
-        ids: torrentsIds,
-        location: downloadDir,
-        move: false,
-      ),
-    );
+    try {
+      await engine.setTorrentsLocation(
+        TorrentSetLocationArguments(
+          ids: torrentsIds,
+          location: downloadDir,
+          move: false,
+        ),
+      );
+    } catch (e, s) {
+      debugPrint('Failed to update existing torrent locations: $e\n$s');
+    }
   }
 }

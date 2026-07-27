@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
@@ -68,9 +67,9 @@ class RemoteControlService {
     _port = 0;
   }
 
-  void dispose() {
+  Future<void> dispose() async {
+    await stop();
     _disposed = true;
-    unawaited(stop());
   }
 
   Future<void> setEnabled(bool value) async {
@@ -114,6 +113,16 @@ class RemoteControlService {
       if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80) return true;
       // fc00::/7
       if ((bytes[0] & 0xfe) == 0xfc) return true;
+      // ::ffff:127.0.0.1 (IPv4-mapped loopback) and other IPv4-mapped
+      // private ranges.
+      if (bytes.length == 16 && bytes[10] == 0xff && bytes[11] == 0xff) {
+        final first = bytes[12];
+        final second = bytes[13];
+        if (first == 127) return true;
+        if (first == 10) return true;
+        if (first == 172 && second >= 16 && second <= 31) return true;
+        if (first == 192 && second == 168) return true;
+      }
       return false;
     }
 
@@ -312,12 +321,10 @@ class RemoteControlService {
   /// Iterates over the maximum length so that an attacker cannot learn the
   /// secret token's length from a short-circuiting comparison.
   bool _constantTimeCompare(String a, String b) {
-    final maxLength = max(a.length, b.length);
-    var result = a.length ^ b.length;
-    for (var i = 0; i < maxLength; i++) {
-      final ac = i < a.length ? a.codeUnitAt(i) : 0;
-      final bc = i < b.length ? b.codeUnitAt(i) : 0;
-      result |= ac ^ bc;
+    if (a.length != b.length) return false;
+    var result = 0;
+    for (var i = 0; i < a.length; i++) {
+      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
     }
     return result == 0;
   }

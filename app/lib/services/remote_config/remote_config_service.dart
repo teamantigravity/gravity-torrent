@@ -90,10 +90,6 @@ class RemoteConfigService {
           .get(Uri.parse(_configUrl))
           .timeout(const Duration(seconds: 8));
 
-      // Throttle future requests whether the response is valid or not.
-      _lastFetch = DateTime.now();
-      await _saveLastFetch();
-
       if (response.statusCode < 200 || response.statusCode >= 300) {
         if (kDebugMode) {
           debugPrint(
@@ -118,6 +114,10 @@ class RemoteConfigService {
           }
         }
       }
+
+      // Throttle future requests only after a successful update.
+      _lastFetch = DateTime.now();
+      await _saveLastFetch();
     } on TimeoutException {
       if (kDebugMode) {
         debugPrint('[RemoteConfig] fetch timed out (keeping defaults)');

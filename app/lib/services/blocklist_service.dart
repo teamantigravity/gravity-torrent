@@ -57,7 +57,7 @@ class BlocklistService {
     }
 
     final lower = host.toLowerCase();
-    if (lower == 'localhost' || !host.contains('.')) return false;
+    if (lower == 'localhost' || lower == 'localhost.' || !host.contains('.')) return false;
 
     // Reject hostnames that are just an IPv4 literal with a port or other noise
     // already handled by the IP path above.

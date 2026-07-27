@@ -218,7 +218,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       }
 
       if (!mounted) return;
-
+      if (!completer.isCanceled) completer.complete();
       _closeVideoLoadingDialog();
 
       if (!mounted) return;
@@ -262,7 +262,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       }
 
       if (!mounted) return;
-
+      if (!completer.isCanceled) completer.complete();
       _closeSubtitlesLoadingDialog();
 
       if (!mounted) return;

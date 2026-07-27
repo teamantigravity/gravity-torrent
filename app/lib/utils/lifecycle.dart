@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/torrents.dart';
@@ -28,6 +29,8 @@ Future<void> closeApp([BuildContext? context]) async {
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
       await foreground.stopForegroundService();
+      await SystemNavigator.pop();
+      return;
     }
     exit(0);
   }

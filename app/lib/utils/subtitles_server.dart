@@ -20,6 +20,11 @@ class SubtitlesServer {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       _server = server;
       if (_stopped) {
+        if (!_serverReadyCompleter.isCompleted) {
+          _serverReadyCompleter.completeError(
+            StateError('SubtitlesServer was stopped before it could start'),
+          );
+        }
         await server.close(force: true);
         return;
       }
@@ -68,11 +73,12 @@ class SubtitlesServer {
   }
 
   Future<void> handleRequest(HttpRequest request) async {
-    final path = Uri.decodeComponent(request.uri.path);
-
     try {
+      final path = request.uri.path;
       // /subtitle.vtt
-      if (isSubtitleFileName(path)) {
+      if (path.isNotEmpty &&
+          path != '/' &&
+          isSubtitleFileName(path.substring(1))) {
         await serveFile(request.response, path.substring(1));
       } else {
         request.response.statusCode = HttpStatus.notFound;
@@ -102,20 +108,34 @@ class SubtitlesServer {
   }
 
   Future<void> serveFile(HttpResponse response, String filePath) async {
-    final resolved = p.normalize(p.join(torrent.location, filePath));
-    final root = p.normalize(torrent.location);
-    if (!p.isWithin(root, resolved) && resolved != root) {
+    final root = Directory(torrent.location).resolveSymbolicLinksSync();
+    final resolved = File(p.normalize(p.join(root, filePath)));
+    final String realPath;
+    try {
+      realPath = resolved.resolveSymbolicLinksSync();
+    } on FileSystemException {
+      response.statusCode = HttpStatus.notFound;
+      response.write('404: Not Found');
+      return;
+    }
+    final normalizedRoot = p.normalize(root);
+    final normalizedResolved = p.normalize(realPath);
+    if (!p.isWithin(normalizedRoot, normalizedResolved) &&
+        normalizedResolved != normalizedRoot) {
       response.statusCode = HttpStatus.forbidden;
       response.write('403: Forbidden');
       return;
     }
 
-    final file = File(resolved);
+    final file = File(realPath);
 
     if (file.existsSync()) {
       final mimeType = lookupMimeType(filePath) ?? ContentType.binary.mimeType;
-      final contentType = ContentType.parse(mimeType);
-      response.headers.contentType = contentType;
+      try {
+        response.headers.contentType = ContentType.parse(mimeType);
+      } on FormatException {
+        response.headers.contentType = ContentType.binary;
+      }
       await response.addStream(file.openRead());
     } else {
       response.statusCode = HttpStatus.notFound;

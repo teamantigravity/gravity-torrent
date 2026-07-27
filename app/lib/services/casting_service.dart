@@ -354,7 +354,19 @@ class CastingService extends ChangeNotifier {
           )
           .timeout(requestTimeout);
 
-      if (response.statusCode == HttpStatus.ok) return true;
+      if (response.statusCode == HttpStatus.ok) {
+        final body = utf8.decode(response.bodyBytes, allowMalformed: true);
+        if (body.contains('<s:Fault>') ||
+            body.contains('<Fault>') ||
+            RegExp(r'<errorCode>\s*[1-9]\d*\s*</errorCode>').hasMatch(body)) {
+          _lastError = 'Renderer reported a SOAP fault for $action.';
+          if (kDebugMode) {
+            debugPrint('CastingService: $action returned a SOAP fault');
+          }
+          return false;
+        }
+        return true;
+      }
       _lastError = 'Renderer returned HTTP ${response.statusCode} for $action.';
       if (kDebugMode) {
         debugPrint('CastingService: $action failed -> ${response.statusCode}');

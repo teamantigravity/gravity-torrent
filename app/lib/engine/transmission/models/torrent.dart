@@ -166,7 +166,10 @@ class TransmissionTorrentModel {
         eta = (json['eta'] as num?)?.toInt() ?? -1,
         pieces = (() {
           final raw = json['pieces'];
-          final count = (json['pieceCount'] as num?)?.toInt() ?? 0;
+          final count = ((json['pieceCount'] as num?)?.toInt() ?? 0).clamp(
+            0,
+            1000000,
+          );
           if (raw == null || raw.toString().isEmpty || count == 0) {
             return List<bool>.filled(count, false);
           }
@@ -182,7 +185,10 @@ class TransmissionTorrentModel {
             return List<bool>.filled(count, false);
           }
         })(),
-        pieceCount = (json['pieceCount'] as num?)?.toInt() ?? 0,
+        pieceCount = ((json['pieceCount'] as num?)?.toInt() ?? 0).clamp(
+          0,
+          1000000,
+        ),
         pieceSize = (json['pieceSize'] as num?)?.toInt() ?? 0,
         errorString = json['errorString'] as String? ?? '',
         location = json['downloadDir'] as String? ?? '',
@@ -228,9 +234,18 @@ class TransmissionTorrentModel {
         speedLimitUp =
             ((json['upload_limit'] ?? json['uploadLimit']) as num?)?.toInt() ??
                 0,
-        doneDate = DateTime.fromMillisecondsSinceEpoch(
-          ((json['doneDate'] as num?)?.toInt() ?? 0) * 1000,
-        ),
+        doneDate = (() {
+          try {
+            return DateTime.fromMillisecondsSinceEpoch(
+              ((json['doneDate'] as num?)?.toInt() ?? 0) * 1000,
+            );
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('Invalid doneDate for torrent: $e');
+            }
+            return DateTime.utc(1970);
+          }
+        })(),
         leftUntilDone = (json['leftUntilDone'] as num?)?.toInt() ?? 0,
         sizeWhenDone = (json['sizeWhenDone'] as num?)?.toInt() ?? 0;
 }

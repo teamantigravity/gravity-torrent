@@ -139,6 +139,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     _appLinks = AppLinks();
     _appLinksSubscription = _appLinks.uriLinkStream.listen(
       (uri) {
+        if (!mounted) return;
         _handleUri(uri);
       },
       onError: (Object e) {
@@ -205,6 +206,7 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     String? initialMagnetLink,
     String? initialContentPath,
   ) async {
+    if (!mounted) return;
     if (!await checkAndRequestStoragePermissions(context)) return;
     if (!mounted) return;
 

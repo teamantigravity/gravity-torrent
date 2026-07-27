@@ -106,6 +106,12 @@ class BatteryService {
         return;
       }
 
+      // On desktop/web the level can be -1 or otherwise invalid; skip throttle.
+      if (level < 0 || level > 100) {
+        if (_throttledByBattery) await _restoreNormalSpeed();
+        return;
+      }
+
       if (!_throttledByBattery && level <= _threshold) {
         // Battery dropped below threshold — enable throttle.
         await _enableThrottle();

@@ -59,12 +59,11 @@ String? detectSubtitleLanguage(String fileName) {
   // language suffix to extract. Treating the whole title as a language code
   // would false-positive on short movie titles (e.g. "Up", "Room").
   if (parts.length < 2) return null;
-  final tag = parts.reversed.firstWhere(
-    (p) => p.isNotEmpty && RegExp(r'^[a-zA-Z]{2,7}$').hasMatch(p),
-    orElse: () => '',
-  );
-  if (tag.isNotEmpty) {
-    return _normalizeLanguageTag(tag.toLowerCase());
+  final languageRe = RegExp(r'^[a-zA-Z]{2,7}$');
+  for (final part in parts.reversed) {
+    if (part.isEmpty || !languageRe.hasMatch(part)) continue;
+    final normalized = _normalizeLanguageTag(part.toLowerCase());
+    if (normalized != null) return normalized;
   }
   return null;
 }
@@ -132,7 +131,9 @@ String? _normalizeLanguageTag(String tag) {
     'vie': 'vi',
     'vietnamese': 'vi',
   };
-  return knownNames[tag] ?? tag;
+  if (knownNames.containsKey(tag)) return knownNames[tag];
+  if (tag.length == 2 || tag.length == 3) return tag;
+  return null;
 }
 
 List<File> getExternalSubtitles(File file, Torrent torrent) {

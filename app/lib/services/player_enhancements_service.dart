@@ -262,7 +262,9 @@ class PlayerEnhancementsService extends ChangeNotifier {
   void setQueue(List<PlaylistItem> items, {int startIndex = 0}) {
     if (_disposed) return;
     _queue = List.of(items);
-    _currentIndex = startIndex.clamp(0, items.length - 1);
+    _currentIndex = items.isEmpty
+        ? -1
+        : startIndex.clamp(0, items.length - 1);
     _safeNotify();
   }
 

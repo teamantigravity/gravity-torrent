@@ -60,6 +60,7 @@ class _BackupScreenState extends State<BackupScreen> {
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
 
     setState(() {
       _busy = true;
