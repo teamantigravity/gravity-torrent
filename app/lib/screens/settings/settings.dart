@@ -583,6 +583,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
       await flags.setEnableAppLock(true);
     } else {
+      if (AppLockService.instance.hasPin) {
+        final authenticated = await context.push<bool>('/privacy-vault') ?? false;
+        if (!mounted || !authenticated) return;
+      }
       await flags.setEnableAppLock(false);
     }
   }

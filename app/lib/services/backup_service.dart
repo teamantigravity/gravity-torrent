@@ -155,9 +155,11 @@ class BackupService {
 
       if (kIsWeb) {
         final data = utf8.encode(output);
+        final localCount = torrentStates.where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true).length;
+        final warnMsg = localCount > 0 ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)' : '';
         return BackupRestoreResult(
           success: true,
-          message: 'Backup created successfully',
+          message: 'Backup created successfully$warnMsg',
           filePath: fileName,
           bytes: Uint8List.fromList(data),
           metadata: BackupMetadata.fromJson(
@@ -174,9 +176,12 @@ class BackupService {
       // Prepend hash as first line, then the payload
       await file.writeAsString(output);
 
+      final localCount = torrentStates.where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true).length;
+      final warnMsg = localCount > 0 ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)' : '';
+
       return BackupRestoreResult(
         success: true,
-        message: 'Backup created successfully',
+        message: 'Backup created successfully$warnMsg',
         filePath: filePath,
         metadata: BackupMetadata.fromJson(
           payload['metadata'] as Map<String, dynamic>,
@@ -343,10 +348,13 @@ class BackupService {
         final value = entry.value;
         if (value is bool) {
           await SharedPrefs.setBool(key, value);
-        } else if (value is int) {
-          await SharedPrefs.setInt(key, value);
-        } else if (value is double) {
-          await SharedPrefs.setDouble(key, value);
+        } else if (value is num) {
+          final existing = SharedPrefs.get(key);
+          if (value is double || existing is double || _isFloatKey(key)) {
+            await SharedPrefs.setDouble(key, value.toDouble());
+          } else {
+            await SharedPrefs.setInt(key, value.toInt());
+          }
         } else if (value is String) {
           await SharedPrefs.setString(key, value);
         } else if (value is List) {
@@ -442,6 +450,17 @@ class BackupService {
     );
 
     return utf8.decode(decrypted);
+  }
+
+  static bool _isFloatKey(String key) {
+    final lower = key.toLowerCase();
+    return lower.contains('ratio') ||
+        lower.contains('speed') ||
+        lower.contains('percent') ||
+        lower.contains('float') ||
+        lower.contains('double') ||
+        lower.contains('multiplier') ||
+        lower.contains('threshold');
   }
 
   static String _currentPlatform() {

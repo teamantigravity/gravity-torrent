@@ -130,11 +130,13 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
   void showAppOpenAdIfReady() {
     if (!canShowAds || _appOpenAd == null || _isShowingAd) return;
     _firstAppOpenShown = true;
+    _isShowingAd = true;
     unawaited(
       _appOpenAd!.show().catchError((Object e) {
         if (kDebugMode) {
           debugPrint('AdServiceMobile app open show error: $e');
         }
+        _isShowingAd = false;
       }),
     );
   }
@@ -299,8 +301,6 @@ class _BannerAdHostState extends State<_BannerAdHost> {
     unawaited(
       _banner!.load().catchError((Object e) {
         if (kDebugMode) debugPrint('AdServiceMobile banner load error: $e');
-        _banner?.dispose();
-        _banner = null;
       }),
     );
   }

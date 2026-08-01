@@ -55,8 +55,8 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
     }
     try {
       await AppLockService.instance.setPin(pin);
-      _pinController.clear();
       if (mounted) {
+        _pinController.clear();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(localizations.pinSaved)));

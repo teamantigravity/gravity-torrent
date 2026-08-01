@@ -63,6 +63,9 @@ class TorrentSpeedChart extends StatelessWidget {
     if (speeds.isEmpty) {
       return [const FlSpot(0, 0), const FlSpot(1, 0)];
     }
+    if (speeds.length == 1) {
+      return [FlSpot(0, speeds[0]), FlSpot(1, speeds[0])];
+    }
     return List.generate(
       speeds.length,
       (i) => FlSpot(i.toDouble(), speeds[i]),

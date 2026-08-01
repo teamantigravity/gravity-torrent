@@ -250,7 +250,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        subtitle: Text('${t.peersConnected} peers'),
+                        subtitle: Text(
+                          '${t.peersConnected} ${localizations.peersConnected.toLowerCase()}',
+                        ),
                         trailing: Text(
                           '${prettyBytes(t.downloadedEver.toDouble(), locale: localizations.localeName)}\u2193\n${prettyBytes(t.uploadedEver.toDouble(), locale: localizations.localeName)}\u2191',
                           textAlign: TextAlign.end,

@@ -39,6 +39,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    _controller.dispose();
     _player.dispose();
 
     // Restore orientation & system UI -- without this the entire app
@@ -65,7 +66,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
         children: [
           GestureDetector(
             onTap: () => setState(() => _controlsVisible = !_controlsVisible),
-            child: Video(controller: _controller),
+            child: Video(
+              controller: _controller,
+              controls: NoVideoControls,
+            ),
           ),
           // Top bar
           if (_controlsVisible)

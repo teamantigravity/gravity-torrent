@@ -192,7 +192,7 @@ void main() {
         isTrue,
       );
       expect(body, contains('<Unit>REL_TIME</Unit>'));
-      expect(body, contains('<Target>0:03:04.000</Target>'));
+      expect(body, contains('<Target>00:03:04</Target>'));
     });
 
     test('setVolume clamps out-of-range values', () async {

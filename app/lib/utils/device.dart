@@ -29,32 +29,34 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
-      constraints: BoxConstraints(
-        maxHeight: (MediaQuery.of(context).size.height - 64).clamp(
-          100.0,
-          double.infinity,
-        ),
-        minWidth: MediaQuery.of(context).size.width,
-      ),
       builder: (BuildContext context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 16.0,
-                horizontal: 16.0,
-              ),
-              child: Text(
-                title,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: (MediaQuery.of(context).size.height - 64).clamp(
+              100.0,
+              double.infinity,
             ),
-            child,
-          ],
+            minWidth: MediaQuery.of(context).size.width,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 16.0,
+                ),
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              child,
+            ],
+          ),
         );
       },
     );

@@ -7,7 +7,6 @@ import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
-
 class BandwidthHeatmapService extends ChangeNotifier {
   // 7 days x 24 hours. Value is speed limit in KB/s. 0 means unlimited, -1 means pause.
   final List<List<int>> _schedule = List.generate(7, (_) => List.filled(24, 0));
@@ -154,7 +153,9 @@ class BandwidthHeatmapService extends ChangeNotifier {
         if (_disposed) return;
 
         if (currentLimit == 0) {
-          // 0 means unlimited
+          // 0 means unlimited — disable heatmap-driven alt-speed.
+          // If BatteryService is currently throttling, it controls alt-speed
+          // independently; we defer to it and skip the update here.
           await session.update(SessionBase(altSpeedEnabled: false));
         } else {
           // specific limit
@@ -169,9 +170,13 @@ class BandwidthHeatmapService extends ChangeNotifier {
       }
 
       _lastAppliedLimit = currentLimit;
-      debugPrint('BandwidthHeatmapService: Enforced limit $currentLimit');
+      if (kDebugMode) {
+        debugPrint('BandwidthHeatmapService: Enforced limit $currentLimit');
+      }
     } catch (e) {
-      debugPrint('BandwidthHeatmapService Error enforcing limit: $e');
+      if (kDebugMode) {
+        debugPrint('BandwidthHeatmapService Error enforcing limit: $e');
+      }
     }
   }
 

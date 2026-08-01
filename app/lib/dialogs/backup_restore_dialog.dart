@@ -118,6 +118,7 @@ class _BackupRestoreDialogState extends State<BackupRestoreDialog> {
                     labelText: l.passphrase,
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
+                      tooltip: _obscure ? 'Show passphrase' : 'Hide passphrase',
                       icon: Icon(
                         _obscure ? Icons.visibility_off : Icons.visibility,
                       ),

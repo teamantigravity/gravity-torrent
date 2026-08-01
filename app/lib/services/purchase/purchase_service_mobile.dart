@@ -101,6 +101,13 @@ class PurchaseServiceMobile implements PurchaseService {
 
   void _onRawPurchases(List<PurchaseDetails> purchases) {
     if (_disposed) return;
+    for (final p in purchases) {
+      if (p.pendingCompletePurchase &&
+          (p.status == PurchaseStatus.error ||
+              p.status == PurchaseStatus.canceled)) {
+        unawaited(_iap.completePurchase(p));
+      }
+    }
     final mapped = purchases.map(_mapPurchase).toList();
     _updates.add(mapped);
   }

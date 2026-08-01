@@ -38,7 +38,7 @@ class RemoteControlService {
     try {
       _token = _generateToken();
       final ip = await _localIp();
-      if (_disposed) return;
+      if (_disposed || !_starting) return;
       // Bind to the private/local address. If no private address is available,
       // fall back to loopback so we never bind to a public interface.
       final bindAddress =
@@ -56,12 +56,18 @@ class RemoteControlService {
   /// unambiguous. IPv4 addresses are returned unchanged.
   @visibleForTesting
   String formatHostForUrl(String address) {
-    if (address.contains(':')) return '[$address]';
-    return address;
+    var sanitized = address;
+    final scopeIndex = sanitized.indexOf('%');
+    if (scopeIndex != -1) {
+      sanitized = sanitized.substring(0, scopeIndex);
+    }
+    if (sanitized.contains(':')) return '[$sanitized]';
+    return sanitized;
   }
 
   Future<void> stop() async {
     if (_disposed) return;
+    _starting = false;
     await _server?.close();
     _server = null;
     _port = 0;
@@ -153,7 +159,14 @@ class RemoteControlService {
       // Prefer IPv4 for the displayed URL because it is easier for users to
       // type/scan; fall back to IPv6 if no private IPv4 is available.
       final chosen = ipv4 ?? ipv6;
-      if (chosen != null) return chosen.address;
+      if (chosen != null) {
+        var addr = chosen.address;
+        final scopeIndex = addr.indexOf('%');
+        if (scopeIndex != -1) {
+          addr = addr.substring(0, scopeIndex);
+        }
+        return addr;
+      }
     } catch (e) {
       // Fall through to loopback
     }
@@ -321,10 +334,11 @@ class RemoteControlService {
   /// Iterates over the maximum length so that an attacker cannot learn the
   /// secret token's length from a short-circuiting comparison.
   bool _constantTimeCompare(String a, String b) {
-    if (a.length != b.length) return false;
-    var result = 0;
-    for (var i = 0; i < a.length; i++) {
-      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    var result = a.length == b.length ? 0 : 1;
+    for (var i = 0; i < b.length; i++) {
+      final aChar = i < a.length ? a.codeUnitAt(i) : 0;
+      final bChar = b.codeUnitAt(i);
+      result |= aChar ^ bChar;
     }
     return result == 0;
   }

@@ -6,7 +6,6 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
-
 /// Automatically throttles downloads (enables turtle/alt-speed mode) when
 /// battery level drops below [threshold] percent and the device is not charging.
 ///
@@ -21,6 +20,7 @@ class BatteryService {
 
   final Battery _battery = Battery();
   StreamSubscription<BatteryState>? _stateSub;
+  Timer? _levelTimer;
   bool _enabled = false;
   bool _loaded = false;
   bool _throttledByBattery = false;
@@ -83,11 +83,20 @@ class BatteryService {
         if (kDebugMode) debugPrint('BatteryService state stream error: $e');
       },
     );
+    _levelTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      unawaited(
+        _checkBattery().catchError((Object e) {
+          if (kDebugMode) debugPrint('BatteryService _checkBattery error: $e');
+        }),
+      );
+    });
   }
 
   void _unsubscribe() {
     _stateSub?.cancel();
     _stateSub = null;
+    _levelTimer?.cancel();
+    _levelTimer = null;
   }
 
   Future<void> _checkBattery() async {
@@ -153,6 +162,10 @@ class BatteryService {
       final engine = getIt<Engine>();
       final session = await engine.fetchSession();
       if (_disposed) return;
+
+      // Unconditionally disable alt-speed. If the BandwidthHeatmapService has
+      // an active limit it will re-apply it within its next scheduled tick
+      // (at most 1 minute), avoiding a circular import dependency.
       await session.update(SessionBase(altSpeedEnabled: false));
       _throttledByBattery = false;
       if (kDebugMode) {

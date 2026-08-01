@@ -122,10 +122,12 @@ class RemoteConfigService {
       if (kDebugMode) {
         debugPrint('[RemoteConfig] fetch timed out (keeping defaults)');
       }
+      _lastFetch = DateTime.now().subtract(const Duration(hours: 5, minutes: 55));
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[RemoteConfig] fetch failed (keeping defaults): $e');
       }
+      _lastFetch = DateTime.now().subtract(const Duration(hours: 5, minutes: 55));
     }
   }
 }

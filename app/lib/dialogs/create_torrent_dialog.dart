@@ -32,16 +32,18 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
   }
 
   Future<void> _pickInputFile() async {
+    final l = AppLocalizations.of(context);
     final result =
-        await FilePicker.pickFiles(dialogTitle: 'Select source file');
+        await FilePicker.pickFiles(dialogTitle: l.selectSourceFile);
     if (result == null || result.files.isEmpty) return;
     if (!mounted) return;
     setState(() => _inputPath = result.files.first.path);
   }
 
   Future<void> _pickInputDirectory() async {
+    final l = AppLocalizations.of(context);
     final dir = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Select source directory',
+      dialogTitle: l.selectSourceDirectory,
     );
     if (dir == null) return;
     if (!mounted) return;
@@ -49,8 +51,9 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
   }
 
   Future<void> _pickOutputDirectory() async {
+    final l = AppLocalizations.of(context);
     final dir = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Select output directory',
+      dialogTitle: l.selectOutputDirectory,
     );
     if (dir == null) return;
     if (!mounted) return;
@@ -97,8 +100,9 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
     } catch (e) {
       if (kDebugMode) debugPrint('Create torrent failed: $e');
       if (!mounted) return;
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create torrent: $e')),
+        SnackBar(content: Text(l.createTorrentFailed(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -114,7 +118,7 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
         _inputPath != null && _outputDirectory != null && !_creating;
 
     return AlertDialog(
-      title: const Text('Create Torrent'),
+      title: Text(l.createTorrent),
       content: SizedBox(
         width: 400,
         child: SingleChildScrollView(
@@ -126,7 +130,7 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
                 leading: const Icon(Icons.folder),
                 title: Text(
                   _inputPath == null
-                      ? 'Source file or folder'
+                      ? l.sourceFileOrFolder
                       : p.basename(_inputPath!),
                 ),
                 subtitle: _inputPath != null ? Text(_inputPath!) : null,
@@ -135,11 +139,11 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
                   itemBuilder: (_) => [
                     PopupMenuItem(
                       value: _pickInputFile,
-                      child: const Text('Select file'),
+                      child: Text(l.selectFile),
                     ),
                     PopupMenuItem(
                       value: _pickInputDirectory,
-                      child: const Text('Select directory'),
+                      child: Text(l.selectDirectory),
                     ),
                   ],
                   child: const Icon(Icons.more_vert),
@@ -149,32 +153,33 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
                 leading: const Icon(Icons.save),
                 title: Text(
                   _outputDirectory == null
-                      ? 'Output folder'
+                      ? l.outputFolder
                       : p.basename(_outputDirectory!),
                 ),
                 subtitle:
                     _outputDirectory != null ? Text(_outputDirectory!) : null,
                 trailing: IconButton(
+                  tooltip: l.selectOutputDirectory,
                   icon: const Icon(Icons.folder_open),
                   onPressed: _pickOutputDirectory,
                 ),
               ),
               TextField(
                 controller: _trackersController,
-                decoration: const InputDecoration(
-                  labelText: 'Trackers (one per line, optional)',
-                  helperText: 'Leave empty for DHT-only torrents',
+                decoration: InputDecoration(
+                  labelText: l.trackersLabel,
+                  helperText: l.trackersHelper,
                 ),
                 maxLines: 4,
               ),
               SwitchListTile(
-                title: const Text('Add for seeding'),
-                subtitle: const Text('Add the created torrent to the engine'),
+                title: Text(l.addForSeeding),
+                subtitle: Text(l.addForSeedingSubtitle),
                 value: _addForSeeding,
                 onChanged: (v) => setState(() => _addForSeeding = v),
               ),
               SwitchListTile(
-                title: const Text('Private torrent'),
+                title: Text(l.privateTorrent),
                 value: _isPrivate,
                 onChanged: (v) => setState(() => _isPrivate = v),
               ),
@@ -182,7 +187,7 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
                 const SizedBox(height: 16),
                 LinearProgressIndicator(value: _progress),
                 const SizedBox(height: 8),
-                const Text('Creating torrent...'),
+                Text(l.creatingTorrent),
               ],
             ],
           ),
@@ -195,7 +200,7 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
         ),
         FilledButton(
           onPressed: canCreate ? _create : null,
-          child: const Text('Create'),
+          child: Text(l.create),
         ),
       ],
     );

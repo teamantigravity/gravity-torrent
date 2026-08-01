@@ -84,6 +84,7 @@ class CastingService extends ChangeNotifier {
   /// Only renderers that actually expose `AVTransport:1` are returned, because
   /// anything else cannot be told to play a stream.
   Future<List<CastDevice>> discoverDevices() async {
+    _disposed = false;
     if (_isDiscovering || kIsWeb) return devices;
     _isDiscovering = true;
     _safeNotify();
@@ -205,7 +206,7 @@ class CastingService extends ChangeNotifier {
       device,
       'SetAVTransportURI',
       innerXml: '<CurrentURI>${escapeXml(streamUrl)}</CurrentURI>'
-          '<CurrentURIMetaData>${escapeXml(metadata)}</CurrentURIMetaData>',
+          '<CurrentURIMetaData>$metadata</CurrentURIMetaData>',
     );
 
     if (_disposed) return false;
@@ -386,6 +387,7 @@ class CastingService extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _client.close();
+    _client = http.Client();
     super.dispose();
   }
 }

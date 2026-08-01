@@ -193,9 +193,9 @@ void main() {
         title: 'Tom & Jerry <hack>.mp4',
         streamUrl: 'http://host/a?b=1&c=2',
       );
-      expect(metadata, contains('Tom &amp; Jerry &lt;hack&gt;.mp4'));
+      expect(metadata, contains('Tom &amp;amp; Jerry &amp;lt;hack&amp;gt;.mp4'));
       expect(metadata, isNot(contains('<hack>')));
-      expect(metadata, contains('http://host/a?b=1&amp;c=2'));
+      expect(metadata, contains('http://host/a?b=1&amp;amp;c=2'));
     });
   });
 
@@ -214,22 +214,22 @@ void main() {
   });
 
   group('formatUpnpDuration', () {
-    test('formats as H:MM:SS.mmm', () {
-      expect(formatUpnpDuration(Duration.zero), '0:00:00.000');
+    test('formats as HH:MM:SS', () {
+      expect(formatUpnpDuration(Duration.zero), '00:00:00');
       expect(
         formatUpnpDuration(
           const Duration(hours: 1, minutes: 2, seconds: 3, milliseconds: 40),
         ),
-        '1:02:03.040',
+        '01:02:03',
       );
     });
 
     test('does not roll hours over at 24', () {
-      expect(formatUpnpDuration(const Duration(hours: 30)), '30:00:00.000');
+      expect(formatUpnpDuration(const Duration(hours: 30)), '30:00:00');
     });
 
     test('clamps negative positions to zero', () {
-      expect(formatUpnpDuration(const Duration(seconds: -5)), '0:00:00.000');
+      expect(formatUpnpDuration(const Duration(seconds: -5)), '00:00:00');
     });
   });
 }

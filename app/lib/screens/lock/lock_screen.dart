@@ -57,21 +57,23 @@ class _LockScreenState extends State<LockScreen> {
       });
     }
 
+    bool ok = false;
     try {
-      final ok = await AppLockService.instance.authenticateWithBiometrics(
+      ok = await AppLockService.instance.authenticateWithBiometrics(
         localizedReason: localizations.unlockApp,
       );
       if (ok && mounted) {
         widget.onUnlocked();
-        return;
       }
-    } catch (_) {}
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _error = AppLocalizations.of(context).biometricFailed;
-      });
+    } catch (_) {
+      // Ignore
+    } finally {
+      if (mounted && !ok) {
+        setState(() {
+          _isLoading = false;
+          _error = AppLocalizations.of(context).biometricFailed;
+        });
+      }
     }
   }
 
@@ -87,6 +89,12 @@ class _LockScreenState extends State<LockScreen> {
       } else if (mounted) {
         setState(() {
           _error = localizations.incorrectPin;
+        });
+      }
+    } on PinLockoutException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
         });
       }
     } catch (_) {

@@ -27,39 +27,39 @@ enum EncryptionMode {
 }
 
 class SessionBase {
-  final String? downloadDir;
-  final bool? downloadQueueEnabled;
-  final int? downloadQueueSize;
-  final int? peerPort;
-  final bool? speedLimitDownEnabled;
-  final bool? speedLimitUpEnabled;
-  final int? speedLimitDown;
-  final int? speedLimitUp;
-  final double? seedRatioLimit;
-  final bool? seedRatioLimited;
+  String? downloadDir;
+  bool? downloadQueueEnabled;
+  int? downloadQueueSize;
+  int? peerPort;
+  bool? speedLimitDownEnabled;
+  bool? speedLimitUpEnabled;
+  int? speedLimitDown;
+  int? speedLimitUp;
+  double? seedRatioLimit;
+  bool? seedRatioLimited;
 
   // Privacy & security
-  final EncryptionMode? encryption;
-  final bool? blocklistEnabled;
-  final String? blocklistUrl;
-  final int? blocklistSize;
-  final bool? dhtEnabled;
-  final bool? pexEnabled;
-  final bool? lpdEnabled;
-  final bool? utpEnabled;
+  EncryptionMode? encryption;
+  bool? blocklistEnabled;
+  String? blocklistUrl;
+  int? blocklistSize;
+  bool? dhtEnabled;
+  bool? pexEnabled;
+  bool? lpdEnabled;
+  bool? utpEnabled;
 
   // Alternative (turtle) speed limits & scheduler
-  final bool? altSpeedEnabled;
-  final int? altSpeedDown;
-  final int? altSpeedUp;
-  final bool? altSpeedTimeEnabled;
-  final int? altSpeedTimeBegin;
-  final int? altSpeedTimeEnd;
-  final int? altSpeedTimeDay;
+  bool? altSpeedEnabled;
+  int? altSpeedDown;
+  int? altSpeedUp;
+  bool? altSpeedTimeEnabled;
+  int? altSpeedTimeBegin;
+  int? altSpeedTimeEnd;
+  int? altSpeedTimeDay;
 
   // Idle seeding auto-stop
-  final bool? idleSeedingLimitEnabled;
-  final int? idleSeedingLimit;
+  bool? idleSeedingLimitEnabled;
+  int? idleSeedingLimit;
 
   SessionBase({
     this.downloadDir,

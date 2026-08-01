@@ -22,7 +22,7 @@ enum TorrentStatus {
 
 class TorrentBase {
   final int id;
-  final List<String>? labels;
+  List<String>? labels;
 
   TorrentBase({required this.id, required this.labels});
 }
@@ -58,13 +58,22 @@ abstract class Torrent extends TorrentBase {
   final DateTime doneDate;
 
   /// Info hash extracted from the magnet link, if available.
+  /// Supports both BitTorrent V1 (`urn:btih:`) and V2 (`urn:btmh:`) hashes,
+  /// as well as magnet URIs with multiple `xt` parameters.
   String? get hash {
     if (magnetLink.isEmpty) return null;
     try {
       final uri = Uri.parse(magnetLink);
-      final xt = uri.queryParameters['xt'];
-      if (xt != null && xt.startsWith('urn:btih:')) {
-        return xt.substring(9);
+      final xtList = uri.queryParametersAll['xt'];
+      if (xtList != null) {
+        for (final xt in xtList) {
+          final xtLower = xt.toLowerCase();
+          if (xtLower.startsWith('urn:btih:')) {
+            return xt.substring(9);
+          } else if (xtLower.startsWith('urn:btmh:')) {
+            return xt.substring(9);
+          }
+        }
       }
     } catch (_) {
       // Ignore malformed magnet links.
@@ -120,7 +129,10 @@ abstract class Torrent extends TorrentBase {
   Future<void> reannounce();
 
   // Remove the torrent
-  Future<void> remove(bool withData);
+  @mustCallSuper
+  Future<void> remove(bool withData) async {
+    await SharedPrefsStorage.remove(_streamingActiveKey);
+  }
 
   // Update torrent data
   Future<void> update(TorrentBase torrent);
@@ -128,6 +140,8 @@ abstract class Torrent extends TorrentBase {
   Future<void> toggleFileWanted(int fileIndex, bool wanted);
 
   Future<void> toggleAllFilesWanted(bool wanted);
+
+  Future<void> setFilesWanted(List<int> fileIndices, bool wanted);
 
   Future<void> setSequentialDownload(bool sequential);
 
@@ -146,7 +160,7 @@ abstract class Torrent extends TorrentBase {
     List<int>? priorityNormal,
   });
 
-  static const _streamingActiveKey = 'streaming_active';
+  String get _streamingActiveKey => 'streaming_active_$id';
 
   Future<void> startStreaming(File file) async {
     if (kDebugMode) debugPrint('starting streaming ${file.name}');
@@ -155,12 +169,6 @@ abstract class Torrent extends TorrentBase {
       throw StateError(
         'Streaming file ${file.name} not found in torrent $name',
       );
-    }
-
-    // File already completed
-    if (file.bytesCompleted == file.length) {
-      // Do nothing if file is already completed.
-      return;
     }
 
     // Be sure torrent is active
@@ -177,12 +185,11 @@ abstract class Torrent extends TorrentBase {
       if (externalSubtitles
               .firstWhereOrNull((f) => f.name == torrentFile.name) !=
           null) {
-        await toggleFileWanted(index, true);
         highPriorityFileIndices.add(index);
       }
     }
 
-    await toggleFileWanted(fileIndex, true);
+    await setFilesWanted(highPriorityFileIndices, true);
 
     // Set high priority for streaming file and subtitles
     await setFilesPriority(priorityHigh: highPriorityFileIndices);
@@ -198,9 +205,12 @@ abstract class Torrent extends TorrentBase {
 
     await setSequentialDownload(false);
 
-    // Reset all files to normal priority
-    final allFileIndices = List.generate(files.length, (index) => index);
-    await setFilesPriority(priorityNormal: allFileIndices);
+    // Reset all files to normal priority so piece scheduling is not biased
+    // toward the previously-streamed file after streaming ends.
+    if (files.isNotEmpty) {
+      final allFileIndices = List.generate(files.length, (index) => index);
+      await setFilesPriority(priorityNormal: allFileIndices);
+    }
 
     await SharedPrefsStorage.setBool(_streamingActiveKey, false);
   }
@@ -218,8 +228,9 @@ abstract class Torrent extends TorrentBase {
     // split with the POSIX context regardless of the host platform.
     String? commonFolder;
     for (final file in files) {
-      final parts = posix.split(file.name);
-      if (parts.isEmpty) {
+      final normalizedFileName = file.name.replaceAll('\\', '/');
+      final parts = posix.split(normalizedFileName);
+      if (parts.length <= 1) {
         commonFolder = null;
         break;
       }
@@ -236,10 +247,13 @@ abstract class Torrent extends TorrentBase {
       }
     }
 
+    final isWindowsPath = Platform.isWindows || location.contains('\\');
+    final pContext = isWindowsPath ? windows : posix;
+
     if (commonFolder != null && commonFolder.isNotEmpty) {
-      folderPath = normalize(join(location, commonFolder));
+      folderPath = pContext.normalize(pContext.join(location, commonFolder));
     } else {
-      folderPath = location;
+      folderPath = pContext.normalize(location);
     }
 
     try {

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
@@ -45,6 +46,8 @@ class BandwidthHeatmapWidget extends StatelessWidget {
                           '$i',
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 10),
+                          overflow: TextOverflow.clip,
+                          softWrap: false,
                         ),
                       ),
                   ],
@@ -57,20 +60,30 @@ class BandwidthHeatmapWidget extends StatelessWidget {
                         child: Text(
                           days[d],
                           style: const TextStyle(fontSize: 10),
+                          overflow: TextOverflow.clip,
+                          softWrap: false,
                         ),
                       ),
                       for (int h = 0; h < 24; h++)
-                        GestureDetector(
-                          onTap: () {
-                            final currentLimit = service.schedule[d][h];
-                            final newLimit = currentLimit == 0 ? -1 : 0;
-                            service.setScheduleLimit(d, h, newLimit);
-                          },
-                          child: Container(
-                            width: cellWidth - 2, // Account for margin
-                            height: cellWidth - 2, // Account for margin
-                            margin: const EdgeInsets.all(1),
-                            color: _getColorForLimit(service.schedule[d][h]),
+                        Semantics(
+                          label:
+                              '${days[d]} $h:00 - ${_getLimitLabel(service.schedule[d][h], localizations)}',
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () {
+                              final currentLimit = service.schedule[d][h];
+                              final newLimit = currentLimit == 0 ? -1 : 0;
+                              service.setScheduleLimit(d, h, newLimit);
+                            },
+                            child: Container(
+                              width: math.max(0.0, cellWidth - 2), // Account for margin
+                              height: math.max(0.0, cellWidth - 2), // Account for margin
+                              margin: const EdgeInsets.all(1),
+                              color: _getColorForLimit(
+                                service.schedule[d][h],
+                                context,
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -83,9 +96,16 @@ class BandwidthHeatmapWidget extends StatelessWidget {
     );
   }
 
-  Color _getColorForLimit(int limit) {
-    if (limit == -1) return Colors.red; // Paused
-    if (limit == 0) return Colors.green; // Unlimited
-    return Colors.orange; // Throttled
+  String _getLimitLabel(int limit, AppLocalizations localizations) {
+    if (limit == -1) return localizations.paused;
+    if (limit == 0) return 'Unlimited';
+    return '$limit ${localizations.kilobytesPerSecond}';
+  }
+
+  Color _getColorForLimit(int limit, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (limit == -1) return colorScheme.error; // Paused
+    if (limit == 0) return colorScheme.primary; // Unlimited
+    return colorScheme.tertiary; // Throttled
   }
 }

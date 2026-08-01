@@ -61,6 +61,7 @@ class TorrentsModel extends ChangeNotifier {
   Set<int> _favorites = {};
   final _notifiedCompletedIds = <int>{};
   final _extractedPaths = <String>{};
+  final _manuallyResumedSeedingIds = <int>{};
 
   static const _notifiedCompletedIdsKey =
       'gravity_torrent_notified_completed_ids';
@@ -85,8 +86,11 @@ class TorrentsModel extends ChangeNotifier {
       torrents.fold<int>(0, (sum, t) => sum + t.uploadedEver);
   Timer? _searchDebounceTimer;
   bool _isFetching = false; // mutex to prevent concurrent fetches
+  bool _isRefetchQueued = false; // debounces triggerRefetch
   bool _disposed = false;
   bool _quotaPauseEnforced = false;
+
+  bool get isQuotaPauseEnforced => _quotaPauseEnforced;
 
   FeatureFlagsModel? _featureFlags;
 
@@ -241,7 +245,7 @@ class TorrentsModel extends ChangeNotifier {
     // If turning on, immediately pause any currently-seeding torrents
     if (value) {
       final seedingIds = torrents
-          .where((t) => t.status == TorrentStatus.seeding)
+          .where((t) => t.status == TorrentStatus.seeding && !_manuallyResumedSeedingIds.contains(t.id))
           .map((t) => t.id)
           .toList();
       if (seedingIds.isNotEmpty) {
@@ -362,15 +366,37 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   Future<void> _triggerRefetch() async {
-    while (_isFetching) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (_disposed) return;
+    if (_isRefetchQueued) return;
+    _isRefetchQueued = true;
+    try {
+      while (_isFetching) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (_disposed) return;
+      }
+      await fetchTorrents();
+    } finally {
+      _isRefetchQueued = false;
     }
-    await fetchTorrents();
   }
 
   Future<void> removeAllTorrents(List<int> torrentIds, bool withData) async {
     if (torrentIds.isEmpty) return;
+
+    for (final id in torrentIds) {
+      SpeedHistoryService.instance.removeTorrent(id);
+      _notifiedCompletedIds.remove(id);
+    }
+    for (final t in torrents) {
+      if (torrentIds.contains(t.id)) {
+        for (final file in t.files) {
+          final filePath = p.normalize(p.join(t.location, file.name));
+          _extractedPaths.remove(filePath);
+        }
+      }
+    }
+    unawaited(_persistNotifiedCompletedIds());
+    unawaited(_persistExtractedPaths());
+
     await engine.removeTorrents(torrentIds, withData);
     unawaited(_triggerRefetch());
   }
@@ -386,6 +412,7 @@ class TorrentsModel extends ChangeNotifier {
     if (toPause.isEmpty) return;
     try {
       await engine.pauseTorrents(toPause);
+      _manuallyResumedSeedingIds.removeAll(toPause);
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to pause selected torrents: $e');
     }
@@ -403,6 +430,12 @@ class TorrentsModel extends ChangeNotifier {
     if (toResume.isEmpty) return;
     try {
       await engine.resumeTorrents(toResume);
+      for (final t in torrents) {
+        if (toResume.contains(t.id) && t.progress >= 1.0) {
+          _manuallyResumedSeedingIds.add(t.id);
+        }
+      }
+      _quotaPauseEnforced = false;
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to resume selected torrents: $e');
     }
@@ -417,6 +450,7 @@ class TorrentsModel extends ChangeNotifier {
     if (toPause.isEmpty) return;
     try {
       await engine.pauseTorrents(toPause);
+      _manuallyResumedSeedingIds.removeAll(toPause);
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to pause all torrents: $e');
     }
@@ -431,6 +465,12 @@ class TorrentsModel extends ChangeNotifier {
     if (toResume.isEmpty) return;
     try {
       await engine.resumeTorrents(toResume);
+      for (final t in torrents) {
+        if (toResume.contains(t.id) && t.progress >= 1.0) {
+          _manuallyResumedSeedingIds.add(t.id);
+        }
+      }
+      _quotaPauseEnforced = false;
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to resume all torrents: $e');
     }
@@ -446,6 +486,33 @@ class TorrentsModel extends ChangeNotifier {
 
     try {
       final List<Torrent> fetched = await engine.fetchTorrents();
+
+      final fetchedIds = fetched.map((t) => t.id).toSet();
+      final deletedIds = torrents.where((t) => !fetchedIds.contains(t.id)).map((t) => t.id).toList();
+
+      if (deletedIds.isNotEmpty) {
+        for (final id in deletedIds) {
+          SpeedHistoryService.instance.removeTorrent(id);
+          _notifiedCompletedIds.remove(id);
+        }
+        for (final t in torrents) {
+          if (deletedIds.contains(t.id)) {
+            for (final file in t.files) {
+              final filePath = p.normalize(p.join(t.location, file.name));
+              _extractedPaths.remove(filePath);
+            }
+          }
+        }
+        unawaited(_persistNotifiedCompletedIds());
+        unawaited(_persistExtractedPaths());
+      }
+
+      _manuallyResumedSeedingIds.retainWhere((id) => fetchedIds.contains(id));
+      for (final t in fetched) {
+        if (t.status == TorrentStatus.stopped) {
+          _manuallyResumedSeedingIds.remove(t.id);
+        }
+      }
 
       // Update the persistent Android foreground service notification with live
       // progress and speed on every refresh.
@@ -486,13 +553,13 @@ class TorrentsModel extends ChangeNotifier {
       }
 
       // Display notification for torrents completed during last refresh
-      if (_featureFlags?.useEnhancedNotifications ?? true) {
-        for (final torrent in fetched) {
-          if (torrent.progress >= 1.0 && torrent.doneDate.year > 1970) {
-            if (!_notifiedCompletedIds.contains(torrent.id)) {
-              _notifiedCompletedIds.add(torrent.id);
-              unawaited(_persistNotifiedCompletedIds());
-              if (hasLoaded) {
+      for (final torrent in fetched) {
+        if (torrent.progress >= 1.0 && torrent.doneDate.year > 1970) {
+          if (!_notifiedCompletedIds.contains(torrent.id)) {
+            _notifiedCompletedIds.add(torrent.id);
+            unawaited(_persistNotifiedCompletedIds());
+            if (hasLoaded) {
+              if (_featureFlags?.useEnhancedNotifications ?? true) {
                 DateTime? addedDate;
                 try {
                   addedDate = DateTime.fromMillisecondsSinceEpoch(
@@ -511,21 +578,21 @@ class TorrentsModel extends ChangeNotifier {
                   id: torrent.id + 1000,
                   duration: duration,
                 );
-                unawaited(
-                  InAppReviewService.recordSuccessfulDownload().catchError((e) {
-                    if (kDebugMode) debugPrint('InAppReview failed: $e');
-                    return null;
-                  }),
-                );
-                unawaited(
-                  _autoExtractCompletedFiles(torrent).catchError((e, st) {
-                    if (kDebugMode) {
-                      debugPrint('Auto-extract failed: $e\n$st');
-                    }
-                    return null;
-                  }),
-                );
               }
+              unawaited(
+                InAppReviewService.recordSuccessfulDownload().catchError((e) {
+                  if (kDebugMode) debugPrint('InAppReview failed: $e');
+                  return null;
+                }),
+              );
+              unawaited(
+                _autoExtractCompletedFiles(torrent).catchError((e, st) {
+                  if (kDebugMode) {
+                    debugPrint('Auto-extract failed: $e\n$st');
+                  }
+                  return null;
+                }),
+              );
             }
           }
         }
@@ -534,7 +601,7 @@ class TorrentsModel extends ChangeNotifier {
       // Auto-pause seeding torrents if user has that preference on
       if (stopSeedingWhenComplete) {
         final seedingIds = fetched
-            .where((t) => t.status == TorrentStatus.seeding)
+            .where((t) => t.status == TorrentStatus.seeding && !_manuallyResumedSeedingIds.contains(t.id))
             .map((t) => t.id)
             .toList();
         if (seedingIds.isNotEmpty) {
@@ -605,7 +672,7 @@ class TorrentsModel extends ChangeNotifier {
         _safeRecordAnalytics(fetched);
       }
 
-      await SeedRatioService.instance.checkAndStop(torrents);
+      await SeedRatioService.instance.checkAndStop(torrents, _manuallyResumedSeedingIds);
 
       for (final t in torrents) {
         SpeedHistoryService.instance.record(t.id, t.rateDownload.toDouble());

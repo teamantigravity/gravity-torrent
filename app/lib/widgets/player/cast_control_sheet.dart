@@ -17,6 +17,8 @@ class CastControlSheet extends StatefulWidget {
 }
 
 class _CastControlSheetState extends State<CastControlSheet> {
+  bool _hasPopped = false;
+
   /// UPnP exposes no way to read the renderer's volume without subscribing to
   /// its event service, so the slider starts at a neutral value and only
   /// reflects changes made from here.
@@ -54,12 +56,15 @@ class _CastControlSheetState extends State<CastControlSheet> {
           // The session can end while the sheet is open (for example when the
           // player is closed), so close rather than show dead controls.
           if (!casting.isCasting || device == null) {
-            final navigator = Navigator.of(context);
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (navigator.canPop()) {
-                navigator.pop();
-              }
-            });
+            if (!_hasPopped) {
+              _hasPopped = true;
+              final navigator = Navigator.of(context);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && navigator.canPop()) {
+                  navigator.pop();
+                }
+              });
+            }
             return const SizedBox.shrink();
           }
 

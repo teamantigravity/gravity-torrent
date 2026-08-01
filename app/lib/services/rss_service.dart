@@ -299,6 +299,7 @@ class RssService {
   @visibleForTesting
   List<String> candidateLinks(XmlElement? item, String text) {
     final raw = <String>{};
+    final verified = <String>{};
 
     // Extract from raw text (handles CDATA content as well).
     final magnetPattern = RegExp(r'magnet:\?[^\s"<>]+', caseSensitive: false);
@@ -315,7 +316,14 @@ class RssService {
       }
       for (final enclosure in item.findElements('enclosure')) {
         final url = enclosure.getAttribute('url');
-        if (url != null && url.isNotEmpty) raw.add(url);
+        final type = enclosure.getAttribute('type');
+        if (url != null && url.isNotEmpty) {
+          if (type != null && type.toLowerCase() == 'application/x-bittorrent') {
+            verified.add(url);
+          } else {
+            raw.add(url);
+          }
+        }
       }
       for (final magnetUri in item.findAllElements('magnetURI')) {
         final uri = magnetUri.innerText.trim();
@@ -323,7 +331,9 @@ class RssService {
       }
     }
 
-    return raw.where(isTorrentLink).toList();
+    final result = raw.where(isTorrentLink).toSet();
+    result.addAll(verified);
+    return result.toList();
   }
 
   @visibleForTesting

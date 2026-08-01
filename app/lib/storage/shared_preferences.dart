@@ -12,131 +12,146 @@ Future<void> _guard(
     if (kDebugMode) {
       debugPrint('SharedPrefs $action failed for $key: $e\n$st');
     }
+    rethrow;
   }
 }
 
 class SharedPrefsStorage {
   static Future<String?> getString(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(key);
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.getString(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.getString failed: $e');
-      return null;
+      rethrow;
     }
   }
 
   static Future<void> setString(String key, String value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(key, value);
+      await SharedPrefs.setString(key, value);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.setString failed: $e');
+      rethrow;
     }
   }
 
   static Future<bool?> getBool(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(key);
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.getBool(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.getBool failed: $e');
-      return null;
+      rethrow;
     }
   }
 
   static Future<void> setBool(String key, bool value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(key, value);
+      await SharedPrefs.setBool(key, value);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.setBool failed: $e');
+      rethrow;
     }
   }
 
   static Future<double?> getDouble(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getDouble(key);
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.getDouble(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.getDouble failed: $e');
-      return null;
+      rethrow;
     }
   }
 
   static Future<void> setDouble(String key, double value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble(key, value);
+      await SharedPrefs.setDouble(key, value);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.setDouble failed: $e');
+      rethrow;
     }
   }
 
   static Future<void> remove(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(key);
+      await SharedPrefs.remove(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.remove failed: $e');
+      rethrow;
     }
   }
 
   static Future<int?> getInt(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getInt(key);
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.getInt(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.getInt failed: $e');
-      return null;
+      rethrow;
     }
   }
 
   static Future<void> setInt(String key, int value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(key, value);
+      await SharedPrefs.setInt(key, value);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.setInt failed: $e');
+      rethrow;
     }
   }
 
   static Future<List<String>?> getStringList(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getStringList(key);
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.getStringList(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.getStringList failed: $e');
-      return null;
+      rethrow;
     }
   }
 
   static Future<void> setStringList(String key, List<String> value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(key, value);
+      await SharedPrefs.setStringList(key, value);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.setStringList failed: $e');
+      rethrow;
     }
   }
 
   static Future<Set<String>> getKeys() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getKeys();
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.getKeys();
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.getKeys failed: $e');
-      return const <String>{};
+      rethrow;
     }
   }
 
   static Future<Object?> get(String key) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.get(key);
+      if (SharedPrefs._prefs == null) {
+        await SharedPrefs.init();
+      }
+      return SharedPrefs.get(key);
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefsStorage.get failed: $e');
-      return null;
+      rethrow;
     }
   }
 }
@@ -153,6 +168,7 @@ class SharedPrefs {
       _prefs = await SharedPreferences.getInstance();
     } catch (e) {
       if (kDebugMode) debugPrint('SharedPrefs.init failed: $e');
+      rethrow;
     }
   }
 
@@ -165,26 +181,41 @@ class SharedPrefs {
   static Set<String> getKeys() => _prefs?.getKeys() ?? const <String>{};
 
   static Future<void> setBool(String key, bool value) async {
+    if (_prefs == null) {
+      await init();
+    }
     if (_prefs == null) return;
     await _guard(() => _prefs!.setBool(key, value), key, 'setBool');
   }
 
   static Future<void> setInt(String key, int value) async {
+    if (_prefs == null) {
+      await init();
+    }
     if (_prefs == null) return;
     await _guard(() => _prefs!.setInt(key, value), key, 'setInt');
   }
 
   static Future<void> setDouble(String key, double value) async {
+    if (_prefs == null) {
+      await init();
+    }
     if (_prefs == null) return;
     await _guard(() => _prefs!.setDouble(key, value), key, 'setDouble');
   }
 
   static Future<void> setString(String key, String value) async {
+    if (_prefs == null) {
+      await init();
+    }
     if (_prefs == null) return;
     await _guard(() => _prefs!.setString(key, value), key, 'setString');
   }
 
   static Future<void> setStringList(String key, List<String> value) async {
+    if (_prefs == null) {
+      await init();
+    }
     if (_prefs == null) return;
     await _guard(
       () => _prefs!.setStringList(key, value),
@@ -194,6 +225,9 @@ class SharedPrefs {
   }
 
   static Future<void> remove(String key) async {
+    if (_prefs == null) {
+      await init();
+    }
     if (_prefs == null) return;
     await _guard(() => _prefs!.remove(key), key, 'remove');
   }

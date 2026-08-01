@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:archive/archive_io.dart';
@@ -55,9 +56,7 @@ class AutoExtractService extends ChangeNotifier {
         lowerPath.endsWith('.gz') ||
         lowerPath.endsWith('.tgz') ||
         lowerPath.endsWith('.tar.gz') ||
-        lowerPath.endsWith('.bz2') ||
-        lowerPath.endsWith('.rar') ||
-        lowerPath.endsWith('.7z')) {
+        lowerPath.endsWith('.bz2')) {
       if (!_extracting.add(filePath)) return;
       debugPrint(
         'AutoExtractService: Initiating extraction for $torrentName at $filePath',
@@ -74,41 +73,43 @@ class AutoExtractService extends ChangeNotifier {
       final targetFolder = Directory(p.join(destDir, safeName));
       final baseDir = p.normalize(p.absolute(destDir));
       final targetPath = p.normalize(p.absolute(targetFolder.path));
-      if (!p.isWithin(baseDir, targetPath) && targetPath != baseDir) {
-        if (kDebugMode) {
-          debugPrint(
-            'AutoExtractService: skipping path-traversal target $targetPath',
-          );
-        }
-        return;
-      }
 
       try {
+        if (!p.isWithin(baseDir, targetPath) && targetPath != baseDir) {
+          if (kDebugMode) {
+            debugPrint(
+              'AutoExtractService: skipping path-traversal target $targetPath',
+            );
+          }
+          return;
+        }
+
         await targetFolder.create(recursive: true);
         if (lowerPath.endsWith('.zip') ||
             lowerPath.endsWith('.tar.gz') ||
             lowerPath.endsWith('.tgz') ||
             lowerPath.endsWith('.tar') ||
             lowerPath.endsWith('.gz') ||
-            lowerPath.endsWith('.bz2') ||
-            lowerPath.endsWith('.rar') ||
-            lowerPath.endsWith('.7z')) {
+            lowerPath.endsWith('.bz2')) {
           if (lowerPath.endsWith('.gz') && !lowerPath.endsWith('.tar.gz')) {
             // Single gzipped file - handled via streaming
-            final inputStream = InputFileStream(filePath);
+            final originalFileName = p.basename(filePath);
             final outPath = p.join(
               targetFolder.parent.path,
-              safeName.replaceFirst(RegExp(r'\.gz$'), ''),
+              originalFileName.replaceFirst(RegExp(r'\.gz$', caseSensitive: false), ''),
             );
             await targetFolder.parent.create(recursive: true);
             try {
-              final outputStream = OutputFileStream(outPath);
-              try {
-                const GZipDecoder().decodeStream(inputStream, outputStream);
-              } finally {
-                await outputStream.close();
-                await inputStream.close();
-              }
+              await Isolate.run(() async {
+                final inputStream = InputFileStream(filePath);
+                final outputStream = OutputFileStream(outPath);
+                try {
+                  const GZipDecoder().decodeStream(inputStream, outputStream);
+                } finally {
+                  await outputStream.close();
+                  await inputStream.close();
+                }
+              });
               final outFile = File(outPath);
               if (!outFile.existsSync() || outFile.lengthSync() == 0) {
                 throw StateError('GZip decompression produced no output');

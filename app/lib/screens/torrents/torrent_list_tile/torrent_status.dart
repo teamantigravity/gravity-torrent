@@ -57,10 +57,12 @@ class TorrentStatusText extends StatelessWidget {
         ),
       TorrentStatus.downloading => Text(
           '${percent.floor()}%',
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: Colors.lightGreen,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.lightGreenAccent
+                : Colors.green.shade700,
             overflow: TextOverflow.ellipsis,
           ),
         ),

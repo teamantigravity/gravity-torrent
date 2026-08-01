@@ -574,5 +574,36 @@
   },
   "bugReportOpenError": "Could not open the bug report page",
   "noMediaUrl": "No media URL provided.",
-  "unlockApp": "Unlock Gravity Torrent"
+  "unlockApp": "Unlock Gravity Torrent",
+  "lowStorageWarning": "Low Storage Warning",
+  "lowStorageMessage": "Free space may be insufficient for this torrent. Proceed anyway?",
+  "proceed": "Proceed",
+  "createTorrent": "Create Torrent",
+  "selectSourceFile": "Select source file",
+  "selectSourceDirectory": "Select source directory",
+  "selectOutputDirectory": "Select output directory",
+  "sourceFileOrFolder": "Source file or folder",
+  "selectFile": "Select file",
+  "selectDirectory": "Select directory",
+  "outputFolder": "Output folder",
+  "trackersLabel": "Trackers (one per line, optional)",
+  "trackersHelper": "Leave empty for DHT-only torrents",
+  "addForSeeding": "Add for seeding",
+  "addForSeedingSubtitle": "Add the created torrent to the engine",
+  "creatingTorrent": "Creating torrent...",
+  "create": "Create",
+  "createTorrentFailed": "Failed to create torrent: {error}",
+  "@createTorrentFailed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "remoteControlDescription": "Control this device from another phone or computer on the same Wi-Fi network. The connection is local-only and protected by a token.",
+  "serverOff": "Server is off",
+  "runningOn": "Running on {address}",
+  "@runningOn": {
+    "placeholders": {
+      "address": {"type": "String"}
+    }
+  }
 }

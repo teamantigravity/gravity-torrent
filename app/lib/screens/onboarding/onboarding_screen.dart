@@ -110,8 +110,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   final p = pages[i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           p.icon,

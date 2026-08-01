@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/services/remote_config/remote_config_service.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// A weekly schedule window during which downloads are allowed.
@@ -213,6 +215,16 @@ class SchedulerService {
               _pausedByScheduler.remove(id);
             }
           }
+          if (getIt.isRegistered<TorrentsModel>() && getIt<TorrentsModel>().isQuotaPauseEnforced) {
+            toResume.clear();
+          }
+          if (WifiGuardService.instance.isEnabled) {
+            final connectivity = await Connectivity().checkConnectivity();
+            if (connectivity.contains(ConnectivityResult.mobile) ||
+                !connectivity.contains(ConnectivityResult.wifi)) {
+              toResume.clear();
+            }
+          }
           if (toResume.isNotEmpty) {
             try {
               await engine.resumeTorrents(toResume);
@@ -275,6 +287,9 @@ class SchedulerService {
           continue;
         }
         toResume.add(id);
+      }
+      if (getIt.isRegistered<TorrentsModel>() && getIt<TorrentsModel>().isQuotaPauseEnforced) {
+        toResume.clear();
       }
       if (toResume.isNotEmpty) {
         try {

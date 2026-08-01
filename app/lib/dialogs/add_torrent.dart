@@ -122,16 +122,36 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         try {
           if (!kIsWeb && Platform.isWindows && downloadDirToCheck.length >= 2) {
             final drive = downloadDirToCheck.substring(0, 2);
-            final result = await Process.run('wmic', [
-              'logicaldisk',
-              'where',
-              'deviceid="$drive"',
-              'get',
-              'freespace',
-            ]);
-            final lines = result.stdout.toString().split('\n');
-            if (lines.length > 1) {
-              freeSpace = int.tryParse(lines[1].trim()) ?? 0;
+            try {
+              final result = await Process.run('powershell', [
+                '-NoProfile',
+                '-Command',
+                '(Get-CimInstance Win32_LogicalDisk -Filter "DeviceID=\'$drive\'").FreeSpace',
+              ]);
+              final output = result.stdout.toString().trim();
+              if (output.isNotEmpty) {
+                freeSpace = int.tryParse(output.split(RegExp(r'\s+')).first) ?? 0;
+              }
+            } on ProcessException catch (e) {
+              if (kDebugMode) debugPrint('PowerShell free space check failed: $e');
+            } catch (_) {}
+
+            if (freeSpace == 0) {
+              try {
+                final result = await Process.run('wmic', [
+                  'logicaldisk',
+                  'where',
+                  'deviceid="$drive"',
+                  'get',
+                  'freespace',
+                ]);
+                final lines = result.stdout.toString().split('\n');
+                if (lines.length > 1) {
+                  freeSpace = int.tryParse(lines[1].trim()) ?? 0;
+                }
+              } on ProcessException catch (e) {
+                if (kDebugMode) debugPrint('WMIC process failed: $e');
+              } catch (_) {}
             }
           } else if (!kIsWeb && (Platform.isLinux || Platform.isMacOS)) {
             final result = await Process.run('df', ['-k', downloadDirToCheck]);
@@ -156,22 +176,22 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
       }
 
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
+
       if (freeSpace > 0 && freeSpace < predictedSize) {
         final proceed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Low Storage Warning'),
-            content: const Text(
-              'Free space may be insufficient for this torrent. Proceed anyway?',
-            ),
+            title: Text(localizations.lowStorageWarning),
+            content: Text(localizations.lowStorageMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+                child: Text(localizations.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Proceed'),
+                child: Text(localizations.proceed),
               ),
             ],
           ),
@@ -180,7 +200,6 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
       }
 
       if (!mounted) return;
-      final localizations = AppLocalizations.of(context);
       final status = await Provider.of<TorrentsModel>(
         context,
         listen: false,
@@ -197,14 +216,14 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(localizations.torrentAlreadyAdded),
-            backgroundColor: Colors.lightGreen,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(localizations.torrentAdded),
-            backgroundColor: Colors.lightGreen,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         // Show an interstitial ad occasionally when a torrent is added successfully
@@ -219,7 +238,10 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
               ? e.message!
               : localizations.invalidTorrent;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.orange),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
@@ -346,6 +368,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
             ),
             if (_torrentLinkController.text.isNotEmpty)
               IconButton(
+                tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
                 onPressed: () => _torrentLinkController.clear(),
                 icon: const Icon(Icons.clear),
               ),
@@ -374,6 +397,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
             children: [
               const SizedBox(width: 8),
               IconButton(
+                tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
                 onPressed: () {
                   setState(() {
                     _filename = null;

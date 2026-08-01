@@ -287,6 +287,10 @@ class StreamingServer {
     CancelableCompleter<void> cancelableCompleter,
   ) async {
     if (kDebugMode) debugPrint('streaming_server: _handleRangeRequest');
+    if (torrent.pieceSize <= 0) {
+      request.response.statusCode = HttpStatus.internalServerError;
+      return;
+    }
     final rangeRegex = RegExp(r'bytes=(\d*)-(\d*)');
     final match = rangeRegex.firstMatch(rangeHeader);
 

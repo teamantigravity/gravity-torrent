@@ -11,6 +11,7 @@ import 'package:gravity_torrent/engine/file.dart' as torrent_file;
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/engine/transmission/models/session_get_request.dart';
 import 'package:gravity_torrent/engine/transmission/models/session_get_response.dart';
@@ -88,7 +89,7 @@ TransmissionTorrent createTransmissionTorrentFromJson(
         ? ((torrent.sizeWhenDone - torrent.leftUntilDone) /
                 torrent.sizeWhenDone)
             .clamp(0.0, 1.0)
-        : 0.0,
+        : torrent.percentDone,
     status: torrent.status,
     size: torrent.totalSize,
     rateDownload: torrent.rateDownload,
@@ -267,6 +268,7 @@ class TransmissionTorrent extends Torrent {
 
   @override
   Future<void> remove(bool withData) async {
+    await super.remove(withData);
     final request = TorrentRemoveRequest(
       arguments: TorrentRemoveRequestArguments(
         ids: [id],
@@ -287,6 +289,7 @@ class TransmissionTorrent extends Torrent {
     _expectSuccess(
       await flutter_libtransmission.requestAsync(jsonEncode(request)),
     );
+    if (torrent.labels != null) labels = torrent.labels;
     _requestEngineCheckpoint();
   }
 
@@ -320,6 +323,21 @@ class TransmissionTorrent extends Torrent {
               ids: [id],
               filesUnwanted: allFileIndexes,
             ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setFilesWanted(List<int> fileIndices, bool wanted) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        filesWanted: wanted ? fileIndices : null,
+        filesUnwanted: !wanted ? fileIndices : null,
+      ),
     );
     _expectSuccess(
       await flutter_libtransmission.requestAsync(jsonEncode(request)),
@@ -468,11 +486,36 @@ class TransmissionSession extends Session {
     _expectSuccess(
       await flutter_libtransmission.requestAsync(jsonEncode(request)),
     );
-    // Persist settings on a background isolate so the UI thread is not
-    // blocked by the synchronous FFI disk write.
     if (getIt.isRegistered<Engine>()) {
       await getIt<Engine>().saveSession();
     }
+    if (session.downloadDir != null) downloadDir = session.downloadDir;
+    if (session.downloadQueueEnabled != null) downloadQueueEnabled = session.downloadQueueEnabled;
+    if (session.downloadQueueSize != null) downloadQueueSize = session.downloadQueueSize;
+    if (session.peerPort != null) peerPort = session.peerPort;
+    if (session.speedLimitDownEnabled != null) speedLimitDownEnabled = session.speedLimitDownEnabled;
+    if (session.speedLimitUpEnabled != null) speedLimitUpEnabled = session.speedLimitUpEnabled;
+    if (session.speedLimitDown != null) speedLimitDown = session.speedLimitDown;
+    if (session.speedLimitUp != null) speedLimitUp = session.speedLimitUp;
+    if (session.seedRatioLimit != null) seedRatioLimit = session.seedRatioLimit;
+    if (session.seedRatioLimited != null) seedRatioLimited = session.seedRatioLimited;
+    if (session.encryption != null) encryption = session.encryption;
+    if (session.blocklistEnabled != null) blocklistEnabled = session.blocklistEnabled;
+    if (session.blocklistUrl != null) blocklistUrl = session.blocklistUrl;
+    if (session.blocklistSize != null) blocklistSize = session.blocklistSize;
+    if (session.dhtEnabled != null) dhtEnabled = session.dhtEnabled;
+    if (session.pexEnabled != null) pexEnabled = session.pexEnabled;
+    if (session.lpdEnabled != null) lpdEnabled = session.lpdEnabled;
+    if (session.utpEnabled != null) utpEnabled = session.utpEnabled;
+    if (session.altSpeedEnabled != null) altSpeedEnabled = session.altSpeedEnabled;
+    if (session.altSpeedDown != null) altSpeedDown = session.altSpeedDown;
+    if (session.altSpeedUp != null) altSpeedUp = session.altSpeedUp;
+    if (session.altSpeedTimeEnabled != null) altSpeedTimeEnabled = session.altSpeedTimeEnabled;
+    if (session.altSpeedTimeBegin != null) altSpeedTimeBegin = session.altSpeedTimeBegin;
+    if (session.altSpeedTimeEnd != null) altSpeedTimeEnd = session.altSpeedTimeEnd;
+    if (session.altSpeedTimeDay != null) altSpeedTimeDay = session.altSpeedTimeDay;
+    if (session.idleSeedingLimitEnabled != null) idleSeedingLimitEnabled = session.idleSeedingLimitEnabled;
+    if (session.idleSeedingLimit != null) idleSeedingLimit = session.idleSeedingLimit;
   }
 }
 
@@ -491,9 +534,14 @@ void _expectSuccess(String raw) {
 }
 
 List<Torrent> _parseTorrentsResponse(String res) {
-  final TorrentGetResponse decodedRes = TorrentGetResponse.fromJson(
-    (jsonDecode(res) as Map<String, dynamic>),
-  );
+  final TorrentGetResponse decodedRes;
+  try {
+    decodedRes = TorrentGetResponse.fromJson(
+      (jsonDecode(res) as Map<String, dynamic>),
+    );
+  } catch (e) {
+    throw TransmissionRpcError('Invalid fetch torrents response: $e');
+  }
   if (decodedRes.result != 'success') {
     throw TransmissionRpcError(decodedRes.result);
   }
@@ -550,12 +598,13 @@ class TransmissionEngine extends Engine {
       if (session.downloadDir != null && session.downloadDir!.isNotEmpty) {
         return;
       }
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final downloadsDir = Directory(path.join(documentsDir.path, 'Downloads'));
-      if (!downloadsDir.existsSync()) {
-        downloadsDir.createSync(recursive: true);
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir != null) {
+        if (!downloadsDir.existsSync()) {
+          downloadsDir.createSync(recursive: true);
+        }
+        await session.update(SessionBase(downloadDir: downloadsDir.path));
       }
-      await session.update(SessionBase(downloadDir: downloadsDir.path));
     } catch (e, s) {
       if (kDebugMode) {
         debugPrint(
@@ -587,24 +636,53 @@ class TransmissionEngine extends Engine {
     }
 
     startCheckpointTimer();
+
+    try {
+      final keys = await SharedPrefsStorage.getKeys();
+      for (final key in keys) {
+        if (key.startsWith('streaming_active_')) {
+          final idString = key.substring('streaming_active_'.length);
+          final id = int.tryParse(idString);
+          if (id != null) {
+            try {
+              final torrent = await fetchTorrent(id);
+              await torrent.stopStreaming();
+            } catch (e) {
+              if (kDebugMode) {
+                debugPrint('Failed to stop streaming for $id at init: $e');
+              }
+            }
+          } else {
+            await SharedPrefsStorage.remove(key);
+          }
+        }
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('TransmissionEngine init streaming cleanup failed: $e\n$s');
+      }
+    }
   }
 
   @override
   Future<void> saveSession() async {
     if (_closed) return;
-    if (_activeSave != null) {
-      await _activeSave;
-    }
-    // Saves transmission session settings to disk on a worker isolate so the
-    // UI thread is not blocked by synchronous FFI disk writes.
-    final saveFuture = Isolate.run(
-      () => flutter_libtransmission.saveSettings(),
-    );
-    _activeSave = saveFuture;
+    final previousSave = _activeSave;
+    final completer = Completer<void>();
+    _activeSave = completer.future;
+
     try {
-      await saveFuture;
+      if (previousSave != null) {
+        await previousSave.catchError((_) {});
+      }
+      if (_closed) return;
+      flutter_libtransmission.saveSettings();
+      completer.complete();
+    } catch (e) {
+      completer.completeError(e);
+      rethrow;
     } finally {
-      if (_activeSave == saveFuture) {
+      if (_activeSave == completer.future) {
         _activeSave = null;
       }
     }
@@ -624,7 +702,13 @@ class TransmissionEngine extends Engine {
       if (kDebugMode) debugPrint('TransmissionEngine shutdown save failed: $e');
     }
     _closed = true;
-    await Isolate.run(() => flutter_libtransmission.closeSession());
+    try {
+      await Isolate.run(() => flutter_libtransmission.closeSession());
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('TransmissionEngine shutdown Isolate.run failed: $e\n$st');
+      }
+    }
   }
 
   @override
@@ -654,12 +738,12 @@ class TransmissionEngine extends Engine {
     }
 
     if (response.result != 'success') {
-      throw TorrentAddError();
+      throw TorrentAddError(response.result);
     }
 
     if (!response.arguments.torrentAdded &&
         !response.arguments.torrentDuplicate) {
-      throw TorrentAddError();
+      throw TorrentAddError(response.result);
     }
 
     if (response.arguments.torrentDuplicate) {
@@ -758,9 +842,14 @@ class TransmissionEngine extends Engine {
       jsonEncode(sessionGetRequest),
     );
 
-    final SessionGetResponse decodedRes = SessionGetResponse.fromJson(
-      (jsonDecode(res) as Map<String, dynamic>),
-    );
+    final SessionGetResponse decodedRes;
+    try {
+      decodedRes = SessionGetResponse.fromJson(
+        (jsonDecode(res) as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw TransmissionRpcError('Invalid fetch session response: $e');
+    }
 
     if (decodedRes.result != 'success') {
       throw TransmissionRpcError(decodedRes.result);
@@ -840,6 +929,15 @@ class TransmissionEngine extends Engine {
     _expectSuccess(
       await flutter_libtransmission.requestAsync(jsonEncode(request)),
     );
+    for (final id in torrentIds) {
+      try {
+        await SharedPrefsStorage.remove('streaming_active_$id');
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('Failed to remove streaming active key for $id: $e');
+        }
+      }
+    }
     requestCheckpoint();
   }
 

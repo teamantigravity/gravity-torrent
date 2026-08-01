@@ -162,45 +162,59 @@ class _ExpandableSearchFormFieldState extends State<ExpandableSearchFormField> {
               : 240
           : 48,
       height: 48,
-      child: Row(
-        children: [
-          Expanded(
-            child: _isExpanded
-                ? TextFormField(
-                    controller: controller,
-                    focusNode: _focusNode,
-                    autofocus: false,
-                    onFieldSubmitted: (value) {
-                      widget.onSubmitted?.call(controller.text);
-                    },
-                    decoration: InputDecoration(
-                      labelText: '${localizations.search}...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: controller.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: controller.clear,
-                              tooltip: MaterialLocalizations.of(context)
-                                  .deleteButtonTooltip,
-                            )
-                          : null,
-                      border: InputBorder.none,
-                    ),
-                  )
-                : const SizedBox(),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          width: _isExpanded
+              ? isMobileSize(context)
+                  ? 160
+                  : 240
+              : 48,
+          child: Row(
+            children: [
+              Expanded(
+                child: _isExpanded
+                    ? TextFormField(
+                        controller: controller,
+                        focusNode: _focusNode,
+                        autofocus: false,
+                        onFieldSubmitted: (value) {
+                          widget.onSubmitted?.call(controller.text);
+                        },
+                        decoration: InputDecoration(
+                          labelText: '${localizations.search}...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: controller.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: controller.clear,
+                                  tooltip: MaterialLocalizations.of(context)
+                                      .deleteButtonTooltip,
+                                )
+                              : null,
+                          border: InputBorder.none,
+                        ),
+                      )
+                    : const SizedBox(),
+              ),
+              IconButton(
+                tooltip: _isExpanded
+                    ? MaterialLocalizations.of(context).closeButtonTooltip
+                    : localizations.search,
+                icon: Icon(_isExpanded ? Icons.close : Icons.search),
+                onPressed: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                    if (!_isExpanded) {
+                      controller.clear();
+                    }
+                  });
+                },
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(_isExpanded ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-                if (!_isExpanded) {
-                  controller.clear();
-                }
-              });
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

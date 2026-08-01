@@ -136,6 +136,8 @@ class PinService {
       _failedAttempts++;
       if (_failedAttempts >= maxFailedAttempts) {
         _lockoutUntil = DateTime.now().add(lockoutDuration);
+        await _persistLockoutState();
+        throw PinLockoutException(lockoutDuration);
       }
       await _persistLockoutState();
       return false;

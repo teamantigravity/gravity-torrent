@@ -275,6 +275,7 @@ class _TorrentScreen extends State<TorrentsScreen> {
           // Disable slidable in selection mode
           if (_isSelectionMode) {
             return TorrentListTile(
+              key: Key(torrent.id.toString()),
               torrent: torrent,
               percent: percent,
               compact: compact,
@@ -398,6 +399,7 @@ class _TorrentScreen extends State<TorrentsScreen> {
 
         // Desktop
         return TorrentListTile(
+          key: Key(torrent.id.toString()),
           torrent: torrent,
           percent: percent,
           compact: compact,
@@ -811,10 +813,29 @@ class _TorrentScreen extends State<TorrentsScreen> {
           _handleDeleteSelected();
         },
       },
-      child: Consumer<TorrentsModel>(
-        builder: (context, torrentsModel, child) {
-          final app = context.watch<AppModel>();
-          if (torrentsModel.hasLoaded && torrentsModel.torrents.isEmpty) {
+      child: Focus(
+        autofocus: true,
+        child: Consumer<TorrentsModel>(
+          builder: (context, torrentsModel, child) {
+            if (_isSelectionMode) {
+              final visibleIds = torrentsModel.displayedTorrents.map((t) => t.id).toSet();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                final idsToRemove = _selectedTorrentIds.where((id) => !visibleIds.contains(id)).toList();
+                if (idsToRemove.isNotEmpty) {
+                  setState(() {
+                    for (final id in idsToRemove) {
+                      _selectedTorrentIds.remove(id);
+                    }
+                    if (_selectedTorrentIds.isEmpty) {
+                      _isSelectionMode = false;
+                    }
+                  });
+                }
+              });
+            }
+            final app = context.watch<AppModel>();
+            if (torrentsModel.hasLoaded && torrentsModel.torrents.isEmpty) {
             return Column(
               children: [
                 Expanded(

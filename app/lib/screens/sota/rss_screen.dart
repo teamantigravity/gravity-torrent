@@ -140,20 +140,12 @@ class _RssScreenState extends State<RssScreen> {
                                   color: Colors.white,
                                 ),
                               ),
-                              onDismissed: (_) async {
-                                final feedToRemove = feed;
-                                setState(() {
-                                  _feeds.removeAt(index);
-                                });
+                              confirmDismiss: (_) async {
                                 try {
-                                  await RssService.instance
-                                      .removeFeed(feedToRemove);
+                                  await RssService.instance.removeFeed(feed);
+                                  return true;
                                 } catch (e) {
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _feeds.insert(index, feedToRemove);
-                                  });
-                                  if (!context.mounted) return;
+                                  if (!mounted) return false;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -161,7 +153,13 @@ class _RssScreenState extends State<RssScreen> {
                                       ),
                                     ),
                                   );
+                                  return false;
                                 }
+                              },
+                              onDismissed: (_) {
+                                setState(() {
+                                  _feeds.removeAt(index);
+                                });
                               },
                               child: SwitchListTile(
                                 secondary: const Icon(Icons.rss_feed),

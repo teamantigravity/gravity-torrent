@@ -58,20 +58,17 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Local remote control',
+              localizations.localRemoteControl,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Control this device from another phone or computer on the same Wi-Fi network. '
-              'The connection is local-only and protected by a token.',
-            ),
+            Text(localizations.remoteControlDescription),
             const SizedBox(height: 24),
             SwitchListTile(
               secondary: const Icon(Icons.wifi_tethering),
               title: Text(localizations.remoteControlServer),
               subtitle: Text(
-                _running ? 'Running on $_address' : 'Server is off',
+                _running ? localizations.runningOn(_address) : localizations.serverOff,
               ),
               value: _running,
               onChanged: (v) => _toggle(),
@@ -131,7 +128,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                 padding: const EdgeInsets.only(top: 16.0),
                 child: Text(
                   localizations.qrScanningMobileOnly,
-                  style: const TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
           ],

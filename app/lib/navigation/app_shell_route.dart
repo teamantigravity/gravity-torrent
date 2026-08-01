@@ -64,9 +64,11 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_appModel == null) {
-      _appModel = context.read<AppModel>();
-      _appModel!.addListener(_onAppModelChanged);
+    final appModel = Provider.of<AppModel>(context);
+    if (_appModel != appModel) {
+      _appModel?.removeListener(_onAppModelChanged);
+      _appModel = appModel;
+      _appModel?.addListener(_onAppModelChanged);
       _onAppModelChanged();
     }
   }
@@ -189,9 +191,10 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
     if (latestVersion == null) return;
     if (!mounted) return;
 
+    hasShownUpdateDialog = true;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      hasShownUpdateDialog = true;
 
       showDialog(
         context: context,

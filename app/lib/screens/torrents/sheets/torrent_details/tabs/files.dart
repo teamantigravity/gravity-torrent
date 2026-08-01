@@ -82,20 +82,19 @@ class _FilesTabState extends State<FilesTab> {
   }
 
   Future<void> _handleWantedChange(
-    BuildContext context,
     int fileIndex,
     bool wanted,
   ) async {
     await widget.torrent.toggleFileWanted(fileIndex, wanted);
-    if (context.mounted) {
+    if (mounted) {
       // Refresh torrents
       await Provider.of<TorrentsModel>(context, listen: false).fetchTorrents();
     }
   }
 
-  Future<void> _handleAllWantedChange(BuildContext context, bool wanted) async {
+  Future<void> _handleAllWantedChange(bool wanted) async {
     await widget.torrent.toggleAllFilesWanted(wanted);
-    if (context.mounted) {
+    if (mounted) {
       // Refresh torrents
       await Provider.of<TorrentsModel>(context, listen: false).fetchTorrents();
     }
@@ -172,7 +171,7 @@ class _FilesTabState extends State<FilesTab> {
                   value: globalWantedState,
                   tristate: true,
                   onChanged: (_) =>
-                      _handleAllWantedChange(context, !areAllFilesWanted),
+                      _handleAllWantedChange(!areAllFilesWanted),
                 ),
               ],
             ),
@@ -261,7 +260,6 @@ class _FilesTabState extends State<FilesTab> {
                       onChanged: file.bytesCompleted == file.length
                           ? null
                           : (_) => _handleWantedChange(
-                                context,
                                 originalIndex,
                                 !file.wanted,
                               ),
@@ -273,7 +271,7 @@ class _FilesTabState extends State<FilesTab> {
                         try {
                           await _openFile(file.name);
                         } catch (e) {
-                          if (!context.mounted) return;
+                          if (!mounted) return;
                           final l = AppLocalizations.of(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

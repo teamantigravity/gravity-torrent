@@ -77,6 +77,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   final GlobalKey _videoComponentKey = GlobalKey();
   PlayerEnhancementsService? _enhancements;
   CancelableCompleter<void>? _loadingCompleter;
+  StreamSubscription? _logSub;
 
   /// File currently being streamed. Diverges from `widget.file` once the user
   /// (or auto-advance) moves through the playlist queue.
@@ -92,16 +93,22 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   void _closeVideoLoadingDialog() {
     if (_videoLoadingDialogContext != null &&
         _videoLoadingDialogContext!.mounted) {
-      Navigator.of(_videoLoadingDialogContext!).pop();
+      final ctx = _videoLoadingDialogContext!;
       _videoLoadingDialogContext = null;
+      if (Navigator.canPop(ctx)) {
+        Navigator.of(ctx).pop();
+      }
     }
   }
 
   void _closeSubtitlesLoadingDialog() {
     if (_subsLoadingDialogContext != null &&
         _subsLoadingDialogContext!.mounted) {
-      Navigator.of(_subsLoadingDialogContext!).pop();
+      final ctx = _subsLoadingDialogContext!;
       _subsLoadingDialogContext = null;
+      if (Navigator.canPop(ctx)) {
+        Navigator.of(ctx).pop();
+      }
     }
   }
 
@@ -125,28 +132,26 @@ class TorrentPlayerState extends State<TorrentPlayer> {
 
   Future<void> _disposePlayer() async {
     try {
-      // Never leave a renderer playing a stream that is about to disappear.
       if (CastingService.instance.isCasting) {
         await CastingService.instance.stopCasting();
       }
-      await widget.torrent.stopStreaming();
-      // Stop playback and detach from the platform media session before
-      // disposing the native player.
-      await player?.stop();
-      await MediaKitAudioHandler.instance?.setPlayer(null);
-      await server?.stop();
-      await subsServer?.stop();
-      _enhancements?.detachPlayer();
     } catch (e) {
-      if (kDebugMode) debugPrint('Error stopping player: $e');
-    } finally {
-      try {
-        await player?.dispose();
-        // leave immersive mode
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      } catch (e) {
-        if (kDebugMode) debugPrint('Error disposing player: $e');
-      }
+      if (kDebugMode) debugPrint('Error stopping cast: $e');
+    }
+
+    try { await widget.torrent.stopStreaming(); } catch (_) {}
+    try { await player?.stop(); } catch (_) {}
+    try { await MediaKitAudioHandler.instance?.setPlayer(null); } catch (_) {}
+    try { await server?.stop(); } catch (_) {}
+    try { await subsServer?.stop(); } catch (_) {}
+    try { _enhancements?.detachPlayer(); } catch (_) {}
+    try { await _logSub?.cancel(); } catch (_) {}
+
+    try {
+      await player?.dispose();
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error disposing player: $e');
     }
   }
 
@@ -155,10 +160,14 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     _lanStreamingEnabled = context.read<FeatureFlagsModel>().enableLanStreaming;
 
     // Boost Moov atom and header pieces for rapid playback startup
-    await MoovPriorityBooster.boostForStreaming(
-      torrent: widget.torrent,
-      file: widget.file,
-    );
+    try {
+      await MoovPriorityBooster.boostForStreaming(
+        torrent: widget.torrent,
+        file: widget.file,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('boostForStreaming error: $e');
+    }
 
     // Streaming server
     server = StreamingServer(
@@ -186,7 +195,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     }
     if (_disposed) return;
 
-    player!.stream.log.listen((log) {
+    _logSub = player!.stream.log.listen((log) {
       if (kDebugMode) debugPrint('mpv: $log');
     });
 
@@ -212,8 +221,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Exit the player on other errors.
-        if (Navigator.canPop(context)) Navigator.pop(context);
+        // Exit silently on other errors, just closing dialog.
         return;
       }
 
@@ -256,8 +264,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Exit the player on other errors.
-        if (Navigator.canPop(context)) Navigator.pop(context);
+        // Exit silently on other errors, just closing dialog.
         return;
       }
 
@@ -282,7 +289,11 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     if (_disposed) return;
 
     if (kDebugMode) debugPrint('open player');
-    await player!.open(Media(serverAdress));
+    try {
+      await player!.open(Media(serverAdress));
+    } catch (e) {
+      if (kDebugMode) debugPrint('player.open error: $e');
+    }
     if (_disposed) return;
 
     _enhancements?.attachPlayer(player!);
@@ -384,9 +395,6 @@ class TorrentPlayerState extends State<TorrentPlayer> {
               onPressed: () {
                 completer.operation.cancel();
                 _closeSubtitlesLoadingDialog();
-                if (mounted && Navigator.canPop(context)) {
-                  Navigator.pop(context); // Exit player screen
-                }
               },
               child: const Text('Cancel'),
             ),
@@ -396,9 +404,6 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     ).then((_) {
       if (!completer.isCanceled && !completer.isCompleted) {
         completer.operation.cancel();
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
       }
     });
   }
@@ -539,6 +544,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
 
   Widget _buildBackButton() {
     return IconButton(
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       icon: const Icon(Icons.arrow_back, color: Colors.white),
       onPressed: () {
         HapticService.light();
@@ -667,7 +673,16 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       SnackBar(content: Text(localizations.castScanningMessage)),
     );
 
-    final devices = await casting.discoverDevices();
+    List<CastDevice> devices = [];
+    try {
+      devices = await casting.discoverDevices();
+    } catch (e) {
+      if (!mounted) return;
+      scaffold.showSnackBar(
+        SnackBar(content: Text('Error discovering devices: $e')),
+      );
+      return;
+    }
     if (!mounted) return;
     if (devices.isEmpty) {
       scaffold.showSnackBar(
@@ -695,11 +710,20 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     );
     if (selected == null || !mounted) return;
 
-    final success = await casting.castStream(
-      device: selected,
-      streamUrl: streamUrl,
-      title: _currentFile.name,
-    );
+    bool success = false;
+    try {
+      success = await casting.castStream(
+        device: selected,
+        streamUrl: streamUrl,
+        title: _currentFile.name,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      scaffold.showSnackBar(
+        SnackBar(content: Text('Error casting stream: $e')),
+      );
+      return;
+    }
 
     // Avoid playing the same title twice at once, on the TV and locally.
     if (success) await player?.pause();

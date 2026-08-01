@@ -242,76 +242,65 @@ class TorrentListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
+              Wrap(
+                spacing: 16.0,
+                runSpacing: 4.0,
                 children: [
-                  Expanded(
-                    child:
-                        TorrentStatusText(torrent: torrent, percent: percent),
-                  ),
-                  Expanded(
-                    child: Text(
-                      prettyBytes(
-                        torrent.size.toDouble(),
-                        locale: localizations.localeName,
-                      ),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  TorrentStatusText(torrent: torrent, percent: percent),
+                  Text(
+                    prettyBytes(
+                      torrent.size.toDouble(),
+                      locale: localizations.localeName,
+                    ),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
-                  Expanded(
-                    child: torrent.progress != 1
-                        ? Row(
-                            children: [
-                              const Icon(
-                                Icons.arrow_circle_down,
-                                size: 16,
-                                color: Colors.lightGreen,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  overflow: TextOverflow.ellipsis,
-                                  '${prettyBytes(
-                                    torrent.rateDownload.toDouble(),
-                                    locale: localizations.localeName,
-                                  )}/s',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const SizedBox(width: 0),
-                  ),
-                  Expanded(
-                    child: Row(
+                  if (torrent.progress != 1)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.arrow_circle_up,
+                          Icons.arrow_circle_down,
                           size: 16,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.lightGreenAccent
+                              : Colors.green.shade700,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            overflow: TextOverflow.ellipsis,
-                            '${prettyBytes(
-                              torrent.rateUpload.toDouble(),
-                              locale: localizations.localeName,
-                            )}/s',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${prettyBytes(
+                            torrent.rateDownload.toDouble(),
+                            locale: localizations.localeName,
+                          )}/s',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_circle_up,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${prettyBytes(
+                          torrent.rateUpload.toDouble(),
+                          locale: localizations.localeName,
+                        )}/s',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

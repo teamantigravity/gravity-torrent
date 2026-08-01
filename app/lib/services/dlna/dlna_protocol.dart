@@ -103,7 +103,9 @@ CastDevice? parseDeviceDescription(String xmlBody, Uri location) {
     if (type == null || control == null || control.isEmpty) continue;
     final resolved = _resolveUrl(base, control);
     if (resolved == null) continue;
-    if (type == avTransportServiceType) {
+    if (type == 'urn:schemas-upnp-org:service:AVTransport:1' ||
+        type == 'urn:schemas-upnp-org:service:AVTransport:2' ||
+        type == 'urn:schemas-upnp-org:service:AVTransport:3') {
       controlUrl ??= resolved;
     } else if (type == renderingControlServiceType) {
       renderingControlUrl ??= resolved;
@@ -187,18 +189,22 @@ String buildDidlMetadata({
       : 'object.item.videoItem';
   final protocolInfo = 'http-get:*:$resolvedMime:*';
 
-  return '<DIDL-Lite '
+  final escapedTitle = escapeXml(title);
+  final escapedUrl = escapeXml(streamUrl);
+
+  final rawDidl = '<DIDL-Lite '
       'xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
       'xmlns:dc="http://purl.org/dc/elements/1.1/" '
       'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">'
       '<item id="0" parentID="-1" restricted="1">'
-      '<dc:title>${escapeXml(title)}</dc:title>'
+      '<dc:title>$escapedTitle</dc:title>'
       '<upnp:class>$upnpClass</upnp:class>'
-      '<res protocolInfo="${escapeXml(protocolInfo)}">'
-      '${escapeXml(streamUrl)}'
+      '<res protocolInfo="$protocolInfo">'
+      '$escapedUrl'
       '</res>'
       '</item>'
       '</DIDL-Lite>';
+  return escapeXml(rawDidl);
 }
 
 /// Wraps [innerXml] in a SOAP envelope for the given UPnP [action].
@@ -219,16 +225,12 @@ String buildSoapEnvelope({
       '</s:Envelope>';
 }
 
-/// Formats [duration] as the `H:MM:SS.mmm` string required by
+/// Formats [duration] as the `HH:MM:SS` string required by
 /// `AVTransport::Seek` with a `REL_TIME` unit.
 String formatUpnpDuration(Duration duration) {
   final clamped = duration.isNegative ? Duration.zero : duration;
-  final hours = clamped.inHours;
+  final hours = clamped.inHours.toString().padLeft(2, '0');
   final minutes = clamped.inMinutes.remainder(60).toString().padLeft(2, '0');
   final seconds = clamped.inSeconds.remainder(60).toString().padLeft(2, '0');
-  final millis = clamped.inMilliseconds.remainder(1000).toString().padLeft(
-        3,
-        '0',
-      );
-  return '$hours:$minutes:$seconds.$millis';
+  return '$hours:$minutes:$seconds';
 }

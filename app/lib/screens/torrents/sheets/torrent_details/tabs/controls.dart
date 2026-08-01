@@ -93,6 +93,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.speedLimitsApplied)),
         );
@@ -119,6 +120,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
         messenger.showSnackBar(
           SnackBar(
             content: Text(
@@ -175,6 +177,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
         messenger.showSnackBar(SnackBar(content: Text(l10n.verifyStarted)));
       }
     } catch (e) {
@@ -199,6 +202,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
         messenger.showSnackBar(SnackBar(content: Text(l10n.reannounceStarted)));
       }
     } catch (e) {
