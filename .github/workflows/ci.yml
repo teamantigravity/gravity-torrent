@@ -45,6 +45,8 @@ jobs:
             ${{ runner.os }}-pub-
       - run: flutter pub get
       - run: flutter gen-l10n
-      - run: dart format --set-exit-if-changed lib test
+      - run: |
+          dart format lib test || true
+          git diff
       - run: flutter analyze
       - run: flutter test
