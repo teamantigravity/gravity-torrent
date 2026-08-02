@@ -57,7 +57,7 @@ class _FilesTabState extends State<FilesTab> {
     final l = AppLocalizations.of(context);
     try {
       final result = await OpenFile.open(path.join(widget.location, filepath));
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (result.type != ResultType.done) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -71,7 +71,7 @@ class _FilesTabState extends State<FilesTab> {
         );
       }
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l.openFileError(e.toString())),
