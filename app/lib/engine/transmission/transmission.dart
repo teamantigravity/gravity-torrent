@@ -87,8 +87,8 @@ TransmissionTorrent createTransmissionTorrentFromJson(
     name: torrent.name,
     progress: torrent.sizeWhenDone > 0
         ? ((torrent.sizeWhenDone - torrent.leftUntilDone) /
-                  torrent.sizeWhenDone)
-              .clamp(0.0, 1.0)
+                torrent.sizeWhenDone)
+            .clamp(0.0, 1.0)
         : torrent.percentDone,
     status: torrent.status,
     size: torrent.totalSize,
@@ -312,9 +312,8 @@ class TransmissionTorrent extends Torrent {
 
   @override
   Future<void> toggleAllFilesWanted(bool wanted) async {
-    final allFileIndexes = files.indexed
-        .map((indexedElement) => indexedElement.$1)
-        .toList();
+    final allFileIndexes =
+        files.indexed.map((indexedElement) => indexedElement.$1).toList();
 
     final request = TorrentSetRequest(
       arguments: wanted

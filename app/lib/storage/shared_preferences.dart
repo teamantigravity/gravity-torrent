@@ -17,6 +17,11 @@ Future<void> _guard(
 }
 
 class SharedPrefsStorage {
+  @visibleForTesting
+  static void resetForTest() {
+    SharedPrefs.resetForTest();
+  }
+
   static Future<String?> getString(String key) async {
     try {
       if (SharedPrefs._prefs == null) {
@@ -161,6 +166,11 @@ class SharedPrefsStorage {
 /// Call [SharedPrefs.init] once during app startup before any service reads
 /// shared preferences synchronously.
 class SharedPrefs {
+  @visibleForTesting
+  static void resetForTest() {
+    _prefs = null;
+  }
+
   static SharedPreferences? _prefs;
 
   static Future<void> init() async {
@@ -217,11 +227,7 @@ class SharedPrefs {
       await init();
     }
     if (_prefs == null) return;
-    await _guard(
-      () => _prefs!.setStringList(key, value),
-      key,
-      'setStringList',
-    );
+    await _guard(() => _prefs!.setStringList(key, value), key, 'setStringList');
   }
 
   static Future<void> remove(String key) async {

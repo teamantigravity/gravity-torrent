@@ -1,3 +1,4 @@
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gravity_torrent/services/app_lock_service.dart';
@@ -7,7 +8,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
+    SharedPrefsStorage.resetForTest();
     SharedPreferences.setMockInitialValues({});
+    await (await SharedPreferences.getInstance()).reload();
     SecureStorage.enableTestMode();
     await AppLockService.instance.setEnabled(false);
     await AppLockService.instance.clearPin();
@@ -16,6 +19,7 @@ void main() {
   });
 
   tearDown(() async {
+    SharedPrefsStorage.resetForTest();
     await AppLockService.instance.clearPin();
     await AppLockService.instance.setEnabled(false);
   });
@@ -100,29 +104,31 @@ void main() {
       expect(AppLockService.instance.hasPin, isTrue);
     });
 
-    test('re-enabling app lock after disable authenticates with original PIN',
-        () async {
-      await AppLockService.instance.setPin('7777');
-      await AppLockService.instance.setEnabled(true);
+    test(
+      're-enabling app lock after disable authenticates with original PIN',
+      () async {
+        await AppLockService.instance.setPin('7777');
+        await AppLockService.instance.setEnabled(true);
 
-      // Simulate user disabling (no PIN erasure) then re-enabling.
-      await AppLockService.instance.setEnabled(false);
-      await AppLockService.instance.setEnabled(true);
+        // Simulate user disabling (no PIN erasure) then re-enabling.
+        await AppLockService.instance.setEnabled(false);
+        await AppLockService.instance.setEnabled(true);
 
-      expect(
-        await AppLockService.instance.authenticate(
-          localizedReason: 'Unlock',
-          pin: '7777',
-        ),
-        isTrue,
-      );
-      expect(
-        await AppLockService.instance.authenticate(
-          localizedReason: 'Unlock',
-          pin: '0000',
-        ),
-        isFalse,
-      );
-    });
+        expect(
+          await AppLockService.instance.authenticate(
+            localizedReason: 'Unlock',
+            pin: '7777',
+          ),
+          isTrue,
+        );
+        expect(
+          await AppLockService.instance.authenticate(
+            localizedReason: 'Unlock',
+            pin: '0000',
+          ),
+          isFalse,
+        );
+      },
+    );
   });
 }

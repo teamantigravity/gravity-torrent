@@ -1,3 +1,4 @@
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,12 +11,15 @@ void main() {
   late BandwidthHeatmapService service;
 
   setUp(() async {
+    SharedPrefsStorage.resetForTest();
     SharedPreferences.setMockInitialValues({});
+    await (await SharedPreferences.getInstance()).reload();
     service = BandwidthHeatmapService();
     await service.load();
   });
 
   tearDown(() async {
+    SharedPrefsStorage.resetForTest();
     await service.reset();
     service.dispose();
   });

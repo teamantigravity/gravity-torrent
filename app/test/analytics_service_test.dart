@@ -1,3 +1,4 @@
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,12 +8,16 @@ import 'package:gravity_torrent/services/analytics_service.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUp(() async {
+    SharedPrefsStorage.resetForTest();
     SharedPreferences.setMockInitialValues({});
+    await (await SharedPreferences.getInstance()).reload();
     AnalyticsService.instance.reset();
   });
 
-  tearDown(() {
+  tearDown(() async {
+    SharedPrefsStorage.resetForTest();
+    SharedPrefsStorage.resetForTest();
     AnalyticsService.instance.reset();
   });
 
@@ -80,8 +85,11 @@ void main() {
       final yesterday = DateTime.now().subtract(const Duration(days: 1));
       final history = [
         {
-          'day': DateTime(yesterday.year, yesterday.month, yesterday.day)
-              .toIso8601String(),
+          'day': DateTime(
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+          ).toIso8601String(),
           'downloadedBytes': 100,
           'uploadedBytes': 50,
         },

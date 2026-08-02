@@ -1,3 +1,4 @@
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gravity_torrent/services/torrent_notes_service.dart';
@@ -6,11 +7,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
+    SharedPrefsStorage.resetForTest();
     SharedPreferences.setMockInitialValues({});
+    await (await SharedPreferences.getInstance()).reload();
     TorrentNotesService.instance.reset();
   });
 
   tearDown(() async {
+    SharedPrefsStorage.resetForTest();
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     TorrentNotesService.instance.reset();

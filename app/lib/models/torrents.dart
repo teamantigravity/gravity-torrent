@@ -147,7 +147,7 @@ class TorrentsModel extends ChangeNotifier {
         await SharedPrefsStorage.getBool('showFavoritesOnly') ?? false;
     stopSeedingWhenComplete =
         await SharedPrefsStorage.getBool('stopSeedingWhenComplete') ??
-        stopSeedingWhenComplete;
+            stopSeedingWhenComplete;
     await _loadFavorites();
 
     try {
@@ -519,14 +519,13 @@ class TorrentsModel extends ChangeNotifier {
 
       // Update the persistent Android foreground service notification with live
       // progress and speed on every refresh.
-      final downloading = fetched
-          .where((t) => t.status == TorrentStatus.downloading)
-          .toList();
+      final downloading =
+          fetched.where((t) => t.status == TorrentStatus.downloading).toList();
 
       if (downloading.isNotEmpty) {
         final totalProgress =
             downloading.fold<double>(0, (sum, t) => sum + t.progress) /
-            downloading.length;
+                downloading.length;
         final rateDown = downloading.fold<int>(
           0,
           (sum, t) => sum + t.rateDownload,
@@ -755,11 +754,10 @@ class TorrentsModel extends ChangeNotifier {
       AnalyticsService.instance
           .recordTorrentStats(torrents)
           .catchError((Object e, StackTrace s) {
-            if (kDebugMode) debugPrint('Analytics error: $e\n$s');
-          })
-          .whenComplete(() {
-            if (!_disposed) notifyListeners();
-          }),
+        if (kDebugMode) debugPrint('Analytics error: $e\n$s');
+      }).whenComplete(() {
+        if (!_disposed) notifyListeners();
+      }),
     );
   }
 

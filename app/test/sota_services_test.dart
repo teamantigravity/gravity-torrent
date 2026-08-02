@@ -1,3 +1,4 @@
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -13,8 +14,10 @@ import 'package:gravity_torrent/storage/secure_storage.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUp(() async {
+    SharedPrefsStorage.resetForTest();
     SharedPreferences.setMockInitialValues({});
+    await (await SharedPreferences.getInstance()).reload();
     SecureStorage.enableTestMode();
   });
 
