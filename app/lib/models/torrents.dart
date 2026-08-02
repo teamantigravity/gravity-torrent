@@ -245,7 +245,9 @@ class TorrentsModel extends ChangeNotifier {
     // If turning on, immediately pause any currently-seeding torrents
     if (value) {
       final seedingIds = torrents
-          .where((t) => t.status == TorrentStatus.seeding && !_manuallyResumedSeedingIds.contains(t.id))
+          .where((t) =>
+              t.status == TorrentStatus.seeding &&
+              !_manuallyResumedSeedingIds.contains(t.id))
           .map((t) => t.id)
           .toList();
       if (seedingIds.isNotEmpty) {
@@ -488,7 +490,10 @@ class TorrentsModel extends ChangeNotifier {
       final List<Torrent> fetched = await engine.fetchTorrents();
 
       final fetchedIds = fetched.map((t) => t.id).toSet();
-      final deletedIds = torrents.where((t) => !fetchedIds.contains(t.id)).map((t) => t.id).toList();
+      final deletedIds = torrents
+          .where((t) => !fetchedIds.contains(t.id))
+          .map((t) => t.id)
+          .toList();
 
       if (deletedIds.isNotEmpty) {
         for (final id in deletedIds) {
@@ -601,7 +606,9 @@ class TorrentsModel extends ChangeNotifier {
       // Auto-pause seeding torrents if user has that preference on
       if (stopSeedingWhenComplete) {
         final seedingIds = fetched
-            .where((t) => t.status == TorrentStatus.seeding && !_manuallyResumedSeedingIds.contains(t.id))
+            .where((t) =>
+                t.status == TorrentStatus.seeding &&
+                !_manuallyResumedSeedingIds.contains(t.id))
             .map((t) => t.id)
             .toList();
         if (seedingIds.isNotEmpty) {
@@ -672,7 +679,8 @@ class TorrentsModel extends ChangeNotifier {
         _safeRecordAnalytics(fetched);
       }
 
-      await SeedRatioService.instance.checkAndStop(torrents, _manuallyResumedSeedingIds);
+      await SeedRatioService.instance
+          .checkAndStop(torrents, _manuallyResumedSeedingIds);
 
       for (final t in torrents) {
         SpeedHistoryService.instance.record(t.id, t.rateDownload.toDouble());

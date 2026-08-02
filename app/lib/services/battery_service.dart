@@ -6,6 +6,7 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
+
 /// Automatically throttles downloads (enables turtle/alt-speed mode) when
 /// battery level drops below [threshold] percent and the device is not charging.
 ///

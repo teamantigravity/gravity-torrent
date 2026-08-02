@@ -818,10 +818,13 @@ class _TorrentScreen extends State<TorrentsScreen> {
         child: Consumer<TorrentsModel>(
           builder: (context, torrentsModel, child) {
             if (_isSelectionMode) {
-              final visibleIds = torrentsModel.displayedTorrents.map((t) => t.id).toSet();
+              final visibleIds =
+                  torrentsModel.displayedTorrents.map((t) => t.id).toSet();
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
-                final idsToRemove = _selectedTorrentIds.where((id) => !visibleIds.contains(id)).toList();
+                final idsToRemove = _selectedTorrentIds
+                    .where((id) => !visibleIds.contains(id))
+                    .toList();
                 if (idsToRemove.isNotEmpty) {
                   setState(() {
                     for (final id in idsToRemove) {
@@ -836,97 +839,97 @@ class _TorrentScreen extends State<TorrentsScreen> {
             }
             final app = context.watch<AppModel>();
             if (torrentsModel.hasLoaded && torrentsModel.torrents.isEmpty) {
-            return Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        downloadSvg,
-                        const SizedBox(height: 16),
-                        Text(
-                          localizations.noDownloadsYet,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: _showAddTorrentDialog,
-                          icon: const Icon(Icons.add),
-                          label: Text(localizations.addTorrentTitle),
-                        ),
-                      ],
+              return Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          downloadSvg,
+                          const SizedBox(height: 16),
+                          Text(
+                            localizations.noDownloadsYet,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _showAddTorrentDialog,
+                            icon: const Icon(Icons.add),
+                            label: Text(localizations.addTorrentTitle),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                  const AdBannerSlot(),
+                ],
+              );
+            }
+
+            return Column(
+              children: [
+                if (_isSelectionMode)
+                  _buildSelectionBar(
+                    context,
+                    app,
+                    torrentsModel,
+                    localizations,
+                  )
+                else
+                  _buildActionBar(
+                    context,
+                    app,
+                    torrentsModel,
+                    localizations,
+                  ),
+                _buildStatsHeader(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
+                _buildStatusFilter(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
+                _buildFileTypeFilterChips(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
+                if (app.showVisibleTorrentCount ||
+                    torrentsModel.filterText.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                    child: Text(
+                      localizations.showingTorrents(
+                        torrentsModel.displayedTorrents.length,
+                        torrentsModel.torrents.length,
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                _buildRecentQueries(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
+                Expanded(
+                  child: _buildTorrentListView(torrentsModel, context),
                 ),
                 const AdBannerSlot(),
               ],
             );
-          }
-
-          return Column(
-            children: [
-              if (_isSelectionMode)
-                _buildSelectionBar(
-                  context,
-                  app,
-                  torrentsModel,
-                  localizations,
-                )
-              else
-                _buildActionBar(
-                  context,
-                  app,
-                  torrentsModel,
-                  localizations,
-                ),
-              _buildStatsHeader(
-                context,
-                app,
-                torrentsModel,
-                localizations,
-              ),
-              _buildStatusFilter(
-                context,
-                app,
-                torrentsModel,
-                localizations,
-              ),
-              _buildFileTypeFilterChips(
-                context,
-                app,
-                torrentsModel,
-                localizations,
-              ),
-              if (app.showVisibleTorrentCount ||
-                  torrentsModel.filterText.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: Text(
-                    localizations.showingTorrents(
-                      torrentsModel.displayedTorrents.length,
-                      torrentsModel.torrents.length,
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              _buildRecentQueries(
-                context,
-                app,
-                torrentsModel,
-                localizations,
-              ),
-              Expanded(
-                child: _buildTorrentListView(torrentsModel, context),
-              ),
-              const AdBannerSlot(),
-            ],
-          );
-        },
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

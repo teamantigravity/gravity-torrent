@@ -33,8 +33,7 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
 
   Future<void> _pickInputFile() async {
     final l = AppLocalizations.of(context);
-    final result =
-        await FilePicker.pickFiles(dialogTitle: l.selectSourceFile);
+    final result = await FilePicker.pickFiles(dialogTitle: l.selectSourceFile);
     if (result == null || result.files.isEmpty) return;
     if (!mounted) return;
     setState(() => _inputPath = result.files.first.path);

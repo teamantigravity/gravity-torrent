@@ -76,8 +76,10 @@ class BandwidthHeatmapWidget extends StatelessWidget {
                               service.setScheduleLimit(d, h, newLimit);
                             },
                             child: Container(
-                              width: math.max(0.0, cellWidth - 2), // Account for margin
-                              height: math.max(0.0, cellWidth - 2), // Account for margin
+                              width: math.max(
+                                  0.0, cellWidth - 2), // Account for margin
+                              height: math.max(
+                                  0.0, cellWidth - 2), // Account for margin
                               margin: const EdgeInsets.all(1),
                               color: _getColorForLimit(
                                 service.schedule[d][h],

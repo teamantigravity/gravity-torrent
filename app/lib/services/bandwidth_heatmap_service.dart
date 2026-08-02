@@ -7,6 +7,7 @@ import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
+
 class BandwidthHeatmapService extends ChangeNotifier {
   // 7 days x 24 hours. Value is speed limit in KB/s. 0 means unlimited, -1 means pause.
   final List<List<int>> _schedule = List.generate(7, (_) => List.filled(24, 0));

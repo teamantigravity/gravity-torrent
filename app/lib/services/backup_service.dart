@@ -155,8 +155,12 @@ class BackupService {
 
       if (kIsWeb) {
         final data = utf8.encode(output);
-        final localCount = torrentStates.where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true).length;
-        final warnMsg = localCount > 0 ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)' : '';
+        final localCount = torrentStates
+            .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
+            .length;
+        final warnMsg = localCount > 0
+            ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+            : '';
         return BackupRestoreResult(
           success: true,
           message: 'Backup created successfully$warnMsg',
@@ -176,8 +180,12 @@ class BackupService {
       // Prepend hash as first line, then the payload
       await file.writeAsString(output);
 
-      final localCount = torrentStates.where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true).length;
-      final warnMsg = localCount > 0 ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)' : '';
+      final localCount = torrentStates
+          .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
+          .length;
+      final warnMsg = localCount > 0
+          ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+          : '';
 
       return BackupRestoreResult(
         success: true,

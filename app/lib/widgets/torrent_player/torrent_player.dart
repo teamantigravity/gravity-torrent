@@ -139,13 +139,27 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       if (kDebugMode) debugPrint('Error stopping cast: $e');
     }
 
-    try { await widget.torrent.stopStreaming(); } catch (_) {}
-    try { await player?.stop(); } catch (_) {}
-    try { await MediaKitAudioHandler.instance?.setPlayer(null); } catch (_) {}
-    try { await server?.stop(); } catch (_) {}
-    try { await subsServer?.stop(); } catch (_) {}
-    try { _enhancements?.detachPlayer(); } catch (_) {}
-    try { await _logSub?.cancel(); } catch (_) {}
+    try {
+      await widget.torrent.stopStreaming();
+    } catch (_) {}
+    try {
+      await player?.stop();
+    } catch (_) {}
+    try {
+      await MediaKitAudioHandler.instance?.setPlayer(null);
+    } catch (_) {}
+    try {
+      await server?.stop();
+    } catch (_) {}
+    try {
+      await subsServer?.stop();
+    } catch (_) {}
+    try {
+      _enhancements?.detachPlayer();
+    } catch (_) {}
+    try {
+      await _logSub?.cancel();
+    } catch (_) {}
 
     try {
       await player?.dispose();

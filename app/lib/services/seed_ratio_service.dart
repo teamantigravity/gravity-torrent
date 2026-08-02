@@ -70,7 +70,8 @@ class SeedRatioService {
 
   /// Checks all [torrents] against their goals and pauses those that have
   /// exceeded their ratio. Called by [TorrentsModel] after each fetch.
-  Future<void> checkAndStop(List<Torrent> torrents, [Set<int>? ignoredIds]) async {
+  Future<void> checkAndStop(List<Torrent> torrents,
+      [Set<int>? ignoredIds]) async {
     await load();
     if (_goals.isEmpty) return;
     if (!getIt.isRegistered<Engine>()) return;

@@ -68,7 +68,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
               secondary: const Icon(Icons.wifi_tethering),
               title: Text(localizations.remoteControlServer),
               subtitle: Text(
-                _running ? localizations.runningOn(_address) : localizations.serverOff,
+                _running
+                    ? localizations.runningOn(_address)
+                    : localizations.serverOff,
               ),
               value: _running,
               onChanged: (v) => _toggle(),

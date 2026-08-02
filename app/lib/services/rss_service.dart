@@ -318,7 +318,8 @@ class RssService {
         final url = enclosure.getAttribute('url');
         final type = enclosure.getAttribute('type');
         if (url != null && url.isNotEmpty) {
-          if (type != null && type.toLowerCase() == 'application/x-bittorrent') {
+          if (type != null &&
+              type.toLowerCase() == 'application/x-bittorrent') {
             verified.add(url);
           } else {
             raw.add(url);

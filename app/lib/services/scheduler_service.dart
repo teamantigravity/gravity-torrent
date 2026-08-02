@@ -215,7 +215,8 @@ class SchedulerService {
               _pausedByScheduler.remove(id);
             }
           }
-          if (getIt.isRegistered<TorrentsModel>() && getIt<TorrentsModel>().isQuotaPauseEnforced) {
+          if (getIt.isRegistered<TorrentsModel>() &&
+              getIt<TorrentsModel>().isQuotaPauseEnforced) {
             toResume.clear();
           }
           if (WifiGuardService.instance.isEnabled) {
@@ -288,7 +289,8 @@ class SchedulerService {
         }
         toResume.add(id);
       }
-      if (getIt.isRegistered<TorrentsModel>() && getIt<TorrentsModel>().isQuotaPauseEnforced) {
+      if (getIt.isRegistered<TorrentsModel>() &&
+          getIt<TorrentsModel>().isQuotaPauseEnforced) {
         toResume.clear();
       }
       if (toResume.isNotEmpty) {

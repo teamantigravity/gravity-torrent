@@ -170,8 +170,7 @@ class _FilesTabState extends State<FilesTab> {
                 Checkbox(
                   value: globalWantedState,
                   tristate: true,
-                  onChanged: (_) =>
-                      _handleAllWantedChange(!areAllFilesWanted),
+                  onChanged: (_) => _handleAllWantedChange(!areAllFilesWanted),
                 ),
               ],
             ),
