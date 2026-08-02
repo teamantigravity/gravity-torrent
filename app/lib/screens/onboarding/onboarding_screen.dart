@@ -160,8 +160,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ],
                       ],
                     ),
-                  );
-                },
+                  ),
+                );
+              },
               ),
             ),
             // Dots + Next/Finish

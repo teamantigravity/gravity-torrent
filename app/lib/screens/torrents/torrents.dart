@@ -926,6 +926,6 @@ class _TorrentScreen extends State<TorrentsScreen> {
           );
         },
       ),
-    );
-  }
+    ),
+  );
 }
