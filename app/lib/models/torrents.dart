@@ -247,7 +247,7 @@ class TorrentsModel extends ChangeNotifier {
       final seedingIds = torrents
           .where((t) =>
               t.status == TorrentStatus.seeding &&
-              !_manuallyResumedSeedingIds.contains(t.id))
+              !_manuallyResumedSeedingIds.contains(t.id),)
           .map((t) => t.id)
           .toList();
       if (seedingIds.isNotEmpty) {
@@ -608,7 +608,7 @@ class TorrentsModel extends ChangeNotifier {
         final seedingIds = fetched
             .where((t) =>
                 t.status == TorrentStatus.seeding &&
-                !_manuallyResumedSeedingIds.contains(t.id))
+                !_manuallyResumedSeedingIds.contains(t.id),)
             .map((t) => t.id)
             .toList();
         if (seedingIds.isNotEmpty) {

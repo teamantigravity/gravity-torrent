@@ -289,7 +289,9 @@ class TransmissionTorrent extends Torrent {
     _expectSuccess(
       await flutter_libtransmission.requestAsync(jsonEncode(request)),
     );
-    if (torrent.labels != null) labels = torrent.labels;
+    if (torrent.labels != null) {
+      labels = torrent.labels;
+    }
     _requestEngineCheckpoint();
   }
 
@@ -489,46 +491,87 @@ class TransmissionSession extends Session {
     if (getIt.isRegistered<Engine>()) {
       await getIt<Engine>().saveSession();
     }
-    if (session.downloadDir != null) downloadDir = session.downloadDir;
-    if (session.downloadQueueEnabled != null)
+    if (session.downloadDir != null) {
+      downloadDir = session.downloadDir;
+    }
+    if (session.downloadQueueEnabled != null) {
       downloadQueueEnabled = session.downloadQueueEnabled;
-    if (session.downloadQueueSize != null)
+    }
+    if (session.downloadQueueSize != null) {
       downloadQueueSize = session.downloadQueueSize;
-    if (session.peerPort != null) peerPort = session.peerPort;
-    if (session.speedLimitDownEnabled != null)
+    }
+    if (session.peerPort != null) {
+      peerPort = session.peerPort;
+    }
+    if (session.speedLimitDownEnabled != null) {
       speedLimitDownEnabled = session.speedLimitDownEnabled;
-    if (session.speedLimitUpEnabled != null)
+    }
+    if (session.speedLimitUpEnabled != null) {
       speedLimitUpEnabled = session.speedLimitUpEnabled;
-    if (session.speedLimitDown != null) speedLimitDown = session.speedLimitDown;
-    if (session.speedLimitUp != null) speedLimitUp = session.speedLimitUp;
-    if (session.seedRatioLimit != null) seedRatioLimit = session.seedRatioLimit;
-    if (session.seedRatioLimited != null)
+    }
+    if (session.speedLimitDown != null) {
+      speedLimitDown = session.speedLimitDown;
+    }
+    if (session.speedLimitUp != null) {
+      speedLimitUp = session.speedLimitUp;
+    }
+    if (session.seedRatioLimit != null) {
+      seedRatioLimit = session.seedRatioLimit;
+    }
+    if (session.seedRatioLimited != null) {
       seedRatioLimited = session.seedRatioLimited;
-    if (session.encryption != null) encryption = session.encryption;
-    if (session.blocklistEnabled != null)
+    }
+    if (session.encryption != null) {
+      encryption = session.encryption;
+    }
+    if (session.blocklistEnabled != null) {
       blocklistEnabled = session.blocklistEnabled;
-    if (session.blocklistUrl != null) blocklistUrl = session.blocklistUrl;
-    if (session.blocklistSize != null) blocklistSize = session.blocklistSize;
-    if (session.dhtEnabled != null) dhtEnabled = session.dhtEnabled;
-    if (session.pexEnabled != null) pexEnabled = session.pexEnabled;
-    if (session.lpdEnabled != null) lpdEnabled = session.lpdEnabled;
-    if (session.utpEnabled != null) utpEnabled = session.utpEnabled;
-    if (session.altSpeedEnabled != null)
+    }
+    if (session.blocklistUrl != null) {
+      blocklistUrl = session.blocklistUrl;
+    }
+    if (session.blocklistSize != null) {
+      blocklistSize = session.blocklistSize;
+    }
+    if (session.dhtEnabled != null) {
+      dhtEnabled = session.dhtEnabled;
+    }
+    if (session.pexEnabled != null) {
+      pexEnabled = session.pexEnabled;
+    }
+    if (session.lpdEnabled != null) {
+      lpdEnabled = session.lpdEnabled;
+    }
+    if (session.utpEnabled != null) {
+      utpEnabled = session.utpEnabled;
+    }
+    if (session.altSpeedEnabled != null) {
       altSpeedEnabled = session.altSpeedEnabled;
-    if (session.altSpeedDown != null) altSpeedDown = session.altSpeedDown;
-    if (session.altSpeedUp != null) altSpeedUp = session.altSpeedUp;
-    if (session.altSpeedTimeEnabled != null)
+    }
+    if (session.altSpeedDown != null) {
+      altSpeedDown = session.altSpeedDown;
+    }
+    if (session.altSpeedUp != null) {
+      altSpeedUp = session.altSpeedUp;
+    }
+    if (session.altSpeedTimeEnabled != null) {
       altSpeedTimeEnabled = session.altSpeedTimeEnabled;
-    if (session.altSpeedTimeBegin != null)
+    }
+    if (session.altSpeedTimeBegin != null) {
       altSpeedTimeBegin = session.altSpeedTimeBegin;
-    if (session.altSpeedTimeEnd != null)
+    }
+    if (session.altSpeedTimeEnd != null) {
       altSpeedTimeEnd = session.altSpeedTimeEnd;
-    if (session.altSpeedTimeDay != null)
+    }
+    if (session.altSpeedTimeDay != null) {
       altSpeedTimeDay = session.altSpeedTimeDay;
-    if (session.idleSeedingLimitEnabled != null)
+    }
+    if (session.idleSeedingLimitEnabled != null) {
       idleSeedingLimitEnabled = session.idleSeedingLimitEnabled;
-    if (session.idleSeedingLimit != null)
+    }
+    if (session.idleSeedingLimit != null) {
       idleSeedingLimit = session.idleSeedingLimit;
+    }
   }
 }
 

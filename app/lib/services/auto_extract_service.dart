@@ -97,7 +97,7 @@ class AutoExtractService extends ChangeNotifier {
             final outPath = p.join(
               targetFolder.parent.path,
               originalFileName.replaceFirst(
-                  RegExp(r'\.gz$', caseSensitive: false), ''),
+                  RegExp(r'\.gz$', caseSensitive: false), '',),
             );
             await targetFolder.parent.create(recursive: true);
             try {

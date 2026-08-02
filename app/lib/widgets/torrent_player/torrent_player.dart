@@ -77,7 +77,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   final GlobalKey _videoComponentKey = GlobalKey();
   PlayerEnhancementsService? _enhancements;
   CancelableCompleter<void>? _loadingCompleter;
-  StreamSubscription? _logSub;
+  StreamSubscription<dynamic>? _logSub;
 
   /// File currently being streamed. Diverges from `widget.file` once the user
   /// (or auto-advance) moves through the playlist queue.

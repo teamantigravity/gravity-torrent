@@ -134,8 +134,9 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
                     int.tryParse(output.split(RegExp(r'\s+')).first) ?? 0;
               }
             } on ProcessException catch (e) {
-              if (kDebugMode)
+              if (kDebugMode) {
                 debugPrint('PowerShell free space check failed: $e');
+              }
             } catch (_) {}
 
             if (freeSpace == 0) {

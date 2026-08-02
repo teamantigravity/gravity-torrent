@@ -194,7 +194,7 @@ void main() {
         streamUrl: 'http://host/a?b=1&c=2',
       );
       expect(
-          metadata, contains('Tom &amp;amp; Jerry &amp;lt;hack&amp;gt;.mp4'));
+          metadata, contains('Tom &amp;amp; Jerry &amp;lt;hack&amp;gt;.mp4'),);
       expect(metadata, isNot(contains('<hack>')));
       expect(metadata, contains('http://host/a?b=1&amp;amp;c=2'));
     });
