@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/services/app_lock_service.dart';
+import 'package:gravity_torrent/services/pin_service.dart';
 
 /// PIN / biometric unlock gate shown when app lock is enabled.
 class LockScreen extends StatefulWidget {

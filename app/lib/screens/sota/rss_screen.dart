@@ -145,7 +145,7 @@ class _RssScreenState extends State<RssScreen> {
                                   await RssService.instance.removeFeed(feed);
                                   return true;
                                 } catch (e) {
-                                  if (!mounted) return false;
+                                  if (!context.mounted) return false;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(

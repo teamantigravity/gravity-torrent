@@ -39,7 +39,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
-    _controller.dispose();
     _player.dispose();
 
     // Restore orientation & system UI -- without this the entire app
@@ -68,7 +67,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             onTap: () => setState(() => _controlsVisible = !_controlsVisible),
             child: Video(
               controller: _controller,
-              controls: NoVideoControls,
+              controls: (_) => const SizedBox.shrink(),
             ),
           ),
           // Top bar
