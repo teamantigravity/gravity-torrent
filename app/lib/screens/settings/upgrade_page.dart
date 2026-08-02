@@ -74,7 +74,7 @@ class _UpgradePageState extends State<UpgradePage> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.purchaseFailed)),
+          SnackBar(content: Text(AppLocalizations.of(context).purchaseFailed)),
         );
       }
     } finally {
@@ -95,7 +95,7 @@ class _UpgradePageState extends State<UpgradePage> {
       if (_alreadyOwned && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.adsRemovedThankYou),
+            content: Text(AppLocalizations.of(context).adsRemovedThankYou),
           ),
         );
       }
@@ -107,7 +107,7 @@ class _UpgradePageState extends State<UpgradePage> {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.purchaseFailed),
+            content: Text(AppLocalizations.of(context).purchaseFailed),
           ),
         );
       }
@@ -116,7 +116,7 @@ class _UpgradePageState extends State<UpgradePage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

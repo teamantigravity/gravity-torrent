@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/services/backup_service.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
@@ -23,35 +22,20 @@ class _BackupScreenState extends State<BackupScreen> {
       _busy = true;
       _statusMessage = null;
     });
-    try {
-      await BackupService.instance.export();
-      if (mounted) {
-        setState(() {
-          _statusMessage = 'Settings exported successfully.';
-          _isError = false;
-        });
+    final result = await BackupService.export();
+    if (mounted) {
+      setState(() {
+        _busy = false;
+        _statusMessage = result.message;
+        _isError = !result.success;
+      });
+      if (result.success) {
+        await BackupService.shareBackup(result);
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _statusMessage = 'Export failed: $e';
-          _isError = true;
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _import() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-      dialogTitle: 'Select backup file',
-    );
-    if (result == null || result.files.single.path == null) return;
-    final path = result.files.single.path!;
-
     // Confirm dialog
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
@@ -66,45 +50,35 @@ class _BackupScreenState extends State<BackupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(AppLocalizations.of(context)!.importAction),
+            child: Text(AppLocalizations.of(context).importAction),
           ),
         ],
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
 
     setState(() {
       _busy = true;
       _statusMessage = null;
     });
-    try {
-      final restored = await BackupService.instance.import(path);
-      if (mounted) {
-        setState(() {
-          _statusMessage =
-              'Restored ${restored.length} settings. Restart the app to apply all changes.';
-          _isError = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _statusMessage = 'Import failed: $e';
-          _isError = true;
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
+    final result = await BackupService.import();
+    if (mounted) {
+      setState(() {
+        _busy = false;
+        _statusMessage = result.message;
+        _isError = !result.success;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: isDesktop()
@@ -242,22 +216,30 @@ class _BackupScreenState extends State<BackupScreen> {
             ],
             const SizedBox(height: 32),
             Text(
-              'What is included in the backup',
+              localizations.backupIncludedTitle,
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            const _IncludedItem(
-                icon: Icons.toggle_on,
-                label:
-                    'Feature toggles (WiFi-only, scheduler, quota, RSS, etc.)'),
-            const _IncludedItem(
-                icon: Icons.schedule, label: 'Download schedule windows'),
-            const _IncludedItem(
-                icon: Icons.data_saver_on,
-                label: 'Monthly bandwidth quota settings'),
-            const _IncludedItem(icon: Icons.rss_feed, label: 'RSS feed URLs'),
-            const _IncludedItem(
-                icon: Icons.palette, label: 'Theme and language preferences'),
+            _IncludedItem(
+              icon: Icons.toggle_on,
+              label: localizations.backupIncludedFeatureToggles,
+            ),
+            _IncludedItem(
+              icon: Icons.schedule,
+              label: localizations.backupIncludedSchedule,
+            ),
+            _IncludedItem(
+              icon: Icons.data_saver_on,
+              label: localizations.backupIncludedQuota,
+            ),
+            _IncludedItem(
+              icon: Icons.rss_feed,
+              label: localizations.backupIncludedRss,
+            ),
+            _IncludedItem(
+              icon: Icons.palette,
+              label: localizations.backupIncludedTheme,
+            ),
             const SizedBox(height: 8),
             Text(
               'Not included: torrent files, downloaded content, or PIN codes.',

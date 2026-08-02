@@ -29,18 +29,27 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
   }
 
   Future<void> _load() async {
-    await SchedulerService.instance.load();
-    final svc = SchedulerService.instance;
-    if (mounted) {
-      setState(() {
-        _enabled = svc.enabled;
-        _startHour = svc.window.start.hour;
-        _startMinute = svc.window.start.minute;
-        _endHour = svc.window.end.hour;
-        _endMinute = svc.window.end.minute;
-        _dayBitmask = svc.window.dayBitmask;
-        _loaded = true;
-      });
+    try {
+      await SchedulerService.instance.load();
+      final svc = SchedulerService.instance;
+      if (mounted) {
+        setState(() {
+          _enabled = svc.enabled;
+          _startHour = svc.window.start.hour;
+          _startMinute = svc.window.start.minute;
+          _endHour = svc.window.end.hour;
+          _endMinute = svc.window.end.minute;
+          _dayBitmask = svc.window.dayBitmask;
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('SchedulerScreen load error: $e\\n$stack');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loaded = true;
+        });
+      }
     }
   }
 
@@ -70,6 +79,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
       helpText: label,
     );
     if (picked != null) {
+      if (!mounted) return;
       onPicked(picked);
     }
   }
@@ -83,7 +93,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: isDesktop()
@@ -151,7 +161,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                           ),
                           onTap: _enabled
                               ? () => _pickTime(
-                                    'Select start time',
+                                    localizations.selectStartTime,
                                     _startHour,
                                     _startMinute,
                                     (t) => setState(() {
@@ -179,7 +189,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                           ),
                           onTap: _enabled
                               ? () => _pickTime(
-                                    'Select end time',
+                                    localizations.selectEndTime,
                                     _endHour,
                                     _endMinute,
                                     (t) => setState(() {
@@ -197,17 +207,22 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                         _endHour * 60 + _endMinute) ...[
                       const SizedBox(height: 8),
                       Chip(
-                        avatar: Icon(Icons.warning_amber_rounded,
-                            color: colorScheme.error),
+                        avatar: Icon(
+                          Icons.warning_amber_rounded,
+                          color: colorScheme.error,
+                        ),
                         label: const Text(
-                            'Start and end time are the same — no downloads will run'),
+                          'Start and end time are the same — no downloads will run',
+                        ),
                       ),
                     ] else if ((_startHour * 60 + _startMinute) >=
                         (_endHour * 60 + _endMinute)) ...[
                       const SizedBox(height: 8),
                       Chip(
-                        avatar: Icon(Icons.info_outline,
-                            color: colorScheme.primary),
+                        avatar: Icon(
+                          Icons.info_outline,
+                          color: colorScheme.primary,
+                        ),
                         label: Text(localizations.scheduleWrapsPastMidnight),
                       ),
                     ],

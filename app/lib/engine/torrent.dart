@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart';
 import 'package:gravity_torrent/engine/file.dart';
-import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/subtitles.dart';
 
 // Torrent statuses
@@ -22,7 +22,7 @@ enum TorrentStatus {
 
 class TorrentBase {
   final int id;
-  final List<String>? labels;
+  List<String>? labels;
 
   TorrentBase({required this.id, required this.labels});
 }
@@ -56,6 +56,30 @@ abstract class Torrent extends TorrentBase {
   final int speedLimitDown;
   final int speedLimitUp;
   final DateTime doneDate;
+
+  /// Info hash extracted from the magnet link, if available.
+  /// Supports both BitTorrent V1 (`urn:btih:`) and V2 (`urn:btmh:`) hashes,
+  /// as well as magnet URIs with multiple `xt` parameters.
+  String? get hash {
+    if (magnetLink.isEmpty) return null;
+    try {
+      final uri = Uri.parse(magnetLink);
+      final xtList = uri.queryParametersAll['xt'];
+      if (xtList != null) {
+        for (final xt in xtList) {
+          final xtLower = xt.toLowerCase();
+          if (xtLower.startsWith('urn:btih:')) {
+            return xt.substring(9);
+          } else if (xtLower.startsWith('urn:btmh:')) {
+            return xt.substring(9);
+          }
+        }
+      }
+    } catch (_) {
+      // Ignore malformed magnet links.
+    }
+    return null;
+  }
 
   Torrent({
     required super.id,
@@ -92,47 +116,54 @@ abstract class Torrent extends TorrentBase {
   // Start the torrent
   Future<void> start();
 
+  // Start the torrent immediately, bypassing the queue
+  Future<void> startNow();
+
   // Pause the torrent
   Future<void> stop();
 
+  // Force a re-check of the torrent data
+  Future<void> verify();
+
+  // Ask trackers for new peers
+  Future<void> reannounce();
+
   // Remove the torrent
-  Future<void> remove(bool withData);
+  @mustCallSuper
+  Future<void> remove(bool withData) async {
+    await SharedPrefsStorage.remove(_streamingActiveKey);
+  }
 
   // Update torrent data
-  Future update(TorrentBase torrent);
+  Future<void> update(TorrentBase torrent);
 
-  Future toggleFileWanted(int fileIndex, bool wanted);
+  Future<void> toggleFileWanted(int fileIndex, bool wanted);
 
-  Future toggleAllFilesWanted(bool wanted);
+  Future<void> toggleAllFilesWanted(bool wanted);
 
-  Future setSequentialDownload(bool sequential);
+  Future<void> setFilesWanted(List<int> fileIndices, bool wanted);
 
-  Future setSequentialDownloadFromPiece(int sequentialDownloadFromPiece);
+  Future<void> setSequentialDownload(bool sequential);
 
-  Future setSpeedLimits({
+  Future<void> setSequentialDownloadFromPiece(int sequentialDownloadFromPiece);
+
+  Future<void> setSpeedLimits({
     required bool downloadEnabled,
     required bool uploadEnabled,
     int? downloadLimitKbps,
     int? uploadLimitKbps,
   });
 
-  Future setFilesPriority({
+  Future<void> setFilesPriority({
     List<int>? priorityHigh,
     List<int>? priorityLow,
     List<int>? priorityNormal,
   });
 
+  String get _streamingActiveKey => 'streaming_active_$id';
+
   Future<void> startStreaming(File file) async {
     if (kDebugMode) debugPrint('starting streaming ${file.name}');
-    // File already completed
-    if (file.bytesCompleted == file.length) {
-      // Do nothing if file is already completed.
-      return;
-    }
-
-    // Be sure torrent is active
-    await start();
-
     final fileIndex = files.indexWhere((f) => f.name == file.name);
     if (fileIndex == -1) {
       throw StateError(
@@ -140,20 +171,25 @@ abstract class Torrent extends TorrentBase {
       );
     }
 
+    // Be sure torrent is active
+    await start();
+
+    await SharedPrefsStorage.setBool(_streamingActiveKey, true);
+
     // File indices for streaming file and detected associated subtitles
     final List<int> highPriorityFileIndices = [fileIndex];
 
     // Want subtitles and set them to high priority
     final externalSubtitles = getExternalSubtitles(file, this);
-    for (final (index, file) in files.indexed) {
-      if (externalSubtitles.firstWhereOrNull((f) => f.name == file.name) !=
+    for (final (index, torrentFile) in files.indexed) {
+      if (externalSubtitles
+              .firstWhereOrNull((f) => f.name == torrentFile.name) !=
           null) {
-        await toggleFileWanted(index, true);
         highPriorityFileIndices.add(index);
       }
     }
 
-    await toggleFileWanted(fileIndex, true);
+    await setFilesWanted(highPriorityFileIndices, true);
 
     // Set high priority for streaming file and subtitles
     await setFilesPriority(priorityHigh: highPriorityFileIndices);
@@ -163,36 +199,61 @@ abstract class Torrent extends TorrentBase {
 
   Future<void> stopStreaming() async {
     if (kDebugMode) debugPrint('stopping streaming');
+    final wasActive =
+        await SharedPrefsStorage.getBool(_streamingActiveKey) ?? false;
+    if (!wasActive) return;
+
     await setSequentialDownload(false);
 
-    // Reset all files to normal priority
-    final allFileIndices = List.generate(files.length, (index) => index);
-    await setFilesPriority(priorityNormal: allFileIndices);
+    // Reset all files to normal priority so piece scheduling is not biased
+    // toward the previously-streamed file after streaming ends.
+    if (files.isNotEmpty) {
+      final allFileIndices = List.generate(files.length, (index) => index);
+      await setFilesPriority(priorityNormal: allFileIndices);
+    }
+
+    await SharedPrefsStorage.setBool(_streamingActiveKey, false);
   }
 
   bool hasLoadedPieces(List<int> piecesToTest) {
     return piecesToTest.every((p) => p >= 0 && p < pieces.length && pieces[p]);
   }
 
-  Future openFolder(BuildContext context) async {
-    if (!isDesktop()) return;
-
+  Future<void> openFolder(BuildContext context) async {
     late OpenResult result;
     String folderPath;
 
-    if (files.isEmpty) {
-      folderPath = location;
-    } else if (files.length == 1) {
-      folderPath = dirname(join(location, files.first.name));
-    } else {
-      // Torrent file names always use POSIX (forward-slash) separators, so
-      // split with the POSIX context regardless of the host platform.
-      var folderName = posix.split(files.first.name).first;
-      if (folderName == '.' || folderName.isEmpty) {
-        folderPath = location;
-      } else {
-        folderPath = normalize(join(location, folderName));
+    // Determine the common parent directory of every file in the torrent.
+    // Torrent file names always use POSIX (forward-slash) separators, so
+    // split with the POSIX context regardless of the host platform.
+    String? commonFolder;
+    for (final file in files) {
+      final normalizedFileName = file.name.replaceAll('\\', '/');
+      final parts = posix.split(normalizedFileName);
+      if (parts.length <= 1) {
+        commonFolder = null;
+        break;
       }
+      final first = parts.first;
+      if (first == '.' || first.isEmpty || first == '/' || first == '..') {
+        commonFolder = null;
+        break;
+      }
+      if (commonFolder == null) {
+        commonFolder = first;
+      } else if (commonFolder != first) {
+        commonFolder = null;
+        break;
+      }
+    }
+
+    final isWindowsPath = Platform.isWindows || location.contains('\\');
+    final pContext = isWindowsPath ? windows : posix;
+
+    if (commonFolder != null && commonFolder.isNotEmpty) {
+      folderPath = pContext.normalize(pContext.join(location, commonFolder));
+    } else {
+      folderPath = pContext.normalize(location);
     }
 
     try {
@@ -202,12 +263,12 @@ abstract class Torrent extends TorrentBase {
     }
 
     if (result.type != ResultType.done) {
-      var errorMessage = switch (result.type) {
+      final errorMessage = switch (result.type) {
         ResultType.noAppToOpen => 'No app to open',
         ResultType.fileNotFound => 'Not found',
         ResultType.permissionDenied => 'Permission denied',
         // It seems fileNotFound is not returned on linux
-        ResultType.error => await Directory(folderPath).exists() == false
+        ResultType.error => Directory(folderPath).existsSync() == false
             ? 'Folder not found'
             : result.message.isNotEmpty
                 ? result.message

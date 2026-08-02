@@ -31,105 +31,50 @@ class _RssScreenState extends State<RssScreen> {
     }
   }
 
-  void _showAddDialog() {
-    final urlController = TextEditingController();
-    final keywordController = TextEditingController();
-
-    showDialog<void>(
+  Future<void> _showAddDialog() async {
+    final result = await showDialog<RssFeed>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.addRssFeed),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: urlController,
-              decoration: const InputDecoration(
-                labelText: 'Feed URL',
-                hintText: 'https://example.com/feed.rss',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.rss_feed),
-              ),
-              keyboardType: TextInputType.url,
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: keywordController,
-              decoration: const InputDecoration(
-                labelText: 'Keyword filter (optional)',
-                hintText: 'e.g. "1080p" — leave blank for all',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.filter_list),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final url = urlController.text.trim();
-              if (url.isEmpty) return;
-              final uri = Uri.tryParse(url);
-              if (uri == null ||
-                  !uri.hasAbsolutePath ||
-                  (!url.startsWith('http://') && !url.startsWith('https://'))) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Please enter a valid HTTP/HTTPS URL')),
-                );
-                return;
-              }
-              final feed = RssFeed(
-                url: url,
-                keyword: keywordController.text.trim(),
-              );
-              await RssService.instance.addFeed(feed);
-              if (ctx.mounted) Navigator.of(ctx).pop();
-              await _load();
-            },
-            child: Text(AppLocalizations.of(context)!.add),
-          ),
-        ],
-      ),
+      builder: (ctx) => const _AddFeedDialog(),
     );
+    if (result != null) {
+      await RssService.instance.addFeed(result);
+      await _load();
+    }
   }
 
   Future<void> _pollNow() async {
+    final l = AppLocalizations.of(context);
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Polling RSS feeds…')));
+    ).showSnackBar(SnackBar(content: Text(l.pollingRssFeeds)));
     await RssService.instance.pollNow();
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Poll complete')));
+      ).showSnackBar(SnackBar(content: Text(l.pollComplete)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: isDesktop()
           ? const WindowTitleBar()
           : AppBar(
-              title: const Text('RSS auto-download'),
+              title: Text(l.rssAutoDownload),
               actions: [
                 if (_loaded)
                   IconButton(
                     icon: const Icon(Icons.refresh),
-                    tooltip: 'Poll now',
+                    tooltip: l.pollNow,
                     onPressed: _pollNow,
                   ),
               ],
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,
-        tooltip: 'Add RSS feed',
+        tooltip: l.addRssFeed,
         child: const Icon(Icons.add),
       ),
       body: !_loaded
@@ -142,14 +87,12 @@ class _RssScreenState extends State<RssScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'RSS auto-download',
+                        l.rssAutoDownload,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Add RSS feed URLs and an optional keyword filter. '
-                        'Matching magnet links and .torrent files are '
-                        'automatically added every 30 minutes.',
+                      Text(
+                        l.rssAutoDownloadDescription,
                       ),
                     ],
                   ),
@@ -168,12 +111,12 @@ class _RssScreenState extends State<RssScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'No feeds yet',
+                                l.noFeedsYet,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
-                              const Text(
-                                'Tap the + button to add your first RSS feed.',
+                              Text(
+                                l.tapToAddFirstRssFeed,
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -197,11 +140,26 @@ class _RssScreenState extends State<RssScreen> {
                                   color: Colors.white,
                                 ),
                               ),
-                              onDismissed: (_) async {
-                                if (index >= 0 && index < _feeds.length) {
-                                  await RssService.instance.removeFeedAt(index);
+                              confirmDismiss: (_) async {
+                                try {
+                                  await RssService.instance.removeFeed(feed);
+                                  return true;
+                                } catch (e) {
+                                  if (!context.mounted) return false;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l.removeTorrentsError(e.toString()),
+                                      ),
+                                    ),
+                                  );
+                                  return false;
                                 }
-                                await _load();
+                              },
+                              onDismissed: (_) {
+                                setState(() {
+                                  _feeds.removeAt(index);
+                                });
                               },
                               child: SwitchListTile(
                                 secondary: const Icon(Icons.rss_feed),
@@ -211,19 +169,40 @@ class _RssScreenState extends State<RssScreen> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 subtitle: feed.keyword.isNotEmpty
-                                    ? Text('Filter: "${feed.keyword}"')
+                                    ? Text(l.filter(feed.keyword))
                                     : Text(
-                                        AppLocalizations.of(context)!.allItems),
+                                        l.allItems,
+                                      ),
                                 value: feed.enabled,
                                 onChanged: (v) async {
-                                  await RssService.instance.updateFeedAt(
-                                    index,
-                                    RssFeed(
-                                      url: feed.url,
-                                      keyword: feed.keyword,
-                                      enabled: v,
-                                    ),
+                                  final currentIndex = _feeds.indexWhere(
+                                    (f) =>
+                                        f.url == feed.url &&
+                                        f.keyword == feed.keyword,
                                   );
+                                  if (currentIndex == -1) return;
+
+                                  final updated = RssFeed(
+                                    url: feed.url,
+                                    keyword: feed.keyword,
+                                    enabled: v,
+                                  );
+                                  setState(
+                                    () => _feeds[currentIndex] = updated,
+                                  );
+
+                                  final serviceIndex =
+                                      RssService.instance.feeds.indexWhere(
+                                    (f) =>
+                                        f.url == feed.url &&
+                                        f.keyword == feed.keyword,
+                                  );
+                                  if (serviceIndex != -1) {
+                                    await RssService.instance.updateFeedAt(
+                                      serviceIndex,
+                                      updated,
+                                    );
+                                  }
                                   await _load();
                                 },
                               ),
@@ -233,6 +212,88 @@ class _RssScreenState extends State<RssScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _AddFeedDialog extends StatefulWidget {
+  const _AddFeedDialog();
+
+  @override
+  State<_AddFeedDialog> createState() => _AddFeedDialogState();
+}
+
+class _AddFeedDialogState extends State<_AddFeedDialog> {
+  final _urlController = TextEditingController();
+  final _keywordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _keywordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l.addRssFeed),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _urlController,
+            decoration: InputDecoration(
+              labelText: l.feedUrl,
+              hintText: l.feedUrlHint,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.rss_feed),
+            ),
+            keyboardType: TextInputType.url,
+            autofocus: true,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _keywordController,
+            decoration: InputDecoration(
+              labelText: l.keywordFilter,
+              hintText: l.keywordFilterHint,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.filter_list),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            final url = _urlController.text.trim();
+            if (url.isEmpty) return;
+            final uri = Uri.tryParse(url);
+            if (uri == null ||
+                !uri.hasAbsolutePath ||
+                (!url.startsWith('http://') && !url.startsWith('https://'))) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l.validUrlRequired),
+                ),
+              );
+              return;
+            }
+            final feed = RssFeed(
+              url: url,
+              keyword: _keywordController.text.trim(),
+            );
+            Navigator.of(context).pop(feed);
+          },
+          child: Text(l.add),
+        ),
+      ],
     );
   }
 }

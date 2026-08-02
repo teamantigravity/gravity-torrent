@@ -25,11 +25,13 @@ class SeedRatioService {
     final raw = await SharedPrefsStorage.getString(_storageKey);
     if (raw != null && raw.isNotEmpty) {
       try {
-        final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        _goals.clear();
-        decoded.forEach((k, v) {
-          if (v is num) _goals[k] = v.toDouble();
-        });
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          _goals.clear();
+          decoded.forEach((k, v) {
+            if (v is num) _goals[k] = v.toDouble();
+          });
+        }
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('SeedRatioService: failed to load goals: $e\n$s');
@@ -40,10 +42,7 @@ class SeedRatioService {
   }
 
   Future<void> _save() async {
-    await SharedPrefsStorage.setString(
-      _storageKey,
-      jsonEncode(_goals),
-    );
+    await SharedPrefsStorage.setString(_storageKey, jsonEncode(_goals));
   }
 
   /// Sets a personal seed ratio goal for [torrentId].
@@ -68,17 +67,27 @@ class SeedRatioService {
 
   /// Checks all [torrents] against their goals and pauses those that have
   /// exceeded their ratio. Called by [TorrentsModel] after each fetch.
-  Future<void> checkAndStop(List<Torrent> torrents) async {
+  Future<void> checkAndStop(
+    List<Torrent> torrents, [
+    Set<int>? ignoredIds,
+  ]) async {
+    await load();
     if (_goals.isEmpty) return;
+    if (!getIt.isRegistered<Engine>()) return;
     try {
       final engine = getIt<Engine>();
       for (final torrent in torrents) {
+        if (ignoredIds != null && ignoredIds.contains(torrent.id)) continue;
         final goal = _goals[torrent.id.toString()];
         if (goal == null) continue;
         if (torrent.status != TorrentStatus.seeding) continue;
-        final downloaded = torrent.downloadedEver;
-        if (downloaded <= 0) continue;
-        final ratio = torrent.uploadedEver / downloaded;
+        final denominator = torrent.size;
+
+        if (denominator <= 0) {
+          continue; // Avoid division by zero if size is also 0
+        }
+
+        final ratio = torrent.uploadedEver / denominator;
         if (ratio >= goal) {
           try {
             await engine.pauseTorrent(torrent.id);
@@ -90,9 +99,7 @@ class SeedRatioService {
             }
           } catch (e) {
             if (kDebugMode) {
-              debugPrint(
-                'SeedRatioService: failed to pause ${torrent.id}: $e',
-              );
+              debugPrint('SeedRatioService: failed to pause ${torrent.id}: $e');
             }
           }
         }

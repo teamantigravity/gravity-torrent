@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/services/app_lock_service.dart';
+import 'package:gravity_torrent/services/pin_service.dart';
 
 /// PIN / biometric unlock gate shown when app lock is enabled.
 class LockScreen extends StatefulWidget {
@@ -26,44 +27,89 @@ class _LockScreenState extends State<LockScreen> {
 
   Future<void> _init() async {
     _biometricsAvailable = await AppLockService.instance.canUseBiometrics();
-    if (mounted) setState(() {});
+    if (!mounted) return;
 
     if (AppLockService.instance.useBiometrics && _biometricsAvailable) {
-      await _tryBiometricUnlock();
+      // Defer the biometric prompt until after the first frame is drawn so
+      // the activity window is fully attached. Starting it during initState
+      // can cause the prompt to fail on some Android versions.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _tryBiometricUnlock();
+      });
     } else {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        // If the user has biometrics enabled but none are enrolled on this
+        // device, surface an explanatory message instead of silently showing
+        // just the PIN prompt.
+        if (AppLockService.instance.useBiometrics && !_biometricsAvailable) {
+          _error = AppLocalizations.of(context).noBiometricsEnrolled;
+        }
+      });
     }
   }
 
   Future<void> _tryBiometricUnlock() async {
-    if (mounted) setState(() => _isLoading = true);
-
-    final ok = await AppLockService.instance.authenticateWithBiometrics();
-    if (ok && mounted) {
-      widget.onUnlocked();
-      return;
+    final localizations = AppLocalizations.of(context);
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
     }
 
-    if (mounted) setState(() => _isLoading = false);
+    bool ok = false;
+    try {
+      ok = await AppLockService.instance.authenticateWithBiometrics(
+        localizedReason: localizations.unlockApp,
+      );
+      if (ok && mounted) {
+        widget.onUnlocked();
+      }
+    } catch (_) {
+      // Ignore
+    } finally {
+      if (mounted && !ok) {
+        setState(() {
+          _isLoading = false;
+          _error = AppLocalizations.of(context).biometricFailed;
+        });
+      }
+    }
   }
 
   Future<void> _unlockWithPin() async {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final pin = _pinController.text.trim();
     if (pin.isEmpty) return;
 
-    final ok = await AppLockService.instance.authenticateWithPin(pin);
-    if (ok && mounted) {
-      widget.onUnlocked();
-    } else if (mounted) {
-      setState(() {
-        _error = localizations.incorrectPin;
-      });
+    try {
+      final ok = await AppLockService.instance.authenticateWithPin(pin);
+      if (ok && mounted) {
+        widget.onUnlocked();
+      } else if (mounted) {
+        setState(() {
+          _error = localizations.incorrectPin;
+        });
+      }
+    } on PinLockoutException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = localizations.incorrectPin;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
+    AppLockService.instance.stopBiometricAuthentication();
     _pinController.dispose();
     super.dispose();
   }
@@ -71,7 +117,7 @@ class _LockScreenState extends State<LockScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final showBiometricOption =
         AppLockService.instance.useBiometrics && _biometricsAvailable;
 
@@ -80,75 +126,80 @@ class _LockScreenState extends State<LockScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 72,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    localizations.appLockedTitle,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    showBiometricOption
-                        ? localizations.unlockWithBiometricsOrPin
-                        : localizations.enterPinToContinue,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  if (_isLoading)
-                    const CircularProgressIndicator()
-                  else ...[
-                    if (showBiometricOption) ...[
-                      Icon(
-                        Icons.fingerprint,
-                        size: 64,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: _tryBiometricUnlock,
-                        icon: const Icon(Icons.fingerprint),
-                        label: Text(localizations.useBiometrics),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                    TextField(
-                      controller: _pinController,
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      maxLength: 8,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _unlockWithPin(),
-                      decoration: InputDecoration(
-                        labelText: localizations.pin,
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.pin),
-                      ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 72,
+                      color: colorScheme.primary,
                     ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 8),
-                      Text(_error!, style: TextStyle(color: colorScheme.error)),
-                    ],
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _unlockWithPin,
-                        icon: const Icon(Icons.lock_open),
-                        label: Text(localizations.unlock),
-                      ),
+                    Text(
+                      localizations.appLockedTitle,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      showBiometricOption
+                          ? localizations.unlockWithBiometricsOrPin
+                          : localizations.enterPinToContinue,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    if (_isLoading)
+                      const CircularProgressIndicator()
+                    else ...[
+                      if (showBiometricOption) ...[
+                        Icon(
+                          Icons.fingerprint,
+                          size: 64,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: _tryBiometricUnlock,
+                          icon: const Icon(Icons.fingerprint),
+                          label: Text(localizations.useBiometrics),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      TextField(
+                        controller: _pinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        maxLength: 8,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _unlockWithPin(),
+                        decoration: InputDecoration(
+                          labelText: localizations.pin,
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.pin),
+                        ),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          style: TextStyle(color: colorScheme.error),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _unlockWithPin,
+                          icon: const Icon(Icons.lock_open),
+                          label: Text(localizations.unlock),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

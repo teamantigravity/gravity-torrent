@@ -8,17 +8,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PurchaseServiceMobile implements PurchaseService {
   PurchaseServiceMobile() {
-    _subscription = InAppPurchase.instance.purchaseStream.listen(
-      _onRawPurchases,
-    );
+    if (isStoreSupported) {
+      _subscription = InAppPurchase.instance.purchaseStream.listen(
+        _onRawPurchases,
+        onError: (Object e, StackTrace st) {
+          if (kDebugMode) {
+            debugPrint('In-app purchase stream error: $e\n$st');
+          }
+        },
+      );
+    }
   }
 
   static const _adFreeKey = 'gravity_torrent_ad_free';
   final InAppPurchase _iap = InAppPurchase.instance;
   // Keeps the store purchase listener alive for the app lifetime.
   // ignore: unused_field
-  late final StreamSubscription<List<PurchaseDetails>> _subscription;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
   final _updates = StreamController<List<PurchaseUpdate>>.broadcast();
+
+  bool _disposed = false;
 
   @override
   Stream<List<PurchaseUpdate>> get purchaseUpdates => _updates.stream;
@@ -76,6 +85,7 @@ class PurchaseServiceMobile implements PurchaseService {
 
   @override
   Future<void> completePurchase(PurchaseUpdate update) async {
+    if (_disposed) return;
     final token = update.purchaseToken;
     if (token is! PurchaseDetails) return;
     if (token.pendingCompletePurchase) {
@@ -90,6 +100,14 @@ class PurchaseServiceMobile implements PurchaseService {
   }
 
   void _onRawPurchases(List<PurchaseDetails> purchases) {
+    if (_disposed) return;
+    for (final p in purchases) {
+      if (p.pendingCompletePurchase &&
+          (p.status == PurchaseStatus.error ||
+              p.status == PurchaseStatus.canceled)) {
+        unawaited(_iap.completePurchase(p));
+      }
+    }
     final mapped = purchases.map(_mapPurchase).toList();
     _updates.add(mapped);
   }
@@ -113,14 +131,29 @@ class PurchaseServiceMobile implements PurchaseService {
   }
 
   Future<void> syncEntitlementOnStartup() async {
+    if (_disposed) return;
     if (await hasLocalAdFreeEntitlement()) {
       await AdServiceProvider.instance.setAdFree(true);
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    unawaited(_subscription?.cancel() ?? Future.value());
+    unawaited(_updates.close());
   }
 }
 
 PurchaseService createPurchaseService() {
   final service = PurchaseServiceMobile();
-  unawaited(service.syncEntitlementOnStartup());
+  unawaited(
+    service.syncEntitlementOnStartup().catchError((Object e, StackTrace st) {
+      if (kDebugMode) {
+        debugPrint('Entitlement sync on startup failed: $e\n$st');
+      }
+      return null;
+    }),
+  );
   return service;
 }

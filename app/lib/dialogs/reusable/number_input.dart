@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class NumberInputDialog extends StatefulWidget {
   final void Function(int) onSave;
@@ -19,7 +20,7 @@ class NumberInputDialog extends StatefulWidget {
 
 class _NumberInputDialogState extends State<NumberInputDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController number;
+  late final TextEditingController number;
 
   @override
   void initState() {
@@ -45,6 +46,8 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return AlertDialog(
       title: Text(widget.title),
       content: Form(
@@ -56,15 +59,15 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
               controller: number,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(labelText: 'Enter a number'),
+              decoration: InputDecoration(labelText: localizations.enterNumber),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a number';
+                  return localizations.emptyNumber;
                 }
                 if (int.tryParse(value) == null) {
-                  return 'Please enter a valid number';
+                  return localizations.invalidNumber;
                 }
-                return null; // Return null if the input is valid
+                return null;
               },
             ),
           ],
@@ -72,12 +75,15 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
       ),
       actions: <Widget>[
         TextButton(
-          child: const Text('Cancel'),
+          child: Text(localizations.cancel),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        TextButton(onPressed: handleSave, child: const Text('Save')),
+        TextButton(
+          onPressed: handleSave,
+          child: Text(localizations.save),
+        ),
       ],
     );
   }

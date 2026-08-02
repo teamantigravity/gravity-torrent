@@ -32,7 +32,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
   @override
   void didUpdateWidget(covariant TorrentControlsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.torrent.id != widget.torrent.id) {
+    if (oldWidget.torrent != widget.torrent) {
       _syncFromTorrent(widget.torrent);
     }
   }
@@ -41,14 +41,16 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     _sequential = torrent.sequentialDownload;
     _downLimitEnabled = torrent.speedLimitDownEnabled;
     _upLimitEnabled = torrent.speedLimitUpEnabled;
-    _downController?.dispose();
-    _upController?.dispose();
-    _downController = TextEditingController(
-      text: torrent.speedLimitDown > 0 ? '${torrent.speedLimitDown}' : '',
-    );
-    _upController = TextEditingController(
-      text: torrent.speedLimitUp > 0 ? '${torrent.speedLimitUp}' : '',
-    );
+
+    _downController ??= TextEditingController();
+    _upController ??= TextEditingController();
+
+    final downText =
+        torrent.speedLimitDown > 0 ? '${torrent.speedLimitDown}' : '';
+    if (_downController!.text != downText) _downController!.text = downText;
+
+    final upText = torrent.speedLimitUp > 0 ? '${torrent.speedLimitUp}' : '';
+    if (_upController!.text != upText) _upController!.text = upText;
   }
 
   @override
@@ -69,7 +71,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
   }
 
   Future<void> _applySpeedLimits() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     try {
       int? down;
       int? up;
@@ -91,6 +93,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.speedLimitsApplied)),
         );
@@ -110,13 +113,14 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
   }
 
   Future<void> _toggleSequential(bool value) async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     setState(() => _sequential = value);
     try {
       await widget.torrent.setSequentialDownload(value);
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
         messenger.showSnackBar(
           SnackBar(
             content: Text(
@@ -142,7 +146,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
 
   Future<void> _togglePause() async {
     final torrent = widget.torrent;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     setState(() => _saving = true);
     try {
       if (torrent.status == TorrentStatus.stopped) {
@@ -165,9 +169,79 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     }
   }
 
+  Future<void> _verify() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _saving = true);
+    try {
+      await widget.torrent.verify();
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.verifyStarted)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _reannounce() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _saving = true);
+    try {
+      await widget.torrent.reannounce();
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        await context.read<TorrentsModel>().fetchTorrents();
+        if (!mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.reannounceStarted)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _startNow() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _saving = true);
+    try {
+      await widget.torrent.startNow();
+      if (mounted) await context.read<TorrentsModel>().fetchTorrents();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.error),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final torrent = widget.torrent;
     final isPaused = torrent.status == TorrentStatus.stopped;
 
@@ -176,13 +250,23 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
       children: [
         ListTile(
           leading: Icon(isPaused ? Icons.play_arrow : Icons.pause),
-          title: Text(isPaused ? l10n.download : l10n.pause),
+          title: Text(isPaused ? l10n.resume : l10n.pause),
           subtitle: Text(l10n.torrentControlPauseHint),
           trailing: FilledButton.tonal(
             onPressed: _saving ? null : _togglePause,
-            child: Text(isPaused ? l10n.download : l10n.pause),
+            child: Text(isPaused ? l10n.resume : l10n.pause),
           ),
         ),
+        if (isPaused)
+          ListTile(
+            leading: const Icon(Icons.play_circle_filled),
+            title: Text(l10n.startNow),
+            subtitle: Text(l10n.torrentControlStartNowHint),
+            trailing: FilledButton.tonal(
+              onPressed: _saving ? null : _startNow,
+              child: Text(l10n.startNow),
+            ),
+          ),
         SwitchListTile(
           title: Text(l10n.sequentialDownload),
           subtitle: Text(
@@ -192,6 +276,23 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
           ),
           value: _sequential,
           onChanged: _saving ? null : _toggleSequential,
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.fact_check),
+          title: Text(l10n.verify),
+          trailing: FilledButton.tonal(
+            onPressed: _saving ? null : _verify,
+            child: Text(l10n.verify),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.refresh),
+          title: Text(l10n.reannounce),
+          trailing: FilledButton.tonal(
+            onPressed: _saving ? null : _reannounce,
+            child: Text(l10n.reannounce),
+          ),
         ),
         const Divider(),
         SwitchListTile(

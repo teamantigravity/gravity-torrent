@@ -11,7 +11,7 @@ class MediaKitAudioHandler extends BaseAudioHandler {
   static MediaKitAudioHandler? get instance => _instance;
 
   Player? _player;
-  final List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription<void>> _subscriptions = [];
 
   bool _playing = false;
   bool _buffering = false;
@@ -20,6 +20,9 @@ class MediaKitAudioHandler extends BaseAudioHandler {
   Duration _duration = Duration.zero;
   double _speed = 1.0;
 
+  // Guards against emitting state after the handler has been disposed.
+  bool _disposed = false;
+
   MediaKitAudioHandler() {
     _instance = this;
   }
@@ -27,7 +30,9 @@ class MediaKitAudioHandler extends BaseAudioHandler {
   /// Attach or detach a [media_kit] player. Call with `null` when playback
   /// stops to clear the media notification.
   Future<void> setPlayer(Player? player, {MediaItem? item}) async {
+    if (_disposed) return;
     await _disposeSubscriptions();
+    if (_disposed) return;
 
     _player = player;
     _completed = false;
@@ -43,6 +48,7 @@ class MediaKitAudioHandler extends BaseAudioHandler {
 
     _subscriptions.add(
       player.stream.playing.listen((playing) {
+        if (_disposed) return;
         _playing = playing;
         _emitState();
       }),
@@ -50,6 +56,7 @@ class MediaKitAudioHandler extends BaseAudioHandler {
 
     _subscriptions.add(
       player.stream.buffering.listen((buffering) {
+        if (_disposed) return;
         _buffering = buffering;
         _emitState();
       }),
@@ -57,6 +64,7 @@ class MediaKitAudioHandler extends BaseAudioHandler {
 
     _subscriptions.add(
       player.stream.completed.listen((completed) {
+        if (_disposed) return;
         _completed = completed;
         _emitState();
       }),
@@ -64,13 +72,14 @@ class MediaKitAudioHandler extends BaseAudioHandler {
 
     _subscriptions.add(
       player.stream.position.listen((position) {
+        if (_disposed) return;
         _position = position;
-        _emitState();
       }),
     );
 
     _subscriptions.add(
       player.stream.duration.listen((duration) {
+        if (_disposed) return;
         _duration = duration;
         _updateMediaItemDuration();
         _emitState();
@@ -79,6 +88,7 @@ class MediaKitAudioHandler extends BaseAudioHandler {
 
     _subscriptions.add(
       player.stream.rate.listen((rate) {
+        if (_disposed) return;
         _speed = rate;
         _emitState();
       }),
@@ -95,12 +105,14 @@ class MediaKitAudioHandler extends BaseAudioHandler {
   }
 
   void _updateMediaItemDuration() {
+    if (_disposed) return;
     final current = mediaItem.value;
     if (current == null || _duration == current.duration) return;
     mediaItem.add(current.copyWith(duration: _duration));
   }
 
   void _emitState() {
+    if (_disposed) return;
     final controls = <MediaControl>[
       if (_playing) MediaControl.pause else MediaControl.play,
       MediaControl.stop,
@@ -138,19 +150,27 @@ class MediaKitAudioHandler extends BaseAudioHandler {
   }
 
   @override
-  Future<void> play() async => await _player?.play();
+  Future<void> play() async {
+    if (_disposed) return;
+    await _player?.play();
+  }
 
   @override
-  Future<void> pause() async => await _player?.pause();
+  Future<void> pause() async {
+    if (_disposed) return;
+    await _player?.pause();
+  }
 
   @override
   Future<void> stop() async {
+    if (_disposed) return;
     await _player?.stop();
     await setPlayer(null);
   }
 
   @override
   Future<void> seek(Duration position) async {
+    if (_disposed) return;
     await _player?.seek(position);
     _position = position;
     _emitState();
@@ -158,20 +178,25 @@ class MediaKitAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> setSpeed(double speed) async {
+    if (_disposed) return;
     await _player?.setRate(speed);
     _speed = speed;
     _emitState();
   }
 
   @override
-  Future<void> onNotificationDeleted() async => await setPlayer(null);
+  Future<void> onNotificationDeleted() => setPlayer(null);
 
   @override
-  Future<void> onTaskRemoved() async => await setPlayer(null);
+  Future<void> onTaskRemoved() => setPlayer(null);
 
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     await _disposeSubscriptions();
     _player = null;
     _instance = null;
+    await playbackState.close();
+    await mediaItem.close();
   }
 }

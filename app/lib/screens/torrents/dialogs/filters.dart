@@ -16,12 +16,12 @@ class _FiltersDialogState extends State<FiltersDialog> {
   @override
   void initState() {
     super.initState();
-    var torrentsModel = Provider.of<TorrentsModel>(context, listen: false);
+    final torrentsModel = Provider.of<TorrentsModel>(context, listen: false);
     // Handle a copy of  filters until we apply filters
     filters = Filters.copy(torrentsModel.filters);
   }
 
-  _handleApply(context) {
+  void _handleApply(BuildContext context) {
     Provider.of<TorrentsModel>(context, listen: false).setFilters(filters);
     Navigator.of(context).pop();
   }
@@ -36,7 +36,7 @@ class _FiltersDialogState extends State<FiltersDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Consumer<TorrentsModel>(
       builder: (context, torrentsModel, child) {

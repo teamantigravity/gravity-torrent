@@ -92,7 +92,9 @@ void main() {
 
     test('isTorrentLink recognizes magnets and torrent files', () {
       expect(
-          RssService.instance.isTorrentLink('magnet:?xt=urn:btih:abc'), isTrue);
+        RssService.instance.isTorrentLink('magnet:?xt=urn:btih:abc'),
+        isTrue,
+      );
       expect(
         RssService.instance.isTorrentLink('https://example.com/file.torrent'),
         isTrue,
@@ -104,6 +106,32 @@ void main() {
       expect(
         RssService.instance.isTorrentLink(''),
         isFalse,
+      );
+    });
+
+    test('isTorrentLink is case-insensitive for extension', () {
+      expect(
+        RssService.instance.isTorrentLink('https://example.com/file.TORRENT'),
+        isTrue,
+      );
+      expect(
+        RssService.instance.isTorrentLink('https://Example.COM/FILE.Torrent'),
+        isTrue,
+      );
+    });
+
+    test('isTorrentLink handles percent-encoded URLs', () {
+      expect(
+        RssService.instance.isTorrentLink(
+          'https://example.com/my%20file.torrent',
+        ),
+        isTrue,
+      );
+      expect(
+        RssService.instance.isTorrentLink(
+          'https://example.com/file%2Etorrent',
+        ),
+        isTrue,
       );
     });
   });

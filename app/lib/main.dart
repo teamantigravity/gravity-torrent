@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -33,11 +35,20 @@ import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/services/remote_control_service.dart';
 import 'package:gravity_torrent/services/rss_service.dart';
 import 'package:gravity_torrent/services/scheduler_service.dart';
+import 'package:gravity_torrent/services/theme_scheduler_service.dart';
+import 'package:gravity_torrent/services/accessibility_service.dart';
 import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/services/battery_service.dart';
+import 'package:gravity_torrent/services/casting_service.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
+import 'package:gravity_torrent/services/torrent_notes_service.dart';
+import 'package:gravity_torrent/services/torrent_favorites_service.dart';
+import 'package:gravity_torrent/services/recent_download_directories_service.dart';
+import 'package:gravity_torrent/services/recent_search_queries_service.dart';
 import 'package:gravity_torrent/services/analytics_service.dart';
 import 'package:gravity_torrent/services/blocklist_service.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:gravity_torrent/services/feature_registration.dart';
 
 ColorScheme _buildColorScheme(Brightness brightness, ColorScheme? dynamic) {
   return dynamic ??
@@ -51,19 +62,10 @@ ColorScheme _buildColorScheme(Brightness brightness, ColorScheme? dynamic) {
 ThemeData _buildTheme(ColorScheme colorScheme) {
   return ThemeData(
     colorScheme: colorScheme,
+    scaffoldBackgroundColor: colorScheme.surface,
     useMaterial3: true,
-    navigationBarTheme: const NavigationBarThemeData(
-      backgroundColor: Colors.transparent,
-      indicatorColor: Colors.transparent,
-    ),
-    navigationRailTheme: const NavigationRailThemeData(
-      indicatorColor: Colors.transparent,
-    ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: colorScheme.surface,
-    ),
-    chipTheme: ChipThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.0)),
     ),
   );
 }
@@ -90,10 +92,36 @@ Future<void> startServices(FeatureFlagsModel flags) async {
   }
 
   try {
-    if (isMobile()) {
-      await BatteryService.instance.load();
-      await BatteryService.instance.setEnabled(flags.enableBatterySaver);
+    await TorrentNotesService.instance.load();
+  } catch (e) {
+    if (kDebugMode) debugPrint('TorrentNotesService init failed: $e');
+  }
+
+  try {
+    await TorrentFavoritesService.instance.load();
+  } catch (e) {
+    if (kDebugMode) debugPrint('TorrentFavoritesService init failed: $e');
+  }
+
+  try {
+    await RecentDownloadDirectoriesService.instance.load();
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('RecentDownloadDirectoriesService init failed: $e');
     }
+  }
+
+  try {
+    await RecentSearchQueriesService.instance.load();
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('RecentSearchQueriesService init failed: $e');
+    }
+  }
+
+  try {
+    await BatteryService.instance.load();
+    await BatteryService.instance.setEnabled(flags.enableBatterySaver);
   } catch (e) {
     if (kDebugMode) debugPrint('BatteryService init failed: $e');
   }
@@ -152,17 +180,68 @@ Future<void> stopServices() async {
   SchedulerService.instance.dispose();
   RssService.instance.stopPolling();
   WifiGuardService.instance.dispose();
-  if (isMobile()) {
-    BatteryService.instance.dispose();
-  }
+  BatteryService.instance.dispose();
+  CastingService.instance.dispose();
   await RemoteControlService.instance.stop();
+  await PurchaseServiceProvider.dispose();
+}
+
+Future<void> _initDesktopWindow() async {
+  try {
+    await YaruWindowTitleBar.ensureInitialized();
+    await windowManager.ensureInitialized();
+
+    const windowOptions = WindowOptions(
+      minimumSize: Size(360, 360),
+    );
+
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  } catch (e, st) {
+    debugPrint('Window initialisation failed: $e\n$st');
+  }
+}
+
+Future<void> _bootstrap() async {
+  // Create + init engine BEFORE registering so consumers never
+  // see an uninitialised singleton.
+  await engine.init();
+
+  // Only register after successful init.
+  getIt.registerSingleton<Engine>(engine);
+
+  // Desktop window (non-blocking for mobile).
+  if (isDesktop()) {
+    await _initDesktopWindow();
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
 
-  await initializeNotifications();
+  try {
+    MediaKit.ensureInitialized();
+  } catch (e, st) {
+    // Missing libmpv or media dependencies should not prevent the app from
+    // launching. Media playback will be unavailable, but the torrent UI works.
+    if (kDebugMode) {
+      debugPrint('MediaKit initialization failed: $e\n$st');
+    }
+  }
+
+  await SharedPrefs.init();
+
+  try {
+    await initializeNotifications();
+  } catch (e, st) {
+    // Local notifications are optional; a bad notification setup should not
+    // white-screen the app on startup.
+    if (kDebugMode) {
+      debugPrint('Notification initialization failed: $e\n$st');
+    }
+  }
 
   unawaited(
     AdServiceProvider.instance.init().catchError((e) {
@@ -170,29 +249,43 @@ void main() async {
       return null;
     }),
   );
-  PurchaseServiceProvider.wirePurchaseStream();
-
-  if (isDesktop()) {
-    await YaruWindowTitleBar.ensureInitialized();
-    // Must add this line.
-    await windowManager.ensureInitialized();
-
-    WindowOptions windowOptions = const WindowOptions(
-      minimumSize: Size(360, 360),
-    );
-
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+  try {
+    PurchaseServiceProvider.wirePurchaseStream();
+  } catch (e, st) {
+    if (kDebugMode) {
+      debugPrint('Purchase stream wiring failed: $e\n$st');
+    }
   }
 
-  getIt.registerSingleton<Engine>(engine);
+  await _bootstrap();
 
-  await engine.init();
+  // Register port for cross-isolate notification actions
+  final receivePort = ReceivePort();
+  IsolateNameServer.removePortNameMapping('notification_actions');
+  IsolateNameServer.registerPortWithName(
+    receivePort.sendPort,
+    'notification_actions',
+  );
+  receivePort.listen((message) async {
+    final actionId = message as String;
+    if (actionId == 'exit') {
+      await stopServices();
+      if (getIt.isRegistered<Engine>()) {
+        await getIt<Engine>().shutdown();
+      }
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await stopForegroundService();
+      }
+      exit(0);
+    } else {
+      if (getIt.isRegistered<Engine>()) {
+        await executeNotificationAction(actionId, getIt<Engine>());
+      }
+    }
+  });
 
   // Initialize the media session for background audio on supported platforms.
-  if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
     try {
       await AudioService.init<MediaKitAudioHandler>(
         builder: () => MediaKitAudioHandler(),
@@ -221,10 +314,25 @@ void main() async {
   final featureFlags = FeatureFlagsModel();
   await featureFlags.initialization;
 
+  // Load accessibility settings before the first frame so text scaling and
+  // high-contrast mode are applied immediately.
+  final accessibilityService = AccessibilityService();
+  await accessibilityService.load();
+
+  // Initialize notification channels and other feature hooks before starting
+  // background services that may post notifications.
+  try {
+    await initializeFeatures();
+  } catch (e, st) {
+    if (kDebugMode) {
+      debugPrint('Feature initialization failed: $e\n$st');
+    }
+  }
+
   // Start background SOTA services based on the loaded flags.
   await startServices(featureFlags);
 
-  if (Platform.isAndroid) {
+  if (!kIsWeb && Platform.isAndroid) {
     try {
       await createForegroundService();
     } catch (e) {
@@ -233,17 +341,27 @@ void main() async {
       // when live reloading.
       if (kDebugMode) debugPrint(e.toString());
     }
-  } else if (Platform.isWindows) {
-    registerAppInRegistry();
+  } else if (!kIsWeb && Platform.isWindows) {
+    await registerAppInRegistry();
   }
 
-  runApp(GravityTorrent(featureFlags: featureFlags));
+  runApp(
+    GravityTorrent(
+      featureFlags: featureFlags,
+      accessibilityService: accessibilityService,
+    ),
+  );
 }
 
 class GravityTorrent extends StatelessWidget {
   final FeatureFlagsModel featureFlags;
+  final AccessibilityService accessibilityService;
 
-  const GravityTorrent({super.key, required this.featureFlags});
+  const GravityTorrent({
+    super.key,
+    required this.featureFlags,
+    required this.accessibilityService,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +378,12 @@ class GravityTorrent extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(create: (context) => SessionModel()),
+        ChangeNotifierProxyProvider<AppModel, ThemeSchedulerService>(
+          create: (_) => ThemeSchedulerService(),
+          update: (_, app, service) => service!..attachAppModel(app),
+        ),
+        ChangeNotifierProvider.value(value: accessibilityService),
+        ...featureProviders(),
       ],
       child: const GravityTorrentApp(),
     );
@@ -274,18 +398,27 @@ class GravityTorrentApp extends StatefulWidget {
 }
 
 class _GravityTorrentAppState extends State<GravityTorrentApp>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, WindowListener {
   bool _unlocked = false;
+  bool _wasLocked = false;
+  Timer? _lockDebounceTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (isDesktop()) {
+      windowManager.addListener(this);
+    }
   }
 
   @override
   void dispose() {
+    _lockDebounceTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    if (isDesktop()) {
+      windowManager.removeListener(this);
+    }
     super.dispose();
   }
 
@@ -295,12 +428,40 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateLockState();
+  }
+
+  void _updateLockState() {
+    final flags = Provider.of<FeatureFlagsModel>(context, listen: false);
+    final isLockEnabled = flags.enableAppLock &&
+        AppLockService.instance.enabled &&
+        AppLockService.instance.hasPin;
+
+    if (!isLockEnabled) {
+      _unlocked = false;
+      _wasLocked = false;
+    } else {
+      if (!_wasLocked) {
+        // Lock just became active for the first time this session
+        // (e.g. user just finished setting up their PIN). Grant the
+        // current session access so the user isn't immediately locked
+        // out right after enabling the feature.
+        _unlocked = true;
+      }
+      _wasLocked = true;
+    }
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
 
     switch (state) {
       case AppLifecycleState.resumed:
-        if (kDebugMode) debugPrint("Application resumed");
+        _lockDebounceTimer?.cancel();
+        if (kDebugMode) debugPrint('Application resumed');
         unawaited(processPendingNotificationAction());
         break;
 
@@ -308,71 +469,182 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
         break;
 
       case AppLifecycleState.hidden:
-        break;
-
       case AppLifecycleState.paused:
+        if (_unlocked) {
+          _lockDebounceTimer?.cancel();
+          _lockDebounceTimer = Timer(const Duration(seconds: 5), () {
+            if (mounted) setState(() => _unlocked = false);
+          });
+        }
         break;
 
       case AppLifecycleState.detached:
-        unawaited(_shutdownServices());
+        _lockDebounceTimer?.cancel();
+        if (defaultTargetPlatform == TargetPlatform.android &&
+            isForegroundServiceStarted) {
+          // If the foreground service is active, deliberately keep the app and engine running
+          // in the background even if the Flutter activity is detached from the recent apps list.
+        } else {
+          unawaited(_shutdownServices());
+        }
         break;
+    }
+  }
+
+  @override
+  void onWindowClose() {
+    if (mounted && _unlocked) {
+      setState(() => _unlocked = false);
     }
   }
 
   // App root
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppModel>(
-      builder: (context, app, child) {
-        final (languageCode, countryCode) = switch (app.locale.split('_')) {
-          [final lang, final country] => (lang, country),
-          [final lang] when lang.isNotEmpty => (lang, ''),
-          _ => ('en', ''),
-        };
-
-        return Consumer<FeatureFlagsModel>(
-          builder: (context, flags, child) {
-            final shouldLock = flags.enableAppLock &&
-                AppLockService.instance.enabled &&
-                AppLockService.instance.hasPin &&
-                !_unlocked;
-
-            return DynamicColorBuilder(
-              builder: (lightDynamic, darkDynamic) {
-                final lightColorScheme = _buildColorScheme(
-                  Brightness.light,
-                  flags.loaded && flags.useDynamicColor ? lightDynamic : null,
-                );
-                final darkColorScheme = _buildColorScheme(
-                  Brightness.dark,
-                  flags.loaded && flags.useDynamicColor ? darkDynamic : null,
-                );
-
-                return MaterialApp.router(
-                  title: 'Gravity Torrent',
-                  theme: _buildTheme(lightColorScheme),
-                  darkTheme: _buildTheme(darkColorScheme),
-                  themeMode: app.theme,
-                  routerConfig: router,
-                  localizationsDelegates:
-                      AppLocalizations.localizationsDelegates,
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  locale: Locale(languageCode, countryCode),
-                  debugShowCheckedModeBanner: false,
-                  builder: (context, child) {
-                    if (shouldLock) {
-                      return LockScreen(
-                        onUnlocked: () => setState(() => _unlocked = true),
-                      );
-                    }
-                    return child!;
-                  },
-                );
-              },
+    return _AppLocaleLayer(
+      builder: (context, app, locale) {
+        return _FeatureFlagsLayer(
+          unlocked: _unlocked,
+          builder: (context, flags, shouldLock) {
+            return _ColorSchemeLayer(
+              app: app,
+              flags: flags,
+              locale: locale,
+              shouldLock: shouldLock,
+              onUnlocked: () => setState(() => _unlocked = true),
             );
           },
         );
       },
     );
+  }
+}
+
+class _AppLocaleLayer extends StatelessWidget {
+  final Widget Function(BuildContext context, AppModel app, Locale locale)
+      builder;
+
+  const _AppLocaleLayer({required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppModel>();
+    final locale = AppLocalizations.supportedLocales.firstWhere(
+      (l) => l.toString() == app.locale,
+      orElse: () => AppLocalizations.supportedLocales.first,
+    );
+
+    return builder(context, app, locale);
+  }
+}
+
+class _FeatureFlagsLayer extends StatelessWidget {
+  final bool unlocked;
+  final Widget Function(
+    BuildContext context,
+    FeatureFlagsModel flags,
+    bool shouldLock,
+  ) builder;
+
+  const _FeatureFlagsLayer({
+    required this.unlocked,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final flags = context.watch<FeatureFlagsModel>();
+    final isLockEnabled = flags.enableAppLock &&
+        AppLockService.instance.enabled &&
+        AppLockService.instance.hasPin;
+    final shouldLock = isLockEnabled && !unlocked;
+
+    return builder(context, flags, shouldLock);
+  }
+}
+
+class _ColorSchemeLayer extends StatelessWidget {
+  final AppModel app;
+  final FeatureFlagsModel flags;
+  final Locale locale;
+  final bool shouldLock;
+  final VoidCallback onUnlocked;
+
+  const _ColorSchemeLayer({
+    required this.app,
+    required this.flags,
+    required this.locale,
+    required this.shouldLock,
+    required this.onUnlocked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        final lightColorScheme = _buildColorScheme(
+          Brightness.light,
+          flags.loaded && flags.useDynamicColor ? lightDynamic : null,
+        );
+        final darkColorScheme = _buildColorScheme(
+          Brightness.dark,
+          flags.loaded && flags.useDynamicColor ? darkDynamic : null,
+        );
+
+        final baseLightTheme = _buildTheme(lightColorScheme);
+        final baseDarkTheme = _buildTheme(darkColorScheme);
+
+        return Consumer2<ThemeSchedulerService, AccessibilityService>(
+          builder: (context, themeSvc, a11ySvc, child) {
+            final darkTheme = themeSvc.isAmoled
+                ? themeSvc.applyAmoled(baseDarkTheme)
+                : baseDarkTheme;
+
+            return MaterialApp.router(
+              title: 'Gravity Torrent',
+              themeMode: themeSvc.materialThemeMode,
+              theme: a11ySvc.applyToTheme(baseLightTheme),
+              darkTheme: a11ySvc.applyToTheme(darkTheme),
+              routerConfig: router,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              locale: locale,
+              debugShowCheckedModeBanner: false,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(a11ySvc.textScaleFactor),
+                  disableAnimations: a11ySvc.reducedMotion,
+                ),
+                child: _LockGate(
+                  shouldLock: shouldLock,
+                  onUnlocked: onUnlocked,
+                  child: child!,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _LockGate extends StatelessWidget {
+  final bool shouldLock;
+  final VoidCallback onUnlocked;
+  final Widget child;
+
+  const _LockGate({
+    required this.shouldLock,
+    required this.onUnlocked,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (shouldLock) {
+      return LockScreen(onUnlocked: onUnlocked);
+    }
+    return child;
   }
 }

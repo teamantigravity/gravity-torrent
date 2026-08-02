@@ -28,7 +28,7 @@ class TorrentAddRequestArguments {
       json['metainfo'] = metainfo;
     }
 
-    if (downloadDir != null) {
+    if (downloadDir?.isNotEmpty ?? false) {
       json['download-dir'] = downloadDir;
     }
 

@@ -63,7 +63,16 @@ Future<void> waitForPiecesList({
   await testPiecesComplete(null);
 
   if (!waitForPiecesCompleter.isCompleted) {
-    Timer.periodic(const Duration(seconds: 1), testPiecesComplete);
+    bool isFetching = false;
+    Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (isFetching) return;
+      isFetching = true;
+      try {
+        await testPiecesComplete(timer);
+      } finally {
+        isFetching = false;
+      }
+    });
   }
 
   return waitForPiecesCompleter.future;
@@ -79,11 +88,11 @@ Future<void> waitForPieces({
   required Torrent torrent,
   required File file,
   required int pieceCount,
-  CancelableCompleter? cancelableCompleter,
+  CancelableCompleter<void>? cancelableCompleter,
 }) async {
   if (pieceCount < 0) pieceCount = 0;
-  List<int> neededPieces = [];
-  final endPiece = (file.beginPiece + pieceCount).clamp(0, file.endPiece);
+  final List<int> neededPieces = [];
+  final endPiece = (file.beginPiece + pieceCount).clamp(0, file.endPiece + 1);
   for (int i = file.beginPiece; i < endPiece; i++) {
     neededPieces.add(i);
   }

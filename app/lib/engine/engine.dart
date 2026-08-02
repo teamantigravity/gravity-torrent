@@ -12,10 +12,18 @@ class TorrentAddError extends Error {
   String toString() => message ?? 'TorrentAddError';
 }
 
+class TransmissionRpcError extends Error {
+  TransmissionRpcError([this.message]);
+  final String? message;
+
+  @override
+  String toString() => message ?? 'TransmissionRpcError';
+}
+
 /// BitTorrent engine abstraction.
 abstract class Engine {
   // Initialise the engine
-  Future init();
+  Future<void> init();
 
   // Shutdown the engine gracefully (flushing data and terminating)
   Future<void> shutdown();
@@ -42,32 +50,36 @@ abstract class Engine {
   Future<Session> fetchSession();
 
   // Reset torrents engine settings
-  Future resetSettings();
+  Future<void> resetSettings();
 
-  Future setTorrentsLocation(
+  Future<void> setTorrentsLocation(
     TorrentSetLocationArguments torrentSetLocationArguments,
   );
 
   // Remove multiple torrents
-  Future removeTorrents(List<int> torrentIds, bool withData);
+  Future<void> removeTorrents(List<int> torrentIds, bool withData);
 
   // Pause a torrent
-  Future pauseTorrent(int id);
+  Future<void> pauseTorrent(int id);
 
   // Pause multiple torrents
-  Future pauseTorrents(List<int> ids);
+  Future<void> pauseTorrents(List<int> ids);
 
   // Resume a torrent
-  Future resumeTorrent(int id);
+  Future<void> resumeTorrent(int id);
 
   // Resume multiple torrents
-  Future resumeTorrents(List<int> ids);
+  Future<void> resumeTorrents(List<int> ids);
 
   // Set per-torrent download/upload speed limits (kbps). 0 means unlimited.
-  Future setTorrentSpeedLimit(int id, {int? downloadLimit, int? uploadLimit});
+  Future<void> setTorrentSpeedLimit(
+    int id, {
+    int? downloadLimit,
+    int? uploadLimit,
+  });
 
   // Set torrent sequential download mode
-  Future setTorrentSequentialDownload(int id, bool sequential);
+  Future<void> setTorrentSequentialDownload(int id, bool sequential);
 
   // Update peer blocklist from session URL
   Future<int> updateBlocklist();

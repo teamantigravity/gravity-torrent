@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/torrents.dart';
@@ -25,7 +24,7 @@ class _SortDialogState extends State<SortDialog> {
     ).reverseSort;
   }
 
-  _handleChange(Sort? sort) {
+  void _handleChange(Sort? sort) {
     if (sort == null) return;
     setState(() {
       selectedSort = sort;
@@ -38,7 +37,7 @@ class _SortDialogState extends State<SortDialog> {
     });
   }
 
-  _handleApply(context) {
+  void _handleApply(BuildContext context) {
     Provider.of<TorrentsModel>(
       context,
       listen: false,
@@ -48,62 +47,66 @@ class _SortDialogState extends State<SortDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
-    return Consumer<TorrentsModel>(
-      builder: (context, torrentsModel, child) {
-        var groupValue = selectedSort;
-
-        return AlertDialog(
-          title: Text(localizations.sort),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              RadioListTile<Sort>(
-                title: Text(localizations.dateAdded),
-                value: Sort.addedDate,
-                groupValue: groupValue,
-                onChanged: _handleChange,
-              ),
-              RadioListTile<Sort>(
-                title: Text(localizations.progress),
-                value: Sort.progress,
-                groupValue: groupValue,
-                onChanged: _handleChange,
-              ),
-              RadioListTile<Sort>(
-                title: Text(localizations.size),
-                value: Sort.size,
-                groupValue: groupValue,
-                onChanged: _handleChange,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(localizations.reverseOrder),
-                  const SizedBox(width: 8),
-                  Switch(
-                    value: reverseSort,
-                    onChanged: _handleReverseSortChange,
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(localizations.cancel),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+    return AlertDialog(
+      title: Text(localizations.sort),
+      content: RadioGroup<Sort>(
+        groupValue: selectedSort,
+        onChanged: _handleChange,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            RadioListTile<Sort>(
+              title: Text(localizations.dateAdded),
+              value: Sort.addedDate,
             ),
-            TextButton(
-              child: Text(localizations.apply),
-              onPressed: () => _handleApply(context),
+            RadioListTile<Sort>(
+              title: Text(localizations.progress),
+              value: Sort.progress,
+            ),
+            RadioListTile<Sort>(
+              title: Text(localizations.size),
+              value: Sort.size,
+            ),
+            RadioListTile<Sort>(
+              title: Text(localizations.name),
+              value: Sort.name,
+            ),
+            RadioListTile<Sort>(
+              title: Text(localizations.eta),
+              value: Sort.eta,
+            ),
+            RadioListTile<Sort>(
+              title: Text(localizations.state),
+              value: Sort.status,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(localizations.reverseOrder),
+                const SizedBox(width: 8),
+                Switch(
+                  value: reverseSort,
+                  onChanged: _handleReverseSortChange,
+                ),
+              ],
             ),
           ],
-        );
-      },
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: Text(localizations.cancel),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        TextButton(
+          child: Text(localizations.apply),
+          onPressed: () => _handleApply(context),
+        ),
+      ],
     );
   }
 }

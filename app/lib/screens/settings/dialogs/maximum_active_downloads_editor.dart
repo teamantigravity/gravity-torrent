@@ -19,6 +19,7 @@ class MaximumActiveDownloadEditorDialog extends StatefulWidget {
 
 class _MaximumActiveDownloadEditorState
     extends State<MaximumActiveDownloadEditorDialog> {
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController _maximumActiveDownloadsController;
 
   @override
@@ -35,49 +36,53 @@ class _MaximumActiveDownloadEditorState
     super.dispose();
   }
 
-  void handleSave() async {
-    widget.onSave(int.parse(_maximumActiveDownloadsController.text));
+  void handleSave() {
+    if (_formKey.currentState?.validate() != true) return;
+    final val = int.tryParse(_maximumActiveDownloadsController.text);
+    if (val == null) return;
+    Navigator.of(context).pop();
+    widget.onSave(val);
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return AlertDialog(
       title: Text(localizations.maximumActiveDownloads),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          TextFormField(
-            controller: _maximumActiveDownloadsController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(labelText: localizations.enterNumber),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return localizations.emptyNumber;
-              }
-              if (int.tryParse(value) == null) {
-                return localizations.invalidNumber;
-              }
-              return null; // Return null if the input is valid
-            },
-          ),
-        ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextFormField(
+              controller: _maximumActiveDownloadsController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(labelText: localizations.enterNumber),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return localizations.emptyNumber;
+                }
+                if (int.tryParse(value) == null) {
+                  return localizations.invalidNumber;
+                }
+                return null; // Return null if the input is valid
+              },
+            ),
+          ],
+        ),
       ),
       actions: <Widget>[
         TextButton(
-          child: Text(localizations.cancel),
           onPressed: () {
             Navigator.of(context).pop();
           },
+          child: Text(localizations.cancel),
         ),
         TextButton(
+          onPressed: handleSave,
           child: Text(localizations.save),
-          onPressed: () {
-            Navigator.of(context).pop();
-            handleSave();
-          },
         ),
       ],
     );

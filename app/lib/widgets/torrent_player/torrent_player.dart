@@ -11,6 +11,11 @@ import 'package:gravity_torrent/services/audio_handler.dart';
 import 'package:gravity_torrent/services/casting_service.dart';
 import 'package:gravity_torrent/services/haptic_service.dart';
 import 'package:gravity_torrent/services/pip_service.dart';
+import 'package:gravity_torrent/services/player_enhancements_service.dart';
+import 'package:gravity_torrent/widgets/player/ab_repeat_controls.dart';
+import 'package:gravity_torrent/widgets/player/cast_control_sheet.dart';
+import 'package:gravity_torrent/widgets/player/sleep_timer_button.dart';
+import 'package:gravity_torrent/widgets/player/speed_selector.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
@@ -18,14 +23,17 @@ import 'package:gravity_torrent/engine/file.dart' as torrent_file;
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/utils/device.dart' as device;
 import 'package:gravity_torrent/models/feature_flags.dart';
+import 'package:gravity_torrent/utils/media_queue.dart';
 import 'package:gravity_torrent/utils/moov_priority_booster.dart';
 import 'package:gravity_torrent/utils/streaming_server.dart';
 import 'package:gravity_torrent/utils/subtitles.dart';
 import 'package:gravity_torrent/utils/subtitles_server.dart';
 import 'package:gravity_torrent/utils/torrent_utils.dart';
+import 'package:gravity_torrent/widgets/player/playlist_queue_sheet.dart';
 import 'package:gravity_torrent/widgets/torrent_player/dialogs/audio_track_selector.dart';
 import 'package:gravity_torrent/widgets/torrent_player/dialogs/subtitles_selector.dart';
 import 'package:gravity_torrent/widgets/window_title_bar.dart';
+import 'package:path/path.dart' as p;
 
 const bufferSize = 2 * 1024 * 1024;
 
@@ -63,43 +71,117 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   StreamingServer? server;
   SubtitlesServer? subsServer;
   VideoController? controller;
+  BuildContext? _videoLoadingDialogContext;
+  BuildContext? _subsLoadingDialogContext;
   bool _disposed = false;
   final GlobalKey _videoComponentKey = GlobalKey();
+  PlayerEnhancementsService? _enhancements;
+  CancelableCompleter<void>? _loadingCompleter;
+  StreamSubscription<dynamic>? _logSub;
+
+  /// File currently being streamed. Diverges from `widget.file` once the user
+  /// (or auto-advance) moves through the playlist queue.
+  late torrent_file.File _currentFile;
+  late String _currentFilePath;
+
+  /// Whether the stream server may bind to the LAN. Required for casting.
+  bool _lanStreamingEnabled = false;
+
+  /// Latest stream URL handed to the player, reused when casting.
+  String? _streamUrl;
+
+  void _closeVideoLoadingDialog() {
+    if (_videoLoadingDialogContext != null &&
+        _videoLoadingDialogContext!.mounted) {
+      final ctx = _videoLoadingDialogContext!;
+      _videoLoadingDialogContext = null;
+      if (Navigator.canPop(ctx)) {
+        Navigator.of(ctx).pop();
+      }
+    }
+  }
+
+  void _closeSubtitlesLoadingDialog() {
+    if (_subsLoadingDialogContext != null &&
+        _subsLoadingDialogContext!.mounted) {
+      final ctx = _subsLoadingDialogContext!;
+      _subsLoadingDialogContext = null;
+      if (Navigator.canPop(ctx)) {
+        Navigator.of(ctx).pop();
+      }
+    }
+  }
 
   @override
   void initState() {
     // Enter immersive mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
     super.initState();
+    _currentFile = widget.file;
+    _currentFilePath = widget.filePath;
     initPlayer();
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _loadingCompleter?.operation.cancel();
     unawaited(_disposePlayer());
     super.dispose();
   }
 
   Future<void> _disposePlayer() async {
-    await widget.torrent.stopStreaming();
-    // Stop playback and detach from the platform media session before
-    // disposing the native player.
-    await player?.stop();
-    await MediaKitAudioHandler.instance?.setPlayer(null);
-    await player?.dispose();
-    await server?.stop();
-    await subsServer?.stop();
-    // leave immersive mode
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    try {
+      if (CastingService.instance.isCasting) {
+        await CastingService.instance.stopCasting();
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error stopping cast: $e');
+    }
+
+    try {
+      await widget.torrent.stopStreaming();
+    } catch (_) {}
+    try {
+      await player?.stop();
+    } catch (_) {}
+    try {
+      await MediaKitAudioHandler.instance?.setPlayer(null);
+    } catch (_) {}
+    try {
+      await server?.stop();
+    } catch (_) {}
+    try {
+      await subsServer?.stop();
+    } catch (_) {}
+    try {
+      _enhancements?.detachPlayer();
+    } catch (_) {}
+    try {
+      await _logSub?.cancel();
+    } catch (_) {}
+
+    try {
+      await player?.dispose();
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error disposing player: $e');
+    }
   }
 
-  void initPlayer() async {
+  Future<void> initPlayer() async {
+    _enhancements = context.read<PlayerEnhancementsService>();
+    _lanStreamingEnabled = context.read<FeatureFlagsModel>().enableLanStreaming;
+
     // Boost Moov atom and header pieces for rapid playback startup
-    await MoovPriorityBooster.boostForStreaming(
-      torrent: widget.torrent,
-      file: widget.file,
-    );
+    try {
+      await MoovPriorityBooster.boostForStreaming(
+        torrent: widget.torrent,
+        file: widget.file,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('boostForStreaming error: $e');
+    }
 
     // Streaming server
     server = StreamingServer(
@@ -107,6 +189,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       bufferSize: bufferSize,
       torrent: widget.torrent,
       torrentFile: widget.file,
+      allowNetworkAccess: _lanStreamingEnabled,
     );
 
     player = StreamingPlayer(
@@ -119,14 +202,14 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       configuration: const VideoControllerConfiguration(),
     );
 
-    await (player!.platform as NativePlayer).setProperty(
-      'network-timeout',
-      '0',
-    );
-    await (player!.platform as NativePlayer).setProperty('cache', 'no');
+    if (player!.platform is NativePlayer) {
+      final nativePlayer = player!.platform as NativePlayer;
+      await nativePlayer.setProperty('network-timeout', '0');
+      await nativePlayer.setProperty('cache', 'no');
+    }
     if (_disposed) return;
 
-    player!.stream.log.listen((log) {
+    _logSub = player!.stream.log.listen((log) {
       if (kDebugMode) debugPrint('mpv: $log');
     });
 
@@ -135,6 +218,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     // Preload video file (wait for first piece)
     if (widget.torrent.progress != 1) {
       final completer = CancelableCompleter<void>();
+      _loadingCompleter = completer;
       if (!mounted) return;
       onVideoLoading(completer);
 
@@ -146,36 +230,39 @@ class TorrentPlayerState extends State<TorrentPlayer> {
           cancelableCompleter: completer,
         );
       } catch (e) {
+        _closeVideoLoadingDialog();
         if (!mounted) return;
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Close the loading dialog and exit the player on other errors.
-        if (Navigator.canPop(context)) Navigator.pop(context);
-        if (Navigator.canPop(context)) Navigator.pop(context);
+        // Exit silently on other errors, just closing dialog.
         return;
       }
 
       if (!mounted) return;
-
-      // Check if we're still showing a dialog before popping
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      if (!completer.isCanceled) completer.complete();
+      _closeVideoLoadingDialog();
 
       if (!mounted) return;
     }
 
     if (_disposed) return;
-    // Start streaming server after video file is ready
-    await server!.start();
+    // Start streaming server after video file is ready. `start()` only returns
+    // when the server socket closes, so it must not be awaited here.
+    unawaited(
+      server!.start().catchError((Object e) {
+        if (kDebugMode) debugPrint('streaming server stopped: $e');
+      }),
+    );
     final serverAdress = await server!.getAddress();
+    _streamUrl = serverAdress;
     if (_disposed) return;
 
     if (kDebugMode) debugPrint('download subs');
     // Download subtitles
     if (widget.torrent.progress != 1) {
       final completer = CancelableCompleter<void>();
+      _loadingCompleter = completer;
       if (!mounted) return;
       onSubtitlesLoading(completer);
 
@@ -186,22 +273,18 @@ class TorrentPlayerState extends State<TorrentPlayer> {
           cancelableCompleter: completer,
         );
       } catch (e) {
+        _closeSubtitlesLoadingDialog();
         if (!mounted) return;
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Close the loading dialog and exit the player on other errors.
-        if (Navigator.canPop(context)) Navigator.pop(context);
-        if (Navigator.canPop(context)) Navigator.pop(context);
+        // Exit silently on other errors, just closing dialog.
         return;
       }
 
       if (!mounted) return;
-
-      // Check if we're still showing a dialog before popping
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      if (!completer.isCanceled) completer.complete();
+      _closeSubtitlesLoadingDialog();
 
       if (!mounted) return;
     }
@@ -209,13 +292,29 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     // Initialize subtitles server
     final subsServer = SubtitlesServer(torrent: widget.torrent);
     this.subsServer = subsServer;
-    await subsServer.start();
+    // Like the streaming server, `start()` runs the accept loop and only
+    // returns once the socket closes, so it must not be awaited.
+    unawaited(
+      subsServer.start().catchError((Object e) {
+        if (kDebugMode) debugPrint('subtitles server stopped: $e');
+      }),
+    );
     final subtitlesServerAdress = await subsServer.getAddress();
     if (_disposed) return;
 
     if (kDebugMode) debugPrint('open player');
-    await player!.open(Media(serverAdress));
+    try {
+      await player!.open(Media(serverAdress));
+    } catch (e) {
+      if (kDebugMode) debugPrint('player.open error: $e');
+    }
     if (_disposed) return;
+
+    _enhancements?.attachPlayer(player!);
+    _setupQueue();
+    _enhancements?.openHandler = _openQueueItem;
+    await _enhancements?.restoreResumePosition(_currentFilePath);
+
     final externalSubtitlesFiles = getExternalSubtitles(
       widget.file,
       widget.torrent,
@@ -257,56 +356,70 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     }
   }
 
-  void onVideoLoading(CancelableCompleter completer) {
+  void onVideoLoading(CancelableCompleter<void> completer) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Loading Video...'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Center(child: CircularProgressIndicator())],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              completer.operation.cancel();
-              Navigator.pop(context); // Close dialog
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context); // Exit player screen
-              }
-            },
-            child: const Text('Cancel'),
+      builder: (BuildContext dialogContext) {
+        _videoLoadingDialogContext = dialogContext;
+        return AlertDialog(
+          title: const Text('Loading Video...'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Center(child: CircularProgressIndicator())],
           ),
-        ],
-      ),
-    );
+          actions: [
+            TextButton(
+              onPressed: () {
+                completer.operation.cancel();
+                _closeVideoLoadingDialog();
+                if (mounted && Navigator.canPop(context)) {
+                  Navigator.pop(context); // Exit player screen
+                }
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      if (!completer.isCanceled && !completer.isCompleted) {
+        completer.operation.cancel();
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      }
+    });
   }
 
-  void onSubtitlesLoading(CancelableCompleter completer) {
+  void onSubtitlesLoading(CancelableCompleter<void> completer) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Loading Subtitles...'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Center(child: CircularProgressIndicator())],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              completer.operation.cancel();
-              Navigator.pop(context); // Close dialog
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context); // Exit player screen
-              }
-            },
-            child: const Text('Cancel'),
+      builder: (BuildContext dialogContext) {
+        _subsLoadingDialogContext = dialogContext;
+        return AlertDialog(
+          title: const Text('Loading Subtitles...'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Center(child: CircularProgressIndicator())],
           ),
-        ],
-      ),
-    );
+          actions: [
+            TextButton(
+              onPressed: () {
+                completer.operation.cancel();
+                _closeSubtitlesLoadingDialog();
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      if (!completer.isCanceled && !completer.isCompleted) {
+        completer.operation.cancel();
+      }
+    });
   }
 
   onSubtitlesClick() {
@@ -341,13 +454,136 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     );
   }
 
+  /// Builds the playback queue from the torrent's playable files.
+  ///
+  /// Files are ordered naturally (so `E2` precedes `E10`) and samples are
+  /// skipped, which makes "play next episode" behave the way a viewer expects.
+  /// The queue starts positioned on the file the user actually opened.
+  void _setupQueue() {
+    final enhancements = _enhancements;
+    if (enhancements == null) return;
+
+    final ordered = orderedPlayableFiles(widget.torrent.files);
+    if (ordered.isEmpty) return;
+
+    final items = ordered
+        .map(
+          (f) => PlaylistItem(
+            title: truncateFromLastSlash(f.name),
+            filePath: p.join(widget.torrent.location, f.name),
+            torrentId: widget.torrent.id,
+            fileName: f.name,
+          ),
+        )
+        .toList();
+
+    var startIndex = ordered.indexWhere((f) => f.name == widget.file.name);
+    // The opened file may itself be a sample, which `orderedPlayableFiles`
+    // filters out. Prepend it so the queue always contains what is playing.
+    if (startIndex < 0) {
+      items.insert(
+        0,
+        PlaylistItem(
+          title: truncateFromLastSlash(widget.file.name),
+          filePath: widget.filePath,
+          torrentId: widget.torrent.id,
+          fileName: widget.file.name,
+        ),
+      );
+      startIndex = 0;
+    }
+
+    enhancements.setQueue(items, startIndex: startIndex);
+  }
+
+  /// Rebuilds the streaming pipeline for [item] and opens it in the player.
+  ///
+  /// Returns `false` when the item cannot be resolved or the widget has been
+  /// disposed, which tells [PlayerEnhancementsService] to leave its state alone.
+  Future<bool> _openQueueItem(PlaylistItem item) async {
+    if (_disposed) return false;
+
+    final fileName = item.fileName;
+    final activePlayer = player;
+    if (fileName == null || activePlayer == null) return false;
+
+    final target = widget.torrent.files.firstWhere(
+      (f) => f.name == fileName,
+      orElse: () => _currentFile,
+    );
+    if (target.name == _currentFile.name && _streamUrl != null) return true;
+
+    try {
+      // Tear the previous stream down before starting the next one so the two
+      // do not compete for sequential-download priority.
+      await server?.stop();
+      await widget.torrent.stopStreaming();
+
+      _currentFile = target;
+      _currentFilePath = p.join(widget.torrent.location, target.name);
+
+      await MoovPriorityBooster.boostForStreaming(
+        torrent: widget.torrent,
+        file: target,
+      );
+      await widget.torrent.startStreaming(target);
+
+      final nextServer = StreamingServer(
+        filePath: _currentFilePath,
+        bufferSize: bufferSize,
+        torrent: widget.torrent,
+        torrentFile: target,
+        allowNetworkAccess: _lanStreamingEnabled,
+      );
+      server = nextServer;
+      activePlayer.server = nextServer;
+
+      unawaited(
+        nextServer.start().catchError((Object e) {
+          if (kDebugMode) debugPrint('streaming server stopped: $e');
+        }),
+      );
+      final address = await nextServer.getAddress();
+      if (_disposed) return false;
+      _streamUrl = address;
+
+      await activePlayer.open(Media(address));
+      if (mounted) setState(() {});
+      return true;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to open queue item: $e');
+      return false;
+    }
+  }
+
   Widget _buildBackButton() {
     return IconButton(
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       icon: const Icon(Icons.arrow_back, color: Colors.white),
       onPressed: () {
         HapticService.light();
         Navigator.pop(context);
         AdServiceProvider.instance.showInterstitialIfReady();
+      },
+    );
+  }
+
+  Widget _buildLoopButton() {
+    return Consumer<PlayerEnhancementsService>(
+      builder: (context, svc, _) {
+        final IconData icon;
+        switch (svc.loopMode) {
+          case LoopMode.off:
+            icon = Icons.repeat_outlined;
+          case LoopMode.one:
+            icon = Icons.repeat_one;
+          case LoopMode.all:
+            icon = Icons.repeat;
+        }
+        return MaterialDesktopCustomButton(
+          icon: Icon(icon),
+          onPressed: svc.cycleLoopMode,
+        );
       },
     );
   }
@@ -372,6 +608,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         } else {
           await PipService.instance.enterCompactFloating(context);
         }
+        if (!mounted) return;
         setState(() {});
       },
     );
@@ -391,49 +628,152 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     );
   }
 
-  Widget _buildCastButton() {
-    final isCasting = CastingService.instance.isCasting;
-    final localizations = AppLocalizations.of(context)!;
-    return MaterialDesktopCustomButton(
-      icon: Icon(
-        isCasting ? Icons.cast_connected : Icons.cast,
-        color: isCasting ? Colors.blue : null,
-      ),
-      onPressed: () async {
-        HapticService.medium();
-        final scaffold = ScaffoldMessenger.of(context);
-        scaffold.showSnackBar(
-          SnackBar(content: Text(localizations.castScanningMessage)),
+  Widget _buildPlaybackSpeedButton() {
+    return const SpeedSelector();
+  }
+
+  Widget _buildSleepTimerButton() {
+    return const SleepTimerButton();
+  }
+
+  Widget _buildQueueButton() {
+    return Consumer<PlayerEnhancementsService>(
+      builder: (context, svc, _) {
+        // A single-item queue offers nothing to navigate, so the button is
+        // hidden rather than shown as a dead control.
+        if (svc.queue.length < 2) return const SizedBox.shrink();
+        return MaterialDesktopCustomButton(
+          icon: const Icon(Icons.playlist_play),
+          onPressed: () {
+            HapticService.light();
+            unawaited(
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const PlaylistQueueSheet(),
+              ),
+            );
+          },
         );
-        final devices = await CastingService.instance.discoverDevices();
-        if (!mounted) return;
-        if (devices.isEmpty) {
-          scaffold.showSnackBar(
-            SnackBar(content: Text(localizations.castNoDevicesFound)),
-          );
-          return;
-        }
-        final streamUrl = await server?.getAddress() ?? '';
-        if (!mounted) return;
-        showDialog<void>(
-          context: context,
-          builder: (dialogCtx) => SimpleDialog(
-            title: Text(localizations.castToDevice),
-            children: devices.map((d) {
-              return SimpleDialogOption(
+      },
+    );
+  }
+
+  Future<void> _onCastPressed() async {
+    HapticService.medium();
+    final localizations = AppLocalizations.of(context);
+    final scaffold = ScaffoldMessenger.of(context);
+    final casting = CastingService.instance;
+
+    if (casting.isCasting) {
+      // Surface the transport controls rather than silently disconnecting.
+      await showModalBottomSheet<void>(
+        context: context,
+        builder: (_) => const CastControlSheet(),
+      );
+      return;
+    }
+
+    // Without LAN streaming the stream server is bound to loopback, so a TV
+    // could never fetch it. Tell the user instead of failing silently.
+    if (!_lanStreamingEnabled) {
+      scaffold.showSnackBar(
+        SnackBar(content: Text(localizations.castLanStreamingRequired)),
+      );
+      return;
+    }
+
+    scaffold.showSnackBar(
+      SnackBar(content: Text(localizations.castScanningMessage)),
+    );
+
+    List<CastDevice> devices = [];
+    try {
+      devices = await casting.discoverDevices();
+    } catch (e) {
+      if (!mounted) return;
+      scaffold.showSnackBar(
+        SnackBar(content: Text('Error discovering devices: $e')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (devices.isEmpty) {
+      scaffold.showSnackBar(
+        SnackBar(content: Text(localizations.castNoDevicesFound)),
+      );
+      return;
+    }
+
+    final streamUrl = _streamUrl ?? '';
+    if (!mounted) return;
+
+    final selected = await showDialog<CastDevice>(
+      context: context,
+      builder: (dialogCtx) => SimpleDialog(
+        title: Text(localizations.castToDevice),
+        children: devices
+            .map(
+              (d) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(dialogCtx, d),
                 child: Text(d.name),
-                onPressed: () async {
-                  Navigator.pop(dialogCtx);
-                  await CastingService.instance.castStream(
-                    device: d,
-                    streamUrl: streamUrl,
-                    title: widget.file.name,
-                  );
-                  if (mounted) setState(() {});
-                },
-              );
-            }).toList(),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (selected == null || !mounted) return;
+
+    bool success = false;
+    try {
+      success = await casting.castStream(
+        device: selected,
+        streamUrl: streamUrl,
+        title: _currentFile.name,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      scaffold.showSnackBar(
+        SnackBar(content: Text('Error casting stream: $e')),
+      );
+      return;
+    }
+
+    // Avoid playing the same title twice at once, on the TV and locally.
+    if (success) await player?.pause();
+    if (!mounted) return;
+
+    scaffold.showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? localizations.castStartedOn(selected.name)
+              : localizations.castFailed(
+                  casting.lastError ?? localizations.castNoDevicesFound,
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCastButton() {
+    // Listens to the service so the icon reflects the real session state
+    // instead of whatever the last setState happened to capture.
+    return ListenableBuilder(
+      listenable: CastingService.instance,
+      builder: (context, _) {
+        final casting = CastingService.instance;
+        return MaterialDesktopCustomButton(
+          icon: Icon(
+            casting.isCasting ? Icons.cast_connected : Icons.cast,
+            color: casting.isCasting ? Colors.blue : null,
           ),
+          onPressed: () {
+            // The control does not accept a null callback, so re-entrant taps
+            // during a scan are dropped here instead.
+            if (casting.isDiscovering) return;
+            unawaited(_onCastPressed());
+          },
         );
       },
     );
@@ -443,7 +783,10 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     return [
       const MaterialPositionIndicator(),
       const Spacer(),
+      _buildQueueButton(),
       _buildCastButton(),
+      _buildSleepTimerButton(),
+      _buildPlaybackSpeedButton(),
       _buildSubtitlesButton(),
       _buildAudioTrackButton(),
       _buildPipButton(),
@@ -458,6 +801,12 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       const MaterialDesktopVolumeButton(),
       const MaterialDesktopPositionIndicator(),
       const Spacer(),
+      _buildQueueButton(),
+      // Desktop can cast too — the omission previously made the documented
+      // feature unreachable outside mobile.
+      _buildCastButton(),
+      _buildSleepTimerButton(),
+      _buildPlaybackSpeedButton(),
       _buildSubtitlesButton(),
       _buildAudioTrackButton(),
       _buildPipButton(),
@@ -478,14 +827,24 @@ class TorrentPlayerState extends State<TorrentPlayer> {
                         seekBarThumbColor: const Color(0xFF4285F4),
                         seekBarPositionColor: const Color(0xFF4285F4),
                         padding: const EdgeInsets.only(bottom: 64),
-                        topButtonBar: [_buildBackButton()],
+                        topButtonBar: [
+                          _buildBackButton(),
+                          const Spacer(),
+                          const ABRepeatControls(),
+                          _buildLoopButton(),
+                        ],
                         bottomButtonBar: _buildMobileBottomButtonBar(),
                       ),
                       fullscreen: MaterialVideoControlsThemeData(
                         seekBarThumbColor: const Color(0xFF4285F4),
                         seekBarPositionColor: const Color(0xFF4285F4),
                         padding: const EdgeInsets.only(bottom: 64),
-                        topButtonBar: [_buildBackButton()],
+                        topButtonBar: [
+                          _buildBackButton(),
+                          const Spacer(),
+                          const ABRepeatControls(),
+                          _buildLoopButton(),
+                        ],
                         bottomButtonBar: _buildMobileBottomButtonBar(),
                       ),
                       child: Video(
@@ -498,13 +857,23 @@ class TorrentPlayerState extends State<TorrentPlayer> {
                       normal: MaterialDesktopVideoControlsThemeData(
                         seekBarThumbColor: const Color(0xFF4285F4),
                         seekBarPositionColor: const Color(0xFF4285F4),
-                        topButtonBar: [_buildBackButton()],
+                        topButtonBar: [
+                          _buildBackButton(),
+                          const Spacer(),
+                          const ABRepeatControls(),
+                          _buildLoopButton(),
+                        ],
                         bottomButtonBar: _buildDesktopBottomButtonBar(),
                       ),
                       fullscreen: MaterialDesktopVideoControlsThemeData(
                         seekBarThumbColor: const Color(0xFF4285F4),
                         seekBarPositionColor: const Color(0xFF4285F4),
-                        topButtonBar: [_buildBackButton()],
+                        topButtonBar: [
+                          _buildBackButton(),
+                          const Spacer(),
+                          const ABRepeatControls(),
+                          _buildLoopButton(),
+                        ],
                         bottomButtonBar: _buildDesktopBottomButtonBar(),
                       ),
                       child: Video(

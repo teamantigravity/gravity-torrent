@@ -76,7 +76,9 @@ class SessionSetRequestArguments {
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
 
-    if (downloadDir != null) json['download-dir'] = downloadDir;
+    if (downloadDir?.isNotEmpty ?? false) {
+      json['download-dir'] = downloadDir;
+    }
     if (downloadQueueEnabled != null) {
       json['download-queue-enabled'] = downloadQueueEnabled;
     }

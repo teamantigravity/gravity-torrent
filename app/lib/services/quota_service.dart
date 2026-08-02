@@ -16,7 +16,7 @@ class QuotaService {
   static const _enabledKey = 'gravity_torrent_quota_enabled';
 
   /// Default: 100 GB
-  static const int defaultQuotaBytes = 100 * 1024 * 1024 * 1024;
+  static const int defaultQuotaBytes = 107374182400;
 
   /// Warning threshold: 80 % of quota.
   static const double warningThreshold = 0.80;
@@ -33,7 +33,8 @@ class QuotaService {
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     final raw = await SharedPrefsStorage.getString(_quotaKey);
     if (raw != null) {
-      _quotaBytes = int.tryParse(raw) ?? defaultQuotaBytes;
+      final parsed = int.tryParse(raw) ?? defaultQuotaBytes;
+      _quotaBytes = parsed > 0 ? parsed : defaultQuotaBytes;
     }
     // Quota depends on analytics history; make sure it is loaded too.
     await AnalyticsService.instance.load();
@@ -46,8 +47,9 @@ class QuotaService {
   }
 
   Future<void> setQuota(int bytes) async {
-    _quotaBytes = bytes;
-    await SharedPrefsStorage.setString(_quotaKey, bytes.toString());
+    final valid = bytes > 0 ? bytes : defaultQuotaBytes;
+    _quotaBytes = valid;
+    await SharedPrefsStorage.setString(_quotaKey, valid.toString());
   }
 
   /// Returns the number of bytes used this calendar month.

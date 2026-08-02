@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/utils/device.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -11,11 +12,15 @@ final appUri = const String.fromEnvironment('APP_URL').isNotEmpty
     ? const String.fromEnvironment('APP_URL')
     : 'http://localhost:3000/';
 
-createAppLink(String link) {
-  Uri uri = Uri(fragment: Uri(queryParameters: {'magnet': link}).toString());
-  String fragmentString = encodeToBase64(
-    uri.toString().substring(2),
-  ); // Remove leading #?
+String createAppLink(String link) {
+  final fragmentUri = Uri(queryParameters: {'magnet': link}).toString();
+  final Uri uri = Uri(fragment: fragmentUri);
+  final String uriString = uri.toString();
+  // uri.toString() is '#?magnet=...' when the fragment is non-empty.
+  final payload = uriString.startsWith('#?')
+      ? uriString.substring(2)
+      : (uriString.startsWith('#') ? uriString.substring(1) : fragmentUri);
+  final String fragmentString = encodeToBase64(payload);
   final appLink = Uri.encodeFull('$appUri#$fragmentString');
 
   return appLink;
@@ -30,29 +35,45 @@ String? getTorrentLink(String appLink) {
   }
 
   try {
-    String fragment = decodeBase64(appLink.substring(hashIndex + 1));
-    Uri uri = Uri(query: fragment);
+    final rawFragment = appLink.substring(hashIndex + 1);
+    final String fragment = decodeBase64(Uri.decodeComponent(rawFragment));
+    final Uri uri = Uri(query: fragment);
     return uri.queryParameters['magnet'];
-  } on FormatException {
+  } catch (_) {
     return null;
   }
 }
 
-isAppLink(String appLink) {
-  return appLink.startsWith(appUri);
+bool isAppLink(String appLink) {
+  try {
+    final uri = Uri.parse(appLink);
+    final base = Uri.parse(appUri);
+    return uri.scheme == base.scheme &&
+        uri.host == base.host &&
+        uri.port == base.port &&
+        uri.path == base.path;
+  } catch (_) {
+    return false;
+  }
 }
 
 Future<void> shareLink(BuildContext context, String magnetLink) async {
-  String link = createAppLink(magnetLink);
+  await shareLinks(context, [magnetLink]);
+}
+
+Future<void> shareLinks(BuildContext context, List<String> magnetLinks) async {
+  if (magnetLinks.isEmpty) return;
+  final links = magnetLinks.map(createAppLink).join('\n');
 
   if (isMobile()) {
-    await SharePlus.instance.share(ShareParams(text: link));
+    await SharePlus.instance.share(ShareParams(text: links));
   } else {
-    await Clipboard.setData(ClipboardData(text: link));
+    await Clipboard.setData(ClipboardData(text: links));
     if (!context.mounted) return;
+    final localizations = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Link copied'),
+      SnackBar(
+        content: Text(localizations.linksCopied),
         backgroundColor: Colors.lightGreen,
       ),
     );

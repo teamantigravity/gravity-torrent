@@ -20,7 +20,7 @@ class TorrentStatusText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     if (torrent.errorString.isNotEmpty) {
       return Text(
@@ -56,20 +56,22 @@ class TorrentStatusText extends StatelessWidget {
           style: defaultTextStyle,
         ),
       TorrentStatus.downloading => Text(
-          '${percent.floor().toString()}%',
-          style: const TextStyle(
+          '${percent.floor()}%',
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: Colors.lightGreen,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.lightGreenAccent
+                : Colors.green.shade700,
             overflow: TextOverflow.ellipsis,
           ),
         ),
       TorrentStatus.seeding => Text(
           localizations.seeding,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: Color(0xFF4285F4),
+            color: Theme.of(context).colorScheme.primary,
             overflow: TextOverflow.ellipsis,
           ),
         ),

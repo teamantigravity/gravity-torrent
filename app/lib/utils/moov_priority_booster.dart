@@ -31,28 +31,23 @@ class MoovPriorityBooster {
 
       if (totalPieces <= 0) return;
 
-      // Header: First 1% of pieces (minimum 2 pieces)
-      final headerPieceCount = (totalPieces * 0.01).ceil().clamp(2, 20);
-      // Tail: Last 1% of pieces (for MP4 moov atom at end of file)
-      final tailPieceCount = (totalPieces * 0.01).ceil().clamp(2, 20);
-
-      final headerEndPiece =
-          (startPiece + headerPieceCount).clamp(startPiece, endPiece);
-      final tailStartPiece =
-          (endPiece - tailPieceCount).clamp(startPiece, endPiece);
-
       if (kDebugMode) {
         debugPrint(
           'MoovPriorityBooster: boosting torrent ${torrent.id} (${file.name}): '
-          'header pieces [$startPiece..$headerEndPiece], tail pieces [$tailStartPiece..$endPiece]',
+          'pieces [$startPiece..$endPiece]',
         );
       }
 
-      // 3. Set high priority on header pieces (file start → header boundary)
+      // 3. Set high priority on the file
       // Transmission uses wantedFiles / priority-high for file-level priority.
       // We set the whole-file priority to high first, then kick sequential mode.
       // For finer per-piece control, Transmission RPC exposes no direct
       // piece-priority API, so we ensure sequential + file high-priority:
+      final fileIndex = torrent.files.indexWhere((f) => f.name == file.name);
+      if (fileIndex != -1) {
+        await torrent.setFilesPriority(priorityHigh: [fileIndex]);
+      }
+
       await engine.setTorrentSpeedLimit(
         torrent.id,
         downloadLimit: 0, // unlimited while buffering header

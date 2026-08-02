@@ -22,11 +22,15 @@ void main() {
   });
 
   group('RemoteControlService IP helpers', () {
-    test('formatHostForUrl wraps IPv6 in brackets', () {
+    test('formatHostForUrl wraps IPv6 in brackets and strips scope ID', () {
       final service = RemoteControlService.instance;
       expect(service.formatHostForUrl('192.168.1.10'), '192.168.1.10');
       expect(
         service.formatHostForUrl('fe80::1'),
+        '[fe80::1]',
+      );
+      expect(
+        service.formatHostForUrl('fe80::1%eth0'),
         '[fe80::1]',
       );
     });
@@ -47,8 +51,10 @@ void main() {
       expect(service.isPrivateIp(InternetAddress('fd00::1')), isTrue);
       expect(service.isPrivateIp(InternetAddress('fc00::1')), isTrue);
       expect(service.isPrivateIp(InternetAddress('::1')), isTrue);
-      expect(service.isPrivateIp(InternetAddress('2001:4860:4860::8888')),
-          isFalse);
+      expect(
+        service.isPrivateIp(InternetAddress('2001:4860:4860::8888')),
+        isFalse,
+      );
     });
   });
 }

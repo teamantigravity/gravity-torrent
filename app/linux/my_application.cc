@@ -14,6 +14,8 @@ struct _MyApplication {
   char **dart_entrypoint_arguments;
 };
 
+static FlMethodChannel *s_application_channel = nullptr;
+
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
 // Implements GApplication::activate.
@@ -43,6 +45,15 @@ static void my_application_activate(GApplication *application) {
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+  if (s_application_channel == nullptr) {
+    g_autoptr(FlMethodCodec) codec =
+        FL_METHOD_CODEC(fl_standard_method_codec_new());
+    FlBinaryMessenger *messenger =
+        fl_engine_get_binary_messenger(fl_view_get_engine(view));
+    s_application_channel =
+        fl_method_channel_new(messenger, "gtk/application", codec);
+  }
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
@@ -88,6 +99,33 @@ static void my_application_shutdown(GApplication *application) {
   G_APPLICATION_CLASS(my_application_parent_class)->shutdown(application);
 }
 
+// Implements GApplication::open.
+static void my_application_open(GApplication *application,
+                                 GFile **files,
+                                 gint n_files,
+                                 const gchar *hint) {
+  // Chain up so the gtk plugin (and any other signal handlers) also see the
+  // open request.
+  G_APPLICATION_CLASS(my_application_parent_class)
+      ->open(application, files, n_files, hint);
+
+  // Forward the opened files as a command-line event on the gtk/application
+  // channel. app_links_linux listens to command-line events and routes the
+  // first one to AppLinks, so this makes file-open requests work on Linux.
+  if (s_application_channel == nullptr || n_files == 0) {
+    return;
+  }
+
+  g_autoptr(FlValue) args = fl_value_new_list();
+  for (gint i = 0; i < n_files; ++i) {
+    g_autofree gchar *uri = g_file_get_uri(files[i]);
+    fl_value_append_take(args, fl_value_new_string(uri));
+  }
+
+  fl_method_channel_invoke_method(s_application_channel, "command-line", args,
+                                  nullptr, nullptr, nullptr);
+}
+
 // Implements GObject::dispose.
 static void my_application_dispose(GObject *object) {
   MyApplication *self = MY_APPLICATION(object);
@@ -101,6 +139,7 @@ static void my_application_class_init(MyApplicationClass *klass) {
       my_application_local_command_line;
   G_APPLICATION_CLASS(klass)->startup = my_application_startup;
   G_APPLICATION_CLASS(klass)->shutdown = my_application_shutdown;
+  G_APPLICATION_CLASS(klass)->open = my_application_open;
   G_OBJECT_CLASS(klass)->dispose = my_application_dispose;
 }
 

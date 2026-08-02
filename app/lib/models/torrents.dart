@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
@@ -8,15 +9,20 @@ import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/main.dart';
 import 'package:gravity_torrent/models/feature_flags.dart';
 import 'package:gravity_torrent/services/analytics_service.dart';
+import 'package:gravity_torrent/services/auto_extract_service.dart';
+import 'package:gravity_torrent/services/file_type_filter_service.dart';
+import 'package:gravity_torrent/services/in_app_review_service.dart';
 import 'package:gravity_torrent/services/quota_service.dart';
+import 'package:path/path.dart' as p;
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/notifications.dart';
 import 'package:gravity_torrent/services/seed_ratio_service.dart';
 import 'package:gravity_torrent/services/speed_history_service.dart';
+import 'package:gravity_torrent/services/torrent_favorites_service.dart';
 
 const refreshIntervalSeconds = 5;
 
-enum Sort { addedDate, progress, size }
+enum Sort { addedDate, progress, size, name, status, eta }
 
 class Filters {
   Set<String> labels = {};
@@ -45,14 +51,46 @@ class TorrentsModel extends ChangeNotifier {
   // All torrents labels
   List<String> labels = [];
   String filterText = '';
+  TorrentStatus? statusFilter;
+  FileTypeCategory fileTypeFilter = FileTypeCategory.all;
   bool hasLoaded = false;
   Sort sort = Sort.addedDate;
   bool reverseSort = true;
+  bool showFavoritesOnly = false;
   Filters filters = Filters(labels: {});
+  Set<int> _favorites = {};
+  final _notifiedCompletedIds = <int>{};
+  final _extractedPaths = <String>{};
+  final _manuallyResumedSeedingIds = <int>{};
+
+  static const _notifiedCompletedIdsKey =
+      'gravity_torrent_notified_completed_ids';
+  static const _extractedPathsKey = 'gravity_torrent_extracted_paths';
+
   Timer? _timer;
+
+  /// Aggregate download speed across all torrents (bytes/s).
+  int get totalDownloadRate =>
+      torrents.fold<int>(0, (sum, t) => sum + t.rateDownload);
+
+  /// Aggregate upload speed across all torrents (bytes/s).
+  int get totalUploadRate =>
+      torrents.fold<int>(0, (sum, t) => sum + t.rateUpload);
+
+  /// Total bytes downloaded across all torrents.
+  int get totalDownloadedEver =>
+      torrents.fold<int>(0, (sum, t) => sum + t.downloadedEver);
+
+  /// Total bytes uploaded across all torrents.
+  int get totalUploadedEver =>
+      torrents.fold<int>(0, (sum, t) => sum + t.uploadedEver);
   Timer? _searchDebounceTimer;
   bool _isFetching = false; // mutex to prevent concurrent fetches
+  bool _isRefetchQueued = false; // debounces triggerRefetch
   bool _disposed = false;
+  bool _quotaPauseEnforced = false;
+
+  bool get isQuotaPauseEnforced => _quotaPauseEnforced;
 
   FeatureFlagsModel? _featureFlags;
 
@@ -62,18 +100,25 @@ class TorrentsModel extends ChangeNotifier {
 
   TorrentsModel({FeatureFlagsModel? featureFlags}) {
     _featureFlags = featureFlags;
-    _init();
+    unawaited(_init());
   }
 
   Future<void> _init() async {
     await _loadSettings();
     if (_disposed) return;
-    fetchTorrents();
+    await _loadPersistedState();
+    if (_disposed) return;
+    await fetchTorrents();
     // Indefinitely refresh
-    _timer = Timer.periodic(
-      const Duration(seconds: refreshIntervalSeconds),
-      (timer) => fetchTorrents(),
-    );
+    _timer = Timer.periodic(const Duration(seconds: refreshIntervalSeconds), (
+      timer,
+    ) {
+      if (_disposed) {
+        timer.cancel();
+        return;
+      }
+      unawaited(fetchTorrents());
+    });
   }
 
   void stopTimer() {
@@ -91,16 +136,19 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   Future<void> _loadSettings() async {
-    var sortName = await SharedPrefsStorage.getString('sort') ?? sort.name;
+    final sortName = await SharedPrefsStorage.getString('sort') ?? sort.name;
     sort = Sort.values.firstWhere(
       (e) => e.name == sortName,
       orElse: () => sort,
     );
     reverseSort =
         await SharedPrefsStorage.getBool('reverseSort') ?? reverseSort;
+    showFavoritesOnly =
+        await SharedPrefsStorage.getBool('showFavoritesOnly') ?? false;
     stopSeedingWhenComplete =
         await SharedPrefsStorage.getBool('stopSeedingWhenComplete') ??
             stopSeedingWhenComplete;
+    await _loadFavorites();
 
     try {
       final session = await engine.fetchSession();
@@ -113,6 +161,64 @@ class TorrentsModel extends ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Failed to set seedRatioLimited in transmission: $e');
+      }
+    }
+  }
+
+  Future<void> _loadPersistedState() async {
+    try {
+      final idsRaw = await SharedPrefsStorage.getString(
+        _notifiedCompletedIdsKey,
+      );
+      if (idsRaw != null && idsRaw.isNotEmpty) {
+        final decoded = jsonDecode(idsRaw);
+        if (decoded is List) {
+          _notifiedCompletedIds.addAll(decoded.whereType<int>());
+        }
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load notified completed ids: $e\n$s');
+      }
+    }
+
+    try {
+      final pathsRaw = await SharedPrefsStorage.getString(_extractedPathsKey);
+      if (pathsRaw != null && pathsRaw.isNotEmpty) {
+        final decoded = jsonDecode(pathsRaw);
+        if (decoded is List) {
+          _extractedPaths.addAll(decoded.whereType<String>());
+        }
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load extracted paths: $e\n$s');
+      }
+    }
+  }
+
+  Future<void> _persistNotifiedCompletedIds() async {
+    try {
+      await SharedPrefsStorage.setString(
+        _notifiedCompletedIdsKey,
+        jsonEncode(_notifiedCompletedIds.toList()),
+      );
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to persist notified completed ids: $e\n$s');
+      }
+    }
+  }
+
+  Future<void> _persistExtractedPaths() async {
+    try {
+      await SharedPrefsStorage.setString(
+        _extractedPathsKey,
+        jsonEncode(_extractedPaths.toList()),
+      );
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to persist extracted paths: $e\n$s');
       }
     }
   }
@@ -139,7 +245,11 @@ class TorrentsModel extends ChangeNotifier {
     // If turning on, immediately pause any currently-seeding torrents
     if (value) {
       final seedingIds = torrents
-          .where((t) => t.status == TorrentStatus.seeding)
+          .where(
+            (t) =>
+                t.status == TorrentStatus.seeding &&
+                !_manuallyResumedSeedingIds.contains(t.id),
+          )
           .map((t) => t.id)
           .toList();
       if (seedingIds.isNotEmpty) {
@@ -154,7 +264,7 @@ class TorrentsModel extends ChangeNotifier {
     if (_disposed) return;
     notifyListeners();
     // Refresh after state change
-    fetchTorrents();
+    unawaited(_triggerRefetch());
   }
 
   List<Torrent> _filterTorrentsName(List<Torrent> torrents) {
@@ -179,18 +289,68 @@ class TorrentsModel extends ChangeNotifier {
   }
 
   List<Torrent> _sortTorrents(List<Torrent> torrents) {
-    List<Torrent> torrentsSorted = List.from(torrents);
+    final pinned = torrents.where((t) => _favorites.contains(t.id)).toList();
+    final unpinned = torrents.where((t) => !_favorites.contains(t.id)).toList();
 
-    switch (sort) {
-      case Sort.addedDate:
-        torrentsSorted.sort((a, b) => a.addedDate.compareTo(b.addedDate));
-      case Sort.progress:
-        torrentsSorted.sort((a, b) => a.progress.compareTo(b.progress));
-      case Sort.size:
-        torrentsSorted.sort((a, b) => a.size.compareTo(b.size));
+    int comparator(Torrent a, Torrent b) {
+      switch (sort) {
+        case Sort.addedDate:
+          return a.addedDate.compareTo(b.addedDate);
+        case Sort.progress:
+          return a.progress.compareTo(b.progress);
+        case Sort.size:
+          return a.size.compareTo(b.size);
+        case Sort.name:
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        case Sort.status:
+          return a.status.index.compareTo(b.status.index);
+        case Sort.eta:
+          final etaA = a.eta < 0 ? double.infinity : a.eta;
+          final etaB = b.eta < 0 ? double.infinity : b.eta;
+          return etaA.compareTo(etaB);
+      }
     }
 
-    return reverseSort ? torrentsSorted.reversed.toList() : torrentsSorted;
+    int compare(Torrent a, Torrent b) {
+      final result = comparator(a, b);
+      return result == 0 ? a.id.compareTo(b.id) : result;
+    }
+
+    pinned.sort(compare);
+    unpinned.sort(compare);
+
+    final sorted = reverseSort
+        ? [...pinned.reversed, ...unpinned.reversed]
+        : [...pinned, ...unpinned];
+
+    return sorted;
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      await TorrentFavoritesService.instance.load();
+      _favorites = Set.from(TorrentFavoritesService.instance.favoriteIds);
+    } catch (e) {
+      if (kDebugMode) debugPrint('TorrentFavoritesService load failed: $e');
+    }
+  }
+
+  bool isFavorite(int torrentId) => _favorites.contains(torrentId);
+
+  Future<void> toggleFavorite(int torrentId) async {
+    try {
+      final newState = await TorrentFavoritesService.instance.toggle(torrentId);
+      if (newState) {
+        _favorites.add(torrentId);
+      } else {
+        _favorites.remove(torrentId);
+      }
+      processDisplayedTorrents();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('TorrentFavoritesService toggle failed: $e');
+      }
+    }
   }
 
   Future<TorrentAddedResponse> addTorrent(
@@ -204,14 +364,117 @@ class TorrentsModel extends ChangeNotifier {
 
     final response = await engine.addTorrent(filename, metainfo, downloadDir);
     if (response == TorrentAddedResponse.added) {
-      await fetchTorrents();
+      unawaited(_triggerRefetch());
     }
     return response;
   }
 
+  Future<void> _triggerRefetch() async {
+    if (_isRefetchQueued) return;
+    _isRefetchQueued = true;
+    try {
+      while (_isFetching) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (_disposed) return;
+      }
+      await fetchTorrents();
+    } finally {
+      _isRefetchQueued = false;
+    }
+  }
+
   Future<void> removeAllTorrents(List<int> torrentIds, bool withData) async {
+    if (torrentIds.isEmpty) return;
+
+    for (final id in torrentIds) {
+      SpeedHistoryService.instance.removeTorrent(id);
+      _notifiedCompletedIds.remove(id);
+    }
+    for (final t in torrents) {
+      if (torrentIds.contains(t.id)) {
+        for (final file in t.files) {
+          final filePath = p.normalize(p.join(t.location, file.name));
+          _extractedPaths.remove(filePath);
+        }
+      }
+    }
+    unawaited(_persistNotifiedCompletedIds());
+    unawaited(_persistExtractedPaths());
+
     await engine.removeTorrents(torrentIds, withData);
-    await fetchTorrents();
+    unawaited(_triggerRefetch());
+  }
+
+  Future<void> pauseSelected(Set<int> ids) async {
+    if (ids.isEmpty) return;
+    final toPause = torrents
+        .where((t) => ids.contains(t.id) && t.status != TorrentStatus.stopped)
+        .map((t) => t.id)
+        .toList();
+    if (toPause.isEmpty) return;
+    try {
+      await engine.pauseTorrents(toPause);
+      _manuallyResumedSeedingIds.removeAll(toPause);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to pause selected torrents: $e');
+    }
+    unawaited(_triggerRefetch());
+  }
+
+  Future<void> resumeSelected(Set<int> ids) async {
+    if (ids.isEmpty) return;
+    final toResume = torrents
+        .where((t) => ids.contains(t.id) && t.status == TorrentStatus.stopped)
+        .map((t) => t.id)
+        .toList();
+    if (toResume.isEmpty) return;
+    try {
+      await engine.resumeTorrents(toResume);
+      for (final t in torrents) {
+        if (toResume.contains(t.id) && t.progress >= 1.0) {
+          _manuallyResumedSeedingIds.add(t.id);
+        }
+      }
+      _quotaPauseEnforced = false;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to resume selected torrents: $e');
+    }
+    unawaited(_triggerRefetch());
+  }
+
+  Future<void> pauseAllTorrents() async {
+    final toPause = torrents
+        .where((t) => t.status != TorrentStatus.stopped)
+        .map((t) => t.id)
+        .toList();
+    if (toPause.isEmpty) return;
+    try {
+      await engine.pauseTorrents(toPause);
+      _manuallyResumedSeedingIds.removeAll(toPause);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to pause all torrents: $e');
+    }
+    unawaited(_triggerRefetch());
+  }
+
+  Future<void> resumeAllTorrents() async {
+    final toResume = torrents
+        .where((t) => t.status == TorrentStatus.stopped)
+        .map((t) => t.id)
+        .toList();
+    if (toResume.isEmpty) return;
+    try {
+      await engine.resumeTorrents(toResume);
+      for (final t in torrents) {
+        if (toResume.contains(t.id) && t.progress >= 1.0) {
+          _manuallyResumedSeedingIds.add(t.id);
+        }
+      }
+      _quotaPauseEnforced = false;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to resume all torrents: $e');
+    }
+    unawaited(_triggerRefetch());
   }
 
   Future<void> fetchTorrents() async {
@@ -222,8 +485,37 @@ class TorrentsModel extends ChangeNotifier {
     _isFetching = true;
 
     try {
-      final DateTime now = DateTime.now();
       final List<Torrent> fetched = await engine.fetchTorrents();
+
+      final fetchedIds = fetched.map((t) => t.id).toSet();
+      final deletedIds = torrents
+          .where((t) => !fetchedIds.contains(t.id))
+          .map((t) => t.id)
+          .toList();
+
+      if (deletedIds.isNotEmpty) {
+        for (final id in deletedIds) {
+          SpeedHistoryService.instance.removeTorrent(id);
+          _notifiedCompletedIds.remove(id);
+        }
+        for (final t in torrents) {
+          if (deletedIds.contains(t.id)) {
+            for (final file in t.files) {
+              final filePath = p.normalize(p.join(t.location, file.name));
+              _extractedPaths.remove(filePath);
+            }
+          }
+        }
+        unawaited(_persistNotifiedCompletedIds());
+        unawaited(_persistExtractedPaths());
+      }
+
+      _manuallyResumedSeedingIds.retainWhere((id) => fetchedIds.contains(id));
+      for (final t in fetched) {
+        if (t.status == TorrentStatus.stopped) {
+          _manuallyResumedSeedingIds.remove(t.id);
+        }
+      }
 
       // Update the persistent Android foreground service notification with live
       // progress and speed on every refresh.
@@ -264,20 +556,47 @@ class TorrentsModel extends ChangeNotifier {
       }
 
       // Display notification for torrents completed during last refresh
-      if (_featureFlags?.useEnhancedNotifications ?? true) {
-        for (final torrent in fetched) {
-          final diff = now.difference(torrent.doneDate).inSeconds;
-          if (diff >= 0 && diff < refreshIntervalSeconds) {
-            final addedDate =
-                DateTime.fromMillisecondsSinceEpoch(torrent.addedDate * 1000);
-            final duration = addedDate.year > 2000
-                ? torrent.doneDate.difference(addedDate)
-                : null;
-            await showCompletedNotification(
-              torrent.name,
-              id: torrent.id + 1000,
-              duration: duration,
-            );
+      for (final torrent in fetched) {
+        if (torrent.progress >= 1.0 && torrent.doneDate.year > 1970) {
+          if (!_notifiedCompletedIds.contains(torrent.id)) {
+            _notifiedCompletedIds.add(torrent.id);
+            unawaited(_persistNotifiedCompletedIds());
+            if (hasLoaded) {
+              if (_featureFlags?.useEnhancedNotifications ?? true) {
+                DateTime? addedDate;
+                try {
+                  addedDate = DateTime.fromMillisecondsSinceEpoch(
+                    torrent.addedDate * 1000,
+                  );
+                } catch (e) {
+                  if (kDebugMode) {
+                    debugPrint('Invalid addedDate for notification: $e');
+                  }
+                }
+                final duration = addedDate != null && addedDate.year > 2000
+                    ? torrent.doneDate.difference(addedDate)
+                    : null;
+                await showCompletedNotification(
+                  torrent.name,
+                  id: torrent.id + 1000,
+                  duration: duration,
+                );
+              }
+              unawaited(
+                InAppReviewService.recordSuccessfulDownload().catchError((e) {
+                  if (kDebugMode) debugPrint('InAppReview failed: $e');
+                  return null;
+                }),
+              );
+              unawaited(
+                _autoExtractCompletedFiles(torrent).catchError((e, st) {
+                  if (kDebugMode) {
+                    debugPrint('Auto-extract failed: $e\n$st');
+                  }
+                  return null;
+                }),
+              );
+            }
           }
         }
       }
@@ -285,7 +604,11 @@ class TorrentsModel extends ChangeNotifier {
       // Auto-pause seeding torrents if user has that preference on
       if (stopSeedingWhenComplete) {
         final seedingIds = fetched
-            .where((t) => t.status == TorrentStatus.seeding)
+            .where(
+              (t) =>
+                  t.status == TorrentStatus.seeding &&
+                  !_manuallyResumedSeedingIds.contains(t.id),
+            )
             .map((t) => t.id)
             .toList();
         if (seedingIds.isNotEmpty) {
@@ -301,28 +624,35 @@ class TorrentsModel extends ChangeNotifier {
       if (_featureFlags?.enableQuota ?? false) {
         final quotaStatus = QuotaService.instance.status;
         if (quotaStatus == QuotaStatus.exceeded) {
-          final activeIds = fetched
-              .where(
-                (t) =>
-                    t.status == TorrentStatus.downloading ||
-                    t.status == TorrentStatus.seeding,
-              )
-              .map((t) => t.id)
-              .toList();
-          if (activeIds.isNotEmpty) {
-            try {
-              await engine.pauseTorrents(activeIds);
-              if (kDebugMode) {
-                debugPrint(
-                  'QuotaService: paused active torrents, quota exceeded',
-                );
+          if (!_quotaPauseEnforced) {
+            final activeIds = fetched
+                .where(
+                  (t) =>
+                      t.status == TorrentStatus.downloading ||
+                      t.status == TorrentStatus.seeding,
+                )
+                .map((t) => t.id)
+                .toList();
+            if (activeIds.isNotEmpty) {
+              try {
+                await engine.pauseTorrents(activeIds);
+                _quotaPauseEnforced = true;
+                if (kDebugMode) {
+                  debugPrint(
+                    'QuotaService: paused active torrents, quota exceeded',
+                  );
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  debugPrint('Failed to pause torrents for quota: $e');
+                }
               }
-            } catch (e) {
-              if (kDebugMode) {
-                debugPrint('Failed to pause torrents for quota: $e');
-              }
+            } else {
+              _quotaPauseEnforced = true;
             }
           }
+        } else {
+          _quotaPauseEnforced = false;
         }
       }
 
@@ -330,7 +660,7 @@ class TorrentsModel extends ChangeNotifier {
 
       labels = {
         for (final t in torrents)
-          if (t.labels != null) ...t.labels!,
+          if (t.labels != null) ...t.labels!.whereType<String>(),
       }.toList();
 
       // Remove filtered labels that do not exist anymore
@@ -346,21 +676,13 @@ class TorrentsModel extends ChangeNotifier {
 
       // Record data usage analytics for the dashboard
       if (_featureFlags?.enableAnalytics ?? false) {
-        final totalDownloaded = fetched.fold<int>(
-          0,
-          (sum, t) => sum + t.downloadedEver,
-        );
-        final totalUploaded = fetched.fold<int>(
-          0,
-          (sum, t) => sum + t.uploadedEver,
-        );
-        _safeRecordAnalytics(
-          downloadedBytes: totalDownloaded,
-          uploadedBytes: totalUploaded,
-        );
+        _safeRecordAnalytics(fetched);
       }
 
-      await SeedRatioService.instance.checkAndStop(torrents);
+      await SeedRatioService.instance.checkAndStop(
+        torrents,
+        _manuallyResumedSeedingIds,
+      );
 
       for (final t in torrents) {
         SpeedHistoryService.instance.record(t.id, t.rateDownload.toDouble());
@@ -376,26 +698,65 @@ class TorrentsModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _autoExtractCompletedFiles(Torrent torrent) async {
+    final baseDir = p.normalize(p.absolute(torrent.location));
+    for (final file in torrent.files) {
+      if (!file.wanted || file.bytesCompleted != file.length) continue;
+      final filePath = p.normalize(p.join(torrent.location, file.name));
+      // Reject any path that resolves outside the download directory.
+      if (!p.isWithin(baseDir, filePath) && filePath != baseDir) {
+        if (kDebugMode) {
+          debugPrint('AutoExtract skipped path-traversal file: $filePath');
+        }
+        continue;
+      }
+      if (_extractedPaths.contains(filePath)) continue;
+      try {
+        await AutoExtractService.instance.handleTorrentCompletion(
+          torrent.name,
+          filePath,
+        );
+        _extractedPaths.add(filePath);
+        unawaited(_persistExtractedPaths());
+      } catch (e) {
+        if (kDebugMode) debugPrint('AutoExtract error for $filePath: $e');
+      }
+    }
+  }
+
   void processDisplayedTorrents() {
     if (_disposed) return;
-    displayedTorrents = _filterTorrents(
-      _filterTorrentsName(_sortTorrents(torrents)),
-    );
+    var result = _filterTorrents(_filterTorrentsName(_sortTorrents(torrents)));
+    if (fileTypeFilter != FileTypeCategory.all) {
+      result = FileTypeFilterService.filterTorrents(
+        result,
+        fileTypeFilter,
+        getFiles: (t) => t.files,
+      );
+    }
+    if (statusFilter != null) {
+      result = result.where((t) => t.status == statusFilter).toList();
+    }
+    if (showFavoritesOnly) {
+      result = result.where((t) => _favorites.contains(t.id)).toList();
+    }
+    displayedTorrents = result;
     notifyListeners();
   }
 
-  void _safeRecordAnalytics({
-    required int downloadedBytes,
-    required int uploadedBytes,
-  }) {
+  void setFileTypeFilter(FileTypeCategory value) {
+    fileTypeFilter = value;
+    processDisplayedTorrents();
+  }
+
+  void _safeRecordAnalytics(List<Torrent> torrents) {
     unawaited(
       AnalyticsService.instance
-          .recordTotals(
-        downloadedBytes: downloadedBytes,
-        uploadedBytes: uploadedBytes,
-      )
+          .recordTorrentStats(torrents)
           .catchError((Object e, StackTrace s) {
         if (kDebugMode) debugPrint('Analytics error: $e\n$s');
+      }).whenComplete(() {
+        if (!_disposed) notifyListeners();
       }),
     );
   }
@@ -419,6 +780,22 @@ class TorrentsModel extends ChangeNotifier {
 
   Future<void> setFilters(Filters updatedFilters) async {
     filters = updatedFilters;
+    processDisplayedTorrents();
+  }
+
+  void setStatusFilter(TorrentStatus? value) {
+    statusFilter = value;
+    processDisplayedTorrents();
+  }
+
+  Future<void> toggleShowFavoritesOnly() async {
+    showFavoritesOnly = !showFavoritesOnly;
+    await SharedPrefsStorage.setBool('showFavoritesOnly', showFavoritesOnly);
+    processDisplayedTorrents();
+  }
+
+  Future<void> refreshFavorites() async {
+    await _loadFavorites();
     processDisplayedTorrents();
   }
 }

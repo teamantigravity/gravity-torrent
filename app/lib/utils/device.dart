@@ -1,7 +1,7 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 bool isMobileSize(BuildContext context) {
@@ -9,14 +9,17 @@ bool isMobileSize(BuildContext context) {
 }
 
 bool isMobile() {
+  if (kIsWeb) return false;
   return Platform.isAndroid || Platform.isIOS || Platform.isFuchsia;
 }
 
 bool isDesktop() {
+  if (kIsWeb) return false;
   return Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 }
 
 bool isFlatpak() {
+  if (kIsWeb) return false;
   return Platform.environment.containsKey('FLATPAK_ID');
 }
 
@@ -26,29 +29,34 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height - 64,
-        minWidth: MediaQuery.of(context).size.width,
-      ),
       builder: (BuildContext context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 16.0,
-                horizontal: 16.0,
-              ),
-              child: Text(
-                title,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: (MediaQuery.of(context).size.height - 64).clamp(
+              100.0,
+              double.infinity,
             ),
-            child,
-          ],
+            minWidth: MediaQuery.of(context).size.width,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 16.0,
+                ),
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              child,
+            ],
+          ),
         );
       },
     );
@@ -68,10 +76,11 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
             alignment: Alignment.centerRight,
             child: SizedBox(
               width: 500,
-              child: Container(
-                color: Theme.of(context).dialogBackgroundColor,
+              height: double.infinity, // Fill vertical space for side sheet
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max, // Let Expanded children work
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
@@ -98,7 +107,7 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
                         ],
                       ),
                     ),
-                    child,
+                    Expanded(child: child),
                   ],
                 ),
               ),
@@ -110,8 +119,9 @@ void showDeviceSheet(BuildContext context, String title, Widget child) {
   }
 }
 
-Future<int> getAndroidSdkVersion() async {
-  DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-  AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+Future<int?> getAndroidSdkVersion() async {
+  if (kIsWeb || !Platform.isAndroid) return null;
+  final deviceInfo = DeviceInfoPlugin();
+  final androidInfo = await deviceInfo.androidInfo;
   return androidInfo.version.sdkInt;
 }

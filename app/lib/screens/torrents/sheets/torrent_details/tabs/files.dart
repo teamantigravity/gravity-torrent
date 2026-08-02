@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/file.dart';
@@ -37,13 +39,22 @@ class _FilesTabState extends State<FilesTab> {
     _showOnlyPlayable = widget.showOnlyPlayable;
   }
 
+  @override
+  void didUpdateWidget(covariant FilesTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.showOnlyPlayable != widget.showOnlyPlayable) {
+      setState(() => _showOnlyPlayable = widget.showOnlyPlayable);
+    }
+  }
+
   bool _isFilePlayable(String filename) {
-    var mimeType = lookupMimeType(filename);
+    final mimeType = lookupMimeType(filename);
     return mimeType != null &&
         (mimeType.startsWith('video') || mimeType.startsWith('audio'));
   }
 
   Future<void> _openFile(String filepath) async {
+    final l = AppLocalizations.of(context);
     try {
       final result = await OpenFile.open(path.join(widget.location, filepath));
       if (!mounted) return;
@@ -51,7 +62,9 @@ class _FilesTabState extends State<FilesTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Could not open file: ${result.message.isNotEmpty ? result.message : 'Unknown error'}',
+              l.openFileError(
+                result.message.isNotEmpty ? result.message : l.unknown,
+              ),
             ),
             backgroundColor: Colors.orange,
           ),
@@ -61,32 +74,35 @@ class _FilesTabState extends State<FilesTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not open file: $e'),
+          content: Text(l.openFileError(e.toString())),
           backgroundColor: Colors.orange,
         ),
       );
     }
   }
 
-  _handleWantedChange(BuildContext context, int fileIndex, bool wanted) async {
+  Future<void> _handleWantedChange(
+    int fileIndex,
+    bool wanted,
+  ) async {
     await widget.torrent.toggleFileWanted(fileIndex, wanted);
-    if (context.mounted) {
+    if (mounted) {
       // Refresh torrents
       await Provider.of<TorrentsModel>(context, listen: false).fetchTorrents();
     }
   }
 
-  _handleAllWantedChange(BuildContext context, bool wanted) async {
+  Future<void> _handleAllWantedChange(bool wanted) async {
     await widget.torrent.toggleAllFilesWanted(wanted);
-    if (context.mounted) {
+    if (mounted) {
       // Refresh torrents
       await Provider.of<TorrentsModel>(context, listen: false).fetchTorrents();
     }
   }
 
   // See docs/streaming.md
-  _handlePlayClick(BuildContext context, File file) {
-    String filePath = path.join(widget.location, file.name);
+  void _handlePlayClick(BuildContext context, File file) {
+    final String filePath = path.join(widget.location, file.name);
 
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
@@ -104,16 +120,16 @@ class _FilesTabState extends State<FilesTab> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
-    var files = widget.torrent.files;
+    final files = widget.torrent.files;
 
-    var displayedFiles = _showOnlyPlayable
+    final displayedFiles = _showOnlyPlayable
         ? files.where((f) => _isFilePlayable(f.name)).toList()
         : files;
 
-    bool areAllFilesWanted = files.every((f) => f.wanted);
-    bool areAllFilesSkipped = files.none((f) => f.wanted);
+    final bool areAllFilesWanted = files.every((f) => f.wanted);
+    final bool areAllFilesSkipped = files.none((f) => f.wanted);
     final globalWantedState = areAllFilesWanted
         ? true
         : areAllFilesSkipped
@@ -142,14 +158,19 @@ class _FilesTabState extends State<FilesTab> {
           ),
         if (files.isNotEmpty)
           ListTile(
+            leading: const Icon(Icons.checklist),
+            title: Text(
+              areAllFilesWanted
+                  ? localizations.deselectAllFiles
+                  : localizations.selectAllFiles,
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Checkbox(
                   value: globalWantedState,
                   tristate: true,
-                  onChanged: (_) =>
-                      _handleAllWantedChange(context, !areAllFilesWanted),
+                  onChanged: (_) => _handleAllWantedChange(!areAllFilesWanted),
                 ),
               ],
             ),
@@ -158,26 +179,32 @@ class _FilesTabState extends State<FilesTab> {
           child: ListView.builder(
             itemCount: displayedFiles.length,
             itemBuilder: (context, index) {
-              var file = displayedFiles[index];
+              final file = displayedFiles[index];
 
-              var percent = (file.bytesCompleted / file.length * 100).floor();
+              final percent = file.length > 0
+                  ? (file.bytesCompleted / file.length * 100).floor()
+                  : null;
 
-              var completed = file.bytesCompleted == file.length;
+              final completed = file.bytesCompleted == file.length;
 
-              bool isPlayable = _isFilePlayable(file.name);
+              final bool isPlayable = _isFilePlayable(file.name);
 
               // Get the original index in the full files list
-              var originalIndex = files.indexOf(file);
+              final originalIndex = files.indexOf(file);
 
               return ListTile(
                 leading: Icon(getFileIcon(file.name)),
                 title: Text(file.name),
                 subtitle: Row(
                   children: [
-                    percent < 100
-                        ? Text('${percent.toString()} %')
-                        : const Icon(Icons.download_done, size: 16),
-                    Text(' • ${prettyBytes(file.length.toDouble())}'),
+                    percent == null
+                        ? const Text('—')
+                        : percent < 100
+                            ? Text('$percent %')
+                            : const Icon(Icons.download_done, size: 16),
+                    Text(
+                      ' • ${prettyBytes(file.length.toDouble(), locale: localizations.localeName)}',
+                    ),
                   ],
                 ),
                 trailing: Row(
@@ -198,30 +225,31 @@ class _FilesTabState extends State<FilesTab> {
                           final filePath =
                               path.join(widget.location, file.name);
                           if (value == 'open') {
-                            _openFile(file.name);
+                            await _openFile(file.name);
                           } else if (value == 'share') {
-                            // ignore: deprecated_member_use
-                            await Share.shareXFiles([XFile(filePath)]);
+                            await SharePlus.instance.share(
+                              ShareParams(files: [XFile(filePath)]),
+                            );
                           } else if (value == 'play_in_app') {
                             _handlePlayClick(context, file);
                           }
                         },
                         itemBuilder: (context) {
                           return [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'open',
-                              child: Text('Open externally'),
+                              child: Text(localizations.openExternally),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'share',
-                              child: Text('Share'),
+                              child: Text(localizations.share),
                             ),
                             if (lookupMimeType(file.name)
                                     ?.startsWith('video/') ==
                                 true)
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'play_in_app',
-                                child: Text('Play in app'),
+                                child: Text(localizations.playInApp),
                               ),
                           ];
                         },
@@ -231,14 +259,28 @@ class _FilesTabState extends State<FilesTab> {
                       onChanged: file.bytesCompleted == file.length
                           ? null
                           : (_) => _handleWantedChange(
-                                context,
                                 originalIndex,
                                 !file.wanted,
                               ),
                     ),
                   ],
                 ),
-                onTap: completed ? () => _openFile(file.name) : null,
+                onTap: completed
+                    ? () async {
+                        try {
+                          await _openFile(file.name);
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          final l = AppLocalizations.of(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l.openFileError(e.toString())),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      }
+                    : null,
               );
             },
           ),
@@ -249,7 +291,7 @@ class _FilesTabState extends State<FilesTab> {
 }
 
 IconData getFileIcon(String filename) {
-  var mimeType = lookupMimeType(filename);
+  final mimeType = lookupMimeType(filename);
 
   if (mimeType != null) {
     if (mimeType.startsWith('video')) {

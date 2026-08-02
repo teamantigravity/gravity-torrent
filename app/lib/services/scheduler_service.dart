@@ -1,12 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/services/remote_config/remote_config_service.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/services/wifi_guard_service.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// A weekly schedule window during which downloads are allowed.
@@ -47,19 +50,32 @@ class ScheduleWindow {
 
   /// Returns true if [now] falls within this window.
   bool isActiveAt(DateTime now) {
-    // Check day bitmask (bit 0 = Monday = weekday 1)
-    final dayBit = 1 << ((now.weekday - 1) % 7);
-    if (dayBitmask & dayBit == 0) return false;
-
     final nowMinutes = now.hour * 60 + now.minute;
     final startMinutes = start.hour * 60 + start.minute;
     final endMinutes = end.hour * 60 + end.minute;
 
-    if (startMinutes <= endMinutes) {
+    if (startMinutes == endMinutes) {
+      // 00:00 to 00:00 means the entire day
+      final dayBit = 1 << ((now.weekday - 1) % 7);
+      return (dayBitmask & dayBit) != 0;
+    } else if (startMinutes < endMinutes) {
+      // No wrap, so just check today's bit
+      final dayBit = 1 << ((now.weekday - 1) % 7);
+      if ((dayBitmask & dayBit) == 0) return false;
       return nowMinutes >= startMinutes && nowMinutes < endMinutes;
     } else {
       // Window wraps midnight
-      return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+      if (nowMinutes >= startMinutes) {
+        // Before midnight, corresponds to today's schedule
+        final dayBit = 1 << ((now.weekday - 1) % 7);
+        return (dayBitmask & dayBit) != 0;
+      } else if (nowMinutes < endMinutes) {
+        // After midnight, corresponds to yesterday's schedule
+        final yesterday = now.subtract(const Duration(days: 1));
+        final yesterdayBit = 1 << ((yesterday.weekday - 1) % 7);
+        return (dayBitmask & yesterdayBit) != 0;
+      }
+      return false;
     }
   }
 }
@@ -83,6 +99,8 @@ class SchedulerService {
 
   bool _enabled = false;
   bool _loaded = false;
+  bool _disposed = false;
+  bool _isEnforcing = false;
   Timer? _timer;
   final Set<int> _pausedByScheduler = {};
 
@@ -90,27 +108,40 @@ class SchedulerService {
   ScheduleWindow get window => _window;
 
   Future<void> load() async {
-    if (_loaded) return;
+    if (_disposed || _loaded) return;
+
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
+    if (_disposed) return;
+
     final raw = await SharedPrefsStorage.getString(_storageKey);
+    if (_disposed) return;
+
     if (raw != null && raw.isNotEmpty) {
       try {
-        _window = ScheduleWindow.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>,
-        );
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) {
+          _window = ScheduleWindow.fromJson(
+            Map<String, dynamic>.from(decoded),
+          );
+        }
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('Failed to load scheduler window: $e\n$s');
         }
       }
     }
+
     _loaded = true;
-    if (_enabled) _startTimer();
+    if (_enabled && !_disposed) _startTimer();
   }
 
   Future<void> setEnabled(bool value) async {
+    if (_disposed) return;
+
     _enabled = value;
     await SharedPrefsStorage.setBool(_enabledKey, value);
+    if (_disposed) return;
+
     if (value) {
       _startTimer();
     } else {
@@ -120,17 +151,25 @@ class SchedulerService {
   }
 
   Future<void> setWindow(ScheduleWindow window) async {
+    if (_disposed) return;
+
     _window = window;
     await SharedPrefsStorage.setString(
       _storageKey,
       jsonEncode(window.toJson()),
     );
+    if (_disposed) return;
+
+    await _enforce();
   }
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) => _enforce());
-    _enforce(); // run immediately
+    _timer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _enforce(),
+    );
+    unawaited(_enforce()); // run immediately
   }
 
   void _stopTimer() {
@@ -139,82 +178,141 @@ class SchedulerService {
   }
 
   Future<void> _enforce() async {
-    if (!_enabled) return;
-    if (!RemoteConfigService.instance.isFeatureEnabled('enableScheduler')) {
-      return;
-    }
-    final now = DateTime.now();
-    final shouldDownload = _window.isActiveAt(now);
+    if (_disposed) return;
+    if (_isEnforcing) return;
 
+    _isEnforcing = true;
     try {
-      final engine = getIt<Engine>();
-      final torrents = await engine.fetchTorrents();
+      if (_disposed) return;
+      if (!_enabled) return;
+      if (!RemoteConfigService.instance.isFeatureEnabled('enableScheduler')) {
+        return;
+      }
+      if (!getIt.isRegistered<Engine>()) return;
 
-      if (shouldDownload) {
-        // Resume torrents paused by the scheduler
-        for (final id in List<int>.from(_pausedByScheduler)) {
-          final t = torrents.firstWhereOrNull((t) => t.id == id);
-          if (t == null) {
-            // Torrent no longer exists; drop it from the set.
-            _pausedByScheduler.remove(id);
-            continue;
-          }
-          if (t.status == TorrentStatus.stopped) {
-            try {
-              await engine.resumeTorrent(id);
+      final now = DateTime.now();
+      final shouldDownload = _window.isActiveAt(now);
+
+      try {
+        final engine = getIt<Engine>();
+        final torrents = await engine.fetchTorrents();
+        if (_disposed) return;
+
+        if (shouldDownload) {
+          // Resume torrents paused by the scheduler
+          final toResume = <int>[];
+          for (final id in List<int>.from(_pausedByScheduler)) {
+            final t = torrents.firstWhereOrNull((t) => t.id == id);
+            if (t == null) {
+              // Torrent no longer exists; drop it from the set.
               _pausedByScheduler.remove(id);
+              continue;
+            }
+            if (t.status == TorrentStatus.stopped) {
+              toResume.add(id);
+              _pausedByScheduler.remove(id);
+            } else {
+              // Already active; remove from scheduler-managed set.
+              _pausedByScheduler.remove(id);
+            }
+          }
+          if (getIt.isRegistered<TorrentsModel>() &&
+              getIt<TorrentsModel>().isQuotaPauseEnforced) {
+            toResume.clear();
+          }
+          if (WifiGuardService.instance.isEnabled) {
+            final connectivity = await Connectivity().checkConnectivity();
+            if (connectivity.contains(ConnectivityResult.mobile) ||
+                !connectivity.contains(ConnectivityResult.wifi)) {
+              toResume.clear();
+            }
+          }
+          if (toResume.isNotEmpty) {
+            try {
+              await engine.resumeTorrents(toResume);
             } catch (e) {
               if (kDebugMode) {
-                debugPrint('SchedulerService failed to resume torrent $id: $e');
+                debugPrint('SchedulerService failed to resume torrents: $e');
               }
             }
-          } else {
-            // Already active; remove from scheduler-managed set.
-            _pausedByScheduler.remove(id);
+          }
+        } else {
+          // Pause active torrents and remember them
+          final toPause = <int>[];
+          for (final torrent in torrents) {
+            if (torrent.status == TorrentStatus.downloading ||
+                torrent.status == TorrentStatus.seeding ||
+                torrent.status == TorrentStatus.queuedToDownload ||
+                torrent.status == TorrentStatus.queuedToSeed ||
+                torrent.status == TorrentStatus.queuedToCheck ||
+                torrent.status == TorrentStatus.checking) {
+              toPause.add(torrent.id);
+              _pausedByScheduler.add(torrent.id);
+            }
+          }
+          if (toPause.isNotEmpty) {
+            try {
+              await engine.pauseTorrents(toPause);
+            } catch (e) {
+              if (kDebugMode) {
+                debugPrint('SchedulerService failed to pause torrents: $e');
+              }
+            }
           }
         }
-      } else {
-        // Pause active torrents and remember them
-        for (final torrent in torrents) {
-          if (torrent.status == TorrentStatus.downloading ||
-              torrent.status == TorrentStatus.seeding ||
-              torrent.status == TorrentStatus.queuedToDownload ||
-              torrent.status == TorrentStatus.queuedToSeed) {
-            await engine.pauseTorrent(torrent.id);
-            _pausedByScheduler.add(torrent.id);
-          }
-        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('SchedulerService _enforce error: $e');
       }
-    } catch (e) {
-      if (kDebugMode) debugPrint('SchedulerService _enforce error: $e');
+    } finally {
+      _isEnforcing = false;
     }
   }
 
   Future<void> _resumeAll() async {
+    if (_disposed) return;
     if (_pausedByScheduler.isEmpty) return;
+    if (!getIt.isRegistered<Engine>()) {
+      _pausedByScheduler.clear();
+      return;
+    }
+
     try {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
+      if (_disposed) return;
+
       final existingIds = {for (final t in torrents) t.id};
-      for (final id in _pausedByScheduler) {
-        if (!existingIds.contains(id)) continue;
+      final toResume = <int>[];
+      for (final id in List<int>.from(_pausedByScheduler)) {
+        if (!existingIds.contains(id)) {
+          _pausedByScheduler.remove(id);
+          continue;
+        }
+        toResume.add(id);
+      }
+      if (getIt.isRegistered<TorrentsModel>() &&
+          getIt<TorrentsModel>().isQuotaPauseEnforced) {
+        toResume.clear();
+      }
+      if (toResume.isNotEmpty) {
         try {
-          await engine.resumeTorrent(id);
+          await engine.resumeTorrents(toResume);
+          _pausedByScheduler.clear();
         } catch (e) {
           if (kDebugMode) {
-            debugPrint('SchedulerService failed to resume torrent $id: $e');
+            debugPrint('SchedulerService failed to resume torrents: $e');
           }
         }
       }
     } catch (e) {
       if (kDebugMode) debugPrint('SchedulerService _resumeAll error: $e');
-    } finally {
-      _pausedByScheduler.clear();
     }
   }
 
   void dispose() {
+    if (_disposed) return;
     _stopTimer();
+    _disposed = true;
   }
 }
 

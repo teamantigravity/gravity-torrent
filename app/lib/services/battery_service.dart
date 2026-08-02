@@ -21,28 +21,36 @@ class BatteryService {
 
   final Battery _battery = Battery();
   StreamSubscription<BatteryState>? _stateSub;
+  Timer? _levelTimer;
   bool _enabled = false;
   bool _loaded = false;
   bool _throttledByBattery = false;
   int _threshold = 20;
+
+  bool _disposed = false;
+  bool _checking = false;
 
   bool get isEnabled => _enabled;
   int get threshold => _threshold;
   bool get isThrottling => _throttledByBattery;
 
   Future<void> load() async {
-    if (_loaded) return;
+    if (_disposed || _loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
+    if (_disposed) return;
     _threshold = (await SharedPrefsStorage.getString(_thresholdKey)
             .then((s) => s != null ? int.tryParse(s) : null)) ??
         20;
+    if (_disposed) return;
     _loaded = true;
     if (_enabled) _subscribe();
   }
 
   Future<void> setEnabled(bool value) async {
+    if (_disposed) return;
     _enabled = value;
     await SharedPrefsStorage.setBool(_enabledKey, value);
+    if (_disposed) return;
     if (value) {
       _subscribe();
       // Check immediately on enable
@@ -56,35 +64,60 @@ class BatteryService {
   }
 
   Future<void> setThreshold(int percent) async {
+    if (_disposed) return;
     _threshold = percent.clamp(5, 95);
     await SharedPrefsStorage.setString(_thresholdKey, _threshold.toString());
+    if (_disposed) return;
     if (_enabled) await _checkBattery();
   }
 
   void _subscribe() {
+    if (_disposed) return;
     _unsubscribe();
     _stateSub = _battery.onBatteryStateChanged.listen(
-      (_) async => _checkBattery(),
+      (_) => unawaited(
+        _checkBattery().catchError((Object e) {
+          if (kDebugMode) debugPrint('BatteryService _checkBattery error: $e');
+        }),
+      ),
       onError: (e) {
         if (kDebugMode) debugPrint('BatteryService state stream error: $e');
       },
     );
+    _levelTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      unawaited(
+        _checkBattery().catchError((Object e) {
+          if (kDebugMode) debugPrint('BatteryService _checkBattery error: $e');
+        }),
+      );
+    });
   }
 
   void _unsubscribe() {
     _stateSub?.cancel();
     _stateSub = null;
+    _levelTimer?.cancel();
+    _levelTimer = null;
   }
 
   Future<void> _checkBattery() async {
-    if (!_enabled) return;
+    if (_disposed || _checking || !_enabled) return;
+    _checking = true;
     try {
       final level = await _battery.batteryLevel;
+      if (_disposed) return;
       final state = await _battery.batteryState;
+      if (_disposed) return;
       final isCharging =
           state == BatteryState.charging || state == BatteryState.full;
 
       if (isCharging) {
+        if (_throttledByBattery) await _restoreNormalSpeed();
+        return;
+      }
+
+      // On desktop/web the level can be -1 or otherwise invalid; skip throttle.
+      if (level < 0 || level > 100) {
         if (_throttledByBattery) await _restoreNormalSpeed();
         return;
       }
@@ -98,14 +131,19 @@ class BatteryService {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('BatteryService _checkBattery error: $e');
+    } finally {
+      _checking = false;
     }
   }
 
   Future<void> _enableThrottle() async {
+    if (_disposed) return;
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       // Enable the engine's built-in turtle (alt speed) mode.
       final session = await engine.fetchSession();
+      if (_disposed) return;
       await session.update(SessionBase(altSpeedEnabled: true));
       _throttledByBattery = true;
       if (kDebugMode) {
@@ -119,9 +157,16 @@ class BatteryService {
   }
 
   Future<void> _restoreNormalSpeed() async {
+    if (_disposed) return;
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       final session = await engine.fetchSession();
+      if (_disposed) return;
+
+      // Unconditionally disable alt-speed. If the BandwidthHeatmapService has
+      // an active limit it will re-apply it within its next scheduled tick
+      // (at most 1 minute), avoiding a circular import dependency.
       await session.update(SessionBase(altSpeedEnabled: false));
       _throttledByBattery = false;
       if (kDebugMode) {
@@ -137,6 +182,8 @@ class BatteryService {
   }
 
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _unsubscribe();
   }
 }

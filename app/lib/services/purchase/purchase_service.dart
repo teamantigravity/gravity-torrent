@@ -54,4 +54,6 @@ abstract class PurchaseService {
   Future<void> completePurchase(PurchaseUpdate update);
 
   Future<bool> hasLocalAdFreeEntitlement();
+
+  void dispose();
 }

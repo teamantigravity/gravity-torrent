@@ -44,24 +44,28 @@ class RssService {
   static const _feedsKey = 'gravity_torrent_rss_feeds';
   static const _seenKey = 'gravity_torrent_rss_seen';
   static const _pollMinutes = 30;
+  static const _maxSeenLinks = 1000;
 
   List<RssFeed> _feeds = [];
-  // Dart's default Set is a LinkedHashSet, so skip() keeps the 1000 most
-  // recently inserted links. Explicit type to make the assumption visible.
+  // Dart's default Set is a LinkedHashSet, so skip() keeps the [_maxSeenLinks]
+  // most recently inserted links. Explicit type to make the assumption visible.
   Set<String> _seenLinks = <String>{};
   bool _loaded = false;
+  bool _isPolling = false;
+  bool _disposed = false;
   Timer? _timer;
 
   List<RssFeed> get feeds => List.unmodifiable(_feeds);
 
   Future<void> load() async {
-    if (_loaded) return;
+    if (_disposed || _loaded) return;
     final rawFeeds = await SharedPrefsStorage.getString(_feedsKey);
     if (rawFeeds != null && rawFeeds.isNotEmpty) {
       try {
         final list = jsonDecode(rawFeeds) as List<dynamic>;
         _feeds = list
-            .map((e) => RssFeed.fromJson(e as Map<String, dynamic>))
+            .whereType<Map<String, dynamic>>()
+            .map((e) => RssFeed.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       } catch (e, s) {
         if (kDebugMode) {
@@ -73,8 +77,9 @@ class RssService {
     final rawSeen = await SharedPrefsStorage.getString(_seenKey);
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
+        final list = jsonDecode(rawSeen) as List<dynamic>;
         _seenLinks = LinkedHashSet<String>.from(
-          (jsonDecode(rawSeen) as List<dynamic>).cast<String>(),
+          list.map((e) => e.toString()),
         );
       } catch (e, s) {
         if (kDebugMode) {
@@ -83,6 +88,8 @@ class RssService {
         _seenLinks = {};
       }
     }
+    if (_disposed) return;
+    _trimSeenLinks();
     _loaded = true;
   }
 
@@ -90,6 +97,13 @@ class RssService {
     await SharedPrefsStorage.setString(
       _feedsKey,
       jsonEncode(_feeds.map((f) => f.toJson()).toList()),
+    );
+  }
+
+  void _trimSeenLinks() {
+    if (_seenLinks.length <= _maxSeenLinks) return;
+    _seenLinks = LinkedHashSet<String>.from(
+      _seenLinks.skip(_seenLinks.length - _maxSeenLinks),
     );
   }
 
@@ -114,6 +128,12 @@ class RssService {
     }
   }
 
+  Future<void> removeFeed(RssFeed feed) async {
+    await load();
+    _feeds.removeWhere((f) => f.url == feed.url && f.keyword == feed.keyword);
+    await _saveFeeds();
+  }
+
   Future<void> updateFeedAt(int index, RssFeed feed) async {
     await load();
     if (index >= 0 && index < _feeds.length) {
@@ -123,12 +143,13 @@ class RssService {
   }
 
   void startPolling() {
+    if (_disposed) return;
     _timer?.cancel();
     _timer = Timer.periodic(
       const Duration(minutes: _pollMinutes),
-      (_) => pollNow(),
+      (_) => unawaited(pollNow()),
     );
-    pollNow(); // poll immediately
+    unawaited(pollNow()); // poll immediately
   }
 
   void stopPolling() {
@@ -136,8 +157,15 @@ class RssService {
     _timer = null;
   }
 
+  void dispose() {
+    _disposed = true;
+    stopPolling();
+  }
+
   Future<void> setEnabled(bool value) async {
+    if (_disposed) return;
     await load();
+    if (_disposed) return;
     if (value) {
       startPolling();
     } else {
@@ -146,20 +174,40 @@ class RssService {
   }
 
   Future<void> pollNow() async {
-    await load();
-    if (!RemoteConfigService.instance.isFeatureEnabled(
-      'enableRssAutoDownload',
-    )) {
-      stopPolling();
-      return;
-    }
-    for (final feed in _feeds) {
-      if (!feed.enabled) continue;
-      try {
-        await _pollFeed(feed);
-      } catch (e) {
-        if (kDebugMode) debugPrint('RssService poll error for ${feed.url}: $e');
+    if (_isPolling) return;
+    _isPolling = true;
+    try {
+      await load();
+      if (_disposed) return;
+      if (!RemoteConfigService.instance.isFeatureEnabled(
+        'enableRssAutoDownload',
+      )) {
+        stopPolling();
+        return;
       }
+      for (final feed in List.of(_feeds)) {
+        if (_disposed) return;
+        if (!feed.enabled) continue;
+        if (!_isValidFeedUrl(feed.url)) continue;
+        try {
+          await _pollFeed(feed);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('RssService poll error for ${feed.url}: $e');
+          }
+        }
+      }
+    } finally {
+      _isPolling = false;
+    }
+  }
+
+  bool _isValidFeedUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.isScheme('http') || uri.isScheme('https');
+    } catch (_) {
+      return false;
     }
   }
 
@@ -167,7 +215,7 @@ class RssService {
     final response = await http
         .get(Uri.parse(feed.url))
         .timeout(const Duration(seconds: 15));
-    if (response.statusCode != 200) return;
+    if (_disposed || response.statusCode != 200) return;
 
     final body = response.body;
 
@@ -189,11 +237,7 @@ class RssService {
       await _processSection(feed, body);
     }
 
-    // Prune seen links to last 1000 to avoid unbounded growth
-    if (_seenLinks.length > 1000) {
-      _seenLinks =
-          LinkedHashSet<String>.from(_seenLinks.skip(_seenLinks.length - 1000));
-    }
+    _trimSeenLinks();
 
     await _saveSeen();
   }
@@ -233,6 +277,10 @@ class RssService {
           _seenLinks.remove(link);
           continue;
         }
+        if (!getIt.isRegistered<Engine>()) {
+          _seenLinks.remove(link);
+          continue;
+        }
         final engine = getIt<Engine>();
         // Transmission accepts both magnet links and .torrent URLs in the
         // filename argument.
@@ -240,7 +288,7 @@ class RssService {
         if (kDebugMode) debugPrint('RssService: auto-added $link');
       } catch (e) {
         if (kDebugMode) debugPrint('RssService: failed to add $link: $e');
-        _seenLinks.remove(link); // retry next poll
+        // Retain link in _seenLinks so broken items do not loop infinitely
       }
     }
   }
@@ -251,11 +299,12 @@ class RssService {
   @visibleForTesting
   List<String> candidateLinks(XmlElement? item, String text) {
     final raw = <String>{};
+    final verified = <String>{};
 
     // Extract from raw text (handles CDATA content as well).
     final magnetPattern = RegExp(r'magnet:\?[^\s"<>]+', caseSensitive: false);
     final torrentPattern = RegExp(
-      r'https?://[^\s"<>]+\.torrent',
+      r'https?://[^\s"<>]+\.torrent(?:\?[^\s"<>]*)?',
       caseSensitive: false,
     );
     raw.addAll(magnetPattern.allMatches(text).map((m) => m.group(0)!));
@@ -267,7 +316,15 @@ class RssService {
       }
       for (final enclosure in item.findElements('enclosure')) {
         final url = enclosure.getAttribute('url');
-        if (url != null && url.isNotEmpty) raw.add(url);
+        final type = enclosure.getAttribute('type');
+        if (url != null && url.isNotEmpty) {
+          if (type != null &&
+              type.toLowerCase() == 'application/x-bittorrent') {
+            verified.add(url);
+          } else {
+            raw.add(url);
+          }
+        }
       }
       for (final magnetUri in item.findAllElements('magnetURI')) {
         final uri = magnetUri.innerText.trim();
@@ -275,12 +332,20 @@ class RssService {
       }
     }
 
-    return raw.where(isTorrentLink).toList();
+    final result = raw.where(isTorrentLink).toSet();
+    result.addAll(verified);
+    return result.toList();
   }
 
   @visibleForTesting
   bool isTorrentLink(String link) {
-    final lower = link.toLowerCase();
-    return lower.startsWith('magnet:') || lower.endsWith('.torrent');
+    final trimmed = link.trim();
+    if (trimmed.toLowerCase().startsWith('magnet:')) return true;
+    try {
+      final uri = Uri.parse(trimmed);
+      return uri.path.toLowerCase().endsWith('.torrent');
+    } catch (_) {
+      return trimmed.toLowerCase().endsWith('.torrent');
+    }
   }
 }

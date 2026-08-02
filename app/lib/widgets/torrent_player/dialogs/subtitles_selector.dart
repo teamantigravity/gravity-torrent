@@ -1,5 +1,5 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:media_kit/media_kit.dart';
 
 class SubtitlesSelectorDialog extends StatefulWidget {
@@ -21,34 +21,37 @@ class SubtitlesSelectorDialog extends StatefulWidget {
 class _SubtitlesSelectorDialogState extends State<SubtitlesSelectorDialog> {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Subtitles'),
+      title: Text(l.subtitles),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            // Internal subtitles
-            ...widget.subtitles.where((s) => s.id != 'auto').toList().map((
-              sub,
-            ) {
-              return RadioListTile(
-                title: Text(
-                  sub.id == 'no' ? 'No subtitle' : sub.title ?? 'Unknown',
-                ),
-                value: sub.id,
-                groupValue: widget.currentValue,
-                onChanged: (t) {
-                  widget.onSubtitleSelected(sub);
-                  Navigator.of(context).pop();
-                },
-              );
-            }),
-          ],
+        child: RadioGroup<String>(
+          groupValue: widget.currentValue,
+          onChanged: (id) {
+            final sub = widget.subtitles.firstWhere((s) => s.id == id);
+            widget.onSubtitleSelected(sub);
+            Navigator.of(context).pop();
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ...widget.subtitles.where((s) => s.id != 'auto').toList().map((
+                sub,
+              ) {
+                return RadioListTile<String>(
+                  title: Text(
+                    sub.id == 'no' ? l.noSubtitle : sub.title ?? l.unknown,
+                  ),
+                  value: sub.id,
+                );
+              }),
+            ],
+          ),
         ),
       ),
       actions: <Widget>[
         TextButton(
-          child: const Text('Cancel'),
+          child: Text(l.cancel),
           onPressed: () {
             Navigator.of(context).pop();
           },

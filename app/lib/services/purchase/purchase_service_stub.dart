@@ -28,6 +28,11 @@ class PurchaseServiceStub implements PurchaseService {
 
   @override
   Future<bool> hasLocalAdFreeEntitlement() async => false;
+
+  @override
+  void dispose() {
+    unawaited(_controller.close());
+  }
 }
 
 PurchaseService createPurchaseService() => PurchaseServiceStub();

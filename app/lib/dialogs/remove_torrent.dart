@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
+import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:provider/provider.dart';
@@ -23,43 +24,50 @@ class RemoveTorrentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final torrentsModel = context.read<TorrentsModel>();
     return AlertDialog(
-      title: const Text('Remove Torrent'),
+      title: Text(l.removeTorrent),
       actions: [
         TextButton(
-          child: const Text('Delete files & torrent'),
+          child: Text(l.cancel),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: Text(l.deleteFilesAndTorrent),
           onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final errorTextBuilder = l.removeTorrentError;
+            Navigator.of(context).pop();
             try {
               await _removeTorrent(torrentsModel, true);
-              if (context.mounted) Navigator.of(context).pop();
             } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Could not remove torrent: $e'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(errorTextBuilder(e.toString())),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           },
         ),
         TextButton(
-          child: const Text('Remove torrent only'),
+          child: Text(l.removeTorrentOnly),
           onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final errorTextBuilder = l.removeTorrentError;
+            Navigator.of(context).pop();
             try {
               await _removeTorrent(torrentsModel, false);
-              if (context.mounted) Navigator.of(context).pop();
             } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Could not remove torrent: $e'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(errorTextBuilder(e.toString())),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           },
         ),

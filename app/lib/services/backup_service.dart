@@ -1,130 +1,483 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
+import 'package:encrypt/encrypt.dart' as encrypt_lib;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:gravity_torrent/engine/engine.dart';
+import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
 
-/// Keys that are included in the settings backup.
-const List<String> _backupKeys = [
-  'theme',
-  'locale',
-  'checkForUpdate',
-  'useDynamicColor',
-  'useEnhancedNotifications',
-  'usePipBackgroundAudio',
-  'enableRemoteControl',
-  'enableAnalytics',
-  'enableAppLock',
-  'enableShortcuts',
-  'enableHaptic',
-  'enableScheduler',
-  'enableQuota',
-  'enableRssAutoDownload',
-  'enableWifiOnly',
-  'enableBatterySaver',
-  'gravity_torrent_scheduler',
-  'gravity_torrent_scheduler_enabled',
-  'gravity_torrent_quota',
-  'gravity_torrent_quota_enabled',
-  'gravity_torrent_seed_ratio_goals',
-  'gravity_torrent_wifi_guard_enabled',
-  'gravity_torrent_wifi_guard_mode',
-  'gravity_torrent_battery_saver_enabled',
-  'gravity_torrent_battery_saver_threshold',
-  'gravity_torrent_rss_feeds',
-  'stopSeedingWhenComplete',
-];
+class BackupMetadata {
+  final String appVersion;
+  final DateTime createdAt;
+  final String platform;
+  final int settingsCount;
+  final int torrentCount;
+  final bool encrypted;
 
-/// Backup version — increment when the schema changes in a breaking way.
-const int _backupVersion = 1;
+  const BackupMetadata({
+    required this.appVersion,
+    required this.createdAt,
+    required this.platform,
+    required this.settingsCount,
+    required this.torrentCount,
+    required this.encrypted,
+  });
 
-/// Exports and imports Gravity Torrent settings as a JSON file.
-class BackupService {
-  BackupService._();
-  static final BackupService instance = BackupService._();
-
-  /// Reads all backup keys from SharedPrefs and writes them to a temp JSON
-  /// file, then shares it via the system share sheet.
-  Future<void> export() async {
-    try {
-      final Map<String, dynamic> data = {
-        'version': _backupVersion,
-        'exportedAt': DateTime.now().toIso8601String(),
-        'settings': {},
+  Map<String, dynamic> toJson() => {
+        'appVersion': appVersion,
+        'createdAt': createdAt.toIso8601String(),
+        'platform': platform,
+        'settingsCount': settingsCount,
+        'torrentCount': torrentCount,
+        'encrypted': encrypted,
       };
 
-      for (final key in _backupKeys) {
-        // Try bool first, then String.
-        final boolVal = await SharedPrefsStorage.getBool(key);
-        if (boolVal != null) {
-          (data['settings'] as Map)[key] = boolVal;
-          continue;
-        }
-        final strVal = await SharedPrefsStorage.getString(key);
-        if (strVal != null) {
-          (data['settings'] as Map)[key] = strVal;
-        }
+  factory BackupMetadata.fromJson(Map<String, dynamic> json) {
+    return BackupMetadata(
+      appVersion: json['appVersion'] as String? ?? 'unknown',
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      platform: json['platform'] as String? ?? 'unknown',
+      settingsCount: json['settingsCount'] as int? ?? 0,
+      torrentCount: json['torrentCount'] as int? ?? 0,
+      encrypted: json['encrypted'] as bool? ?? false,
+    );
+  }
+}
+
+class BackupRestoreResult {
+  final bool success;
+  final String message;
+  final String? filePath;
+  final Uint8List? bytes;
+  final BackupMetadata? metadata;
+
+  const BackupRestoreResult({
+    required this.success,
+    required this.message,
+    this.filePath,
+    this.bytes,
+    this.metadata,
+  });
+}
+
+class BackupService {
+  BackupService._();
+
+  static const String _backupFileExtension = '.gtbackup';
+  static const String _backupVersion = '1';
+  static const String _appVersion = '1.0.0'; // Replace with actual version
+
+  // ── Export ───────────────────────────────────────────────────────────────
+
+  /// Creates a backup file containing all app settings and torrent state.
+  ///
+  /// If [passphrase] is provided, the backup is AES-256-CBC encrypted.
+  /// Returns the path to the generated backup file.
+  static Future<BackupRestoreResult> export({
+    String? passphrase,
+    String? outputDirectory,
+  }) async {
+    try {
+      // Collect all settings from SharedPreferences
+      final allKeys = SharedPrefs.getKeys();
+      final settings = <String, dynamic>{};
+      for (final key in allKeys) {
+        settings[key] = SharedPrefs.get(key);
       }
 
-      final json = const JsonEncoder.withIndent('  ').convert(data);
-      final dir = await getTemporaryDirectory();
-      final now = DateTime.now();
-      final fileName =
-          'gravity_backup_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.json';
-      final file = File('${dir.path}/$fileName');
-      await file.writeAsString(json);
+      // Collect torrent state
+      final List<Map<String, dynamic>> torrentStates = [];
+      try {
+        if (!getIt.isRegistered<Engine>()) {
+          debugPrint('BackupService: engine not registered, skipping torrents');
+        } else {
+          final engine = getIt<Engine>();
+          final torrents = await engine.fetchTorrents();
+          for (final t in torrents) {
+            torrentStates.add({
+              'name': t.name,
+              'magnetLink': t.magnetLink,
+              'downloadDir': t.location,
+              'labels': t.labels,
+              'addedDate': t.addedDate,
+              'uploadedEver': t.uploadedEver,
+              'downloadedEver': t.downloadedEver,
+              'isPrivate': t.isPrivate,
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('BackupService: could not read torrent state — $e');
+      }
 
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path, mimeType: 'application/json')],
-          subject: 'Gravity Torrent settings backup',
+      // Build backup payload
+      final payload = {
+        'version': _backupVersion,
+        'metadata': BackupMetadata(
+          appVersion: _appVersion,
+          createdAt: DateTime.now(),
+          platform: _currentPlatform(),
+          settingsCount: settings.length,
+          torrentCount: torrentStates.length,
+          encrypted: passphrase != null && passphrase.isNotEmpty,
+        ).toJson(),
+        'settings': settings,
+        'torrents': torrentStates,
+      };
+
+      final jsonString = jsonEncode(payload);
+      Uint8List fileBytes;
+
+      if (passphrase != null && passphrase.isNotEmpty) {
+        fileBytes = _encrypt(jsonString, passphrase);
+      } else {
+        fileBytes = Uint8List.fromList(utf8.encode(jsonString));
+      }
+
+      // Compute integrity hash
+      final hash = sha256.convert(fileBytes).toString();
+
+      // Write file
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .split('.')
+          .first;
+      final fileName = 'gravity_backup_$timestamp$_backupFileExtension';
+      final output = '$hash\n${base64Encode(fileBytes)}';
+
+      if (kIsWeb) {
+        final data = utf8.encode(output);
+        final localCount = torrentStates
+            .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
+            .length;
+        final warnMsg = localCount > 0
+            ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+            : '';
+        return BackupRestoreResult(
+          success: true,
+          message: 'Backup created successfully$warnMsg',
+          filePath: fileName,
+          bytes: Uint8List.fromList(data),
+          metadata: BackupMetadata.fromJson(
+            payload['metadata'] as Map<String, dynamic>,
+          ),
+        );
+      }
+
+      final dir =
+          outputDirectory ?? (await getApplicationDocumentsDirectory()).path;
+      final filePath = p.join(dir, fileName);
+
+      final file = File(filePath);
+      // Prepend hash as first line, then the payload
+      await file.writeAsString(output);
+
+      final localCount = torrentStates
+          .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
+          .length;
+      final warnMsg = localCount > 0
+          ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+          : '';
+
+      return BackupRestoreResult(
+        success: true,
+        message: 'Backup created successfully$warnMsg',
+        filePath: filePath,
+        metadata: BackupMetadata.fromJson(
+          payload['metadata'] as Map<String, dynamic>,
         ),
       );
     } catch (e) {
-      if (kDebugMode) debugPrint('BackupService export error: $e');
-      rethrow;
+      return BackupRestoreResult(
+        success: false,
+        message: 'Backup failed: $e',
+      );
     }
   }
 
-  /// Reads a JSON backup file from [filePath] and restores all settings to
-  /// SharedPrefs. Returns a list of restored keys.
-  Future<List<String>> import(String filePath) async {
-    final raw = await File(filePath).readAsString();
-    final Map<String, dynamic> data;
-    try {
-      data = jsonDecode(raw) as Map<String, dynamic>;
-    } catch (e) {
-      throw FormatException('Invalid backup file: $e');
-    }
-
-    final version = data['version'] as int?;
-    if (version == null || version > _backupVersion) {
-      throw FormatException(
-        'Unsupported backup version: $version. '
-        'Please update Gravity Torrent.',
+  /// Share the backup file via the platform share sheet.
+  static Future<void> shareBackup(BackupRestoreResult result) async {
+    if (kIsWeb && result.bytes != null) {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile.fromData(
+              result.bytes!,
+              name: result.filePath ?? 'backup$_backupFileExtension',
+            ),
+          ],
+        ),
+      );
+    } else if (result.filePath != null) {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(result.filePath!)],
+        ),
       );
     }
+  }
 
-    final settings = data['settings'] as Map<String, dynamic>? ?? {};
-    final restored = <String>[];
+  // ── Import ──────────────────────────────────────────────────────────────
 
-    for (final entry in settings.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (value is bool) {
-        await SharedPrefsStorage.setBool(key, value);
-        restored.add(key);
-      } else if (value is String) {
-        await SharedPrefsStorage.setString(key, value);
-        restored.add(key);
+  /// Pick and restore a backup file.
+  static Future<BackupRestoreResult> import({String? passphrase}) async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return const BackupRestoreResult(
+          success: false,
+          message: 'No file selected',
+        );
       }
+
+      final platformFile = result.files.first;
+      Uint8List? bytes;
+      if (kIsWeb) {
+        bytes = await platformFile.readAsBytes();
+      }
+      if (platformFile.path == null && bytes == null) {
+        return const BackupRestoreResult(
+          success: false,
+          message: 'No file data found',
+        );
+      }
+
+      return await restore(
+        filePath: platformFile.path,
+        bytes: bytes,
+        passphrase: passphrase,
+      );
+    } catch (e) {
+      return BackupRestoreResult(
+        success: false,
+        message: 'Import failed: $e',
+      );
+    }
+  }
+
+  /// Restore from a specific file path.
+  static Future<BackupRestoreResult> restore({
+    String? filePath,
+    Uint8List? bytes,
+    String? passphrase,
+  }) async {
+    try {
+      String content;
+      if (bytes != null) {
+        content = utf8.decode(bytes);
+      } else {
+        if (filePath == null) {
+          return const BackupRestoreResult(
+            success: false,
+            message: 'No file provided',
+          );
+        }
+        if (kIsWeb) {
+          return const BackupRestoreResult(
+            success: false,
+            message: 'Cannot read file path on Web',
+          );
+        }
+        final file = File(filePath);
+        if (!file.existsSync()) {
+          return const BackupRestoreResult(
+            success: false,
+            message: 'Backup file not found',
+          );
+        }
+        content = await file.readAsString();
+      }
+      final newlineIndex = content.indexOf('\n');
+      if (newlineIndex < 0) {
+        return const BackupRestoreResult(
+          success: false,
+          message: 'Invalid backup file format',
+        );
+      }
+
+      final storedHash = content.substring(0, newlineIndex).trim();
+      final encodedPayload = content.substring(newlineIndex + 1).trim();
+
+      // Verify integrity
+      final decodedBytes = base64Decode(encodedPayload);
+      final computedHash = sha256.convert(decodedBytes).toString();
+      if (storedHash != computedHash) {
+        return const BackupRestoreResult(
+          success: false,
+          message: 'Backup file integrity check failed — file may be corrupted',
+        );
+      }
+
+      // Decrypt if needed
+      String jsonString;
+      try {
+        if (passphrase != null && passphrase.isNotEmpty) {
+          jsonString = _decrypt(decodedBytes, passphrase);
+        } else {
+          jsonString = utf8.decode(decodedBytes);
+        }
+      } catch (e) {
+        return BackupRestoreResult(
+          success: false,
+          message: passphrase != null
+              ? 'Decryption failed — wrong passphrase?'
+              : 'Could not decode backup — it may be encrypted',
+        );
+      }
+
+      // Parse
+      final payload = jsonDecode(jsonString) as Map<String, dynamic>;
+      final version = payload['version'] as String?;
+      if (version != _backupVersion) {
+        return BackupRestoreResult(
+          success: false,
+          message: 'Unsupported backup version: $version',
+        );
+      }
+
+      final metadata =
+          BackupMetadata.fromJson(payload['metadata'] as Map<String, dynamic>);
+
+      // Restore settings
+      final settings = payload['settings'] as Map<String, dynamic>? ?? {};
+      for (final entry in settings.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        if (value is bool) {
+          await SharedPrefs.setBool(key, value);
+        } else if (value is num) {
+          final existing = SharedPrefs.get(key);
+          if (value is double || existing is double || _isFloatKey(key)) {
+            await SharedPrefs.setDouble(key, value.toDouble());
+          } else {
+            await SharedPrefs.setInt(key, value.toInt());
+          }
+        } else if (value is String) {
+          await SharedPrefs.setString(key, value);
+        } else if (value is List) {
+          final stringList = value
+              .where((item) => item != null)
+              .map((item) => item.toString())
+              .toList();
+          await SharedPrefs.setStringList(
+            key,
+            stringList,
+          );
+        }
+      }
+
+      // Restore torrent magnet links
+      final torrents = (payload['torrents'] as List<dynamic>?) ?? [];
+      try {
+        if (!getIt.isRegistered<Engine>()) {
+          debugPrint('BackupService: engine not registered, skipping torrents');
+          return const BackupRestoreResult(
+            success: false,
+            message: 'Engine not ready, cannot restore torrents',
+          );
+        }
+        final engine = getIt<Engine>();
+        for (final t in torrents) {
+          final map = t as Map<String, dynamic>;
+          final magnetLink = map['magnetLink'] as String?;
+          if (magnetLink != null && magnetLink.isNotEmpty) {
+            try {
+              await engine.addTorrent(
+                magnetLink,
+                null,
+                map['downloadDir'] as String?,
+              );
+            } catch (e) {
+              debugPrint('BackupService: could not re-add torrent — $e');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('BackupService: torrent restoration skipped — $e');
+      }
+
+      return BackupRestoreResult(
+        success: true,
+        message:
+            'Restored ${settings.length} settings and ${torrents.length} torrents',
+        metadata: metadata,
+      );
+    } catch (e) {
+      return BackupRestoreResult(
+        success: false,
+        message: 'Restore failed: $e',
+      );
+    }
+  }
+
+  // ── Encryption helpers ──────────────────────────────────────────────────
+
+  static Uint8List _encrypt(String plaintext, String passphrase) {
+    final keyBytes = sha256.convert(utf8.encode(passphrase)).bytes;
+    final key = encrypt_lib.Key(Uint8List.fromList(keyBytes));
+    final iv = encrypt_lib.IV.fromSecureRandom(16);
+    final encrypter = encrypt_lib.Encrypter(
+      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc),
+    );
+    final encrypted = encrypter.encryptBytes(utf8.encode(plaintext), iv: iv);
+
+    // Prepend IV to ciphertext
+    final result = BytesBuilder();
+    result.add(iv.bytes);
+    result.add(encrypted.bytes);
+    return result.toBytes();
+  }
+
+  static String _decrypt(Uint8List cipherBytes, String passphrase) {
+    if (cipherBytes.length < 17) {
+      throw const FormatException('Ciphertext too short');
     }
 
-    if (kDebugMode) {
-      debugPrint('BackupService: restored ${restored.length} keys');
-    }
-    return restored;
+    final keyBytes = sha256.convert(utf8.encode(passphrase)).bytes;
+    final key = encrypt_lib.Key(Uint8List.fromList(keyBytes));
+    final iv = encrypt_lib.IV(Uint8List.sublistView(cipherBytes, 0, 16));
+    final ciphertext = Uint8List.sublistView(cipherBytes, 16);
+
+    final encrypter = encrypt_lib.Encrypter(
+      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc),
+    );
+    final decrypted = encrypter.decryptBytes(
+      encrypt_lib.Encrypted(ciphertext),
+      iv: iv,
+    );
+
+    return utf8.decode(decrypted);
+  }
+
+  static bool _isFloatKey(String key) {
+    final lower = key.toLowerCase();
+    return lower.contains('ratio') ||
+        lower.contains('speed') ||
+        lower.contains('percent') ||
+        lower.contains('float') ||
+        lower.contains('double') ||
+        lower.contains('multiplier') ||
+        lower.contains('threshold');
+  }
+
+  static String _currentPlatform() {
+    if (kIsWeb) return 'web';
+    if (!kIsWeb && Platform.isAndroid) return 'android';
+    if (!kIsWeb && Platform.isIOS) return 'ios';
+    if (!kIsWeb && Platform.isMacOS) return 'macos';
+    if (!kIsWeb && Platform.isWindows) return 'windows';
+    if (!kIsWeb && Platform.isLinux) return 'linux';
+    return 'unknown';
   }
 }

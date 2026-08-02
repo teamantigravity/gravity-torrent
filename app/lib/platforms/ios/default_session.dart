@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,16 +9,18 @@ import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.dart';
 
 initDefaultDownloadDir(Engine engine) async {
-  var session = await engine.fetchSession();
+  final session = await engine.fetchSession();
   final documentsDir = await getApplicationDocumentsDirectory();
   final downloadDir = join(documentsDir.path, 'Downloads');
+
+  await Directory(downloadDir).create(recursive: true);
 
   debugPrint('Settings default directory $downloadDir');
 
   // Default download directory set by transmission is not correct.
   // See tr_getDefaultDownloadDir() in platform.cc
   if (session.downloadDir != downloadDir) {
-    var sessionUpdate = SessionBase(downloadDir: downloadDir);
+    final sessionUpdate = SessionBase(downloadDir: downloadDir);
     await session.update(sessionUpdate);
   }
 
@@ -25,11 +29,17 @@ initDefaultDownloadDir(Engine engine) async {
   // torrent-set-location does not accept empty ids, so build a list of all ids
   final torrents = await engine.fetchTorrents();
   final torrentsIds = torrents.map((t) => t.id).toList();
-  await engine.setTorrentsLocation(
-    TorrentSetLocationArguments(
-      ids: torrentsIds,
-      location: downloadDir,
-      move: false,
-    ),
-  );
+  if (torrentsIds.isNotEmpty) {
+    try {
+      await engine.setTorrentsLocation(
+        TorrentSetLocationArguments(
+          ids: torrentsIds,
+          location: downloadDir,
+          move: false,
+        ),
+      );
+    } catch (e, s) {
+      debugPrint('Failed to update existing torrent locations: $e\n$s');
+    }
+  }
 }

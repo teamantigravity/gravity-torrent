@@ -10,9 +10,10 @@ class SessionModel extends ChangeNotifier {
   Session? session;
   Timer? _timer;
   bool _disposed = false;
+  bool _isFetching = false;
 
   SessionModel() {
-    _startSessionFetching();
+    unawaited(_startSessionFetching());
   }
 
   @override
@@ -23,20 +24,29 @@ class SessionModel extends ChangeNotifier {
   }
 
   Future<void> fetchSession() async {
+    if (_isFetching) return;
+    _isFetching = true;
     try {
       session = await engine.fetchSession();
       if (!_disposed) notifyListeners();
     } catch (e) {
       debugPrint('SessionModel.fetchSession error: $e');
+    } finally {
+      _isFetching = false;
     }
   }
 
-  void _startSessionFetching() async {
+  Future<void> _startSessionFetching() async {
     await fetchSession();
+    if (_disposed) return;
     _timer = Timer.periodic(
       const Duration(seconds: _sessionRefreshIntervalSeconds),
       (timer) {
-        fetchSession();
+        if (_disposed) {
+          timer.cancel();
+          return;
+        }
+        unawaited(fetchSession());
       },
     );
   }

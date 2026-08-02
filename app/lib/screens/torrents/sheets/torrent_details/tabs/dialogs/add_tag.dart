@@ -35,7 +35,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return AlertDialog(
       title: Text(localizations.newTag),

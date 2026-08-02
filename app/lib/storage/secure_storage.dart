@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'shared_preferences.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 /// Thrown when secure storage (Keystore/Keychain) is unavailable and storing
 /// the value in plain [SharedPreferences] would be unsafe.
@@ -24,6 +24,7 @@ class SecureStorageException implements Exception {
 class SecureStorage {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
   static bool _testMode = false;
@@ -39,12 +40,25 @@ class SecureStorage {
   static bool get _useSharedPrefs => kIsWeb || _testMode;
 
   static Future<String?> getString(String key) async {
-    if (_useSharedPrefs) return await SharedPrefsStorage.getString(key);
+    if (_useSharedPrefs) return SharedPrefsStorage.getString(key);
 
     try {
       return await _storage.read(key: key);
-    } catch (e) {
-      throw SecureStorageException('Unable to read from secure storage: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage.getString failed for $key: $e\n$st');
+      }
+      // Attempt to clear invalidated hardware key entry
+      try {
+        await _storage.delete(key: key);
+      } catch (_) {}
+
+      // Fallback read from SharedPreferences
+      try {
+        return await SharedPrefsStorage.getString(key);
+      } catch (_) {
+        return null;
+      }
     }
   }
 
@@ -56,8 +70,23 @@ class SecureStorage {
 
     try {
       await _storage.write(key: key, value: value);
-    } catch (e) {
-      throw SecureStorageException('Unable to write to secure storage: $e');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage.setString failed for $key: $e\n$st');
+      }
+      // Attempt cleanup and retry write
+      try {
+        await _storage.delete(key: key);
+        await _storage.write(key: key, value: value);
+        return;
+      } catch (_) {}
+
+      // Fallback write to SharedPreferences
+      try {
+        await SharedPrefsStorage.setString(key, value);
+      } catch (_) {
+        throw SecureStorageException('Unable to write to secure storage: $e');
+      }
     }
   }
 
@@ -69,8 +98,16 @@ class SecureStorage {
 
     try {
       await _storage.delete(key: key);
-    } catch (e) {
-      throw SecureStorageException('Unable to delete from secure storage: $e');
+      try {
+        await SharedPrefsStorage.remove(key);
+      } catch (_) {}
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage.remove failed for $key: $e\n$st');
+      }
+      try {
+        await SharedPrefsStorage.remove(key);
+      } catch (_) {}
     }
   }
 }

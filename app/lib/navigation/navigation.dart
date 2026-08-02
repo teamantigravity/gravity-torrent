@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gravity_torrent/navigation/add_torrent_button.dart';
@@ -13,20 +14,20 @@ class Destination {
   const Destination(this.label, this.icon, this.selectedIcon);
 
   final String label;
-  final Widget icon;
-  final Widget selectedIcon;
+  final IconData icon;
+  final IconData selectedIcon;
 }
 
 const List<Destination> destinations = <Destination>[
   Destination(
     'Torrents',
-    Icon(Icons.downloading, size: 36),
-    Icon(Icons.downloading, size: 36, color: Color(0xFF4285F4)),
+    Icons.downloading,
+    Icons.downloading,
   ),
   Destination(
     'Settings',
-    Icon(Icons.settings, size: 36),
-    Icon(Icons.settings, size: 36, color: Color(0xFF4285F4)),
+    Icons.settings,
+    Icons.settings,
   ),
 ];
 
@@ -93,8 +94,14 @@ class _Navigation extends State<Navigation> {
     return 0;
   }
 
+  bool _isTorrentsRoute(BuildContext context) {
+    final location = GoRouterState.of(context).uri.path;
+    return location == '/torrents';
+  }
+
   // Mobile Navigation
   Widget buildBottomBarScaffold(BuildContext context) {
+    final isTorrents = _isTorrentsRoute(context);
     return Scaffold(
       appBar: isDesktop() ? const WindowTitleBar() : AppBar(toolbarHeight: 0),
       body: Column(
@@ -103,17 +110,24 @@ class _Navigation extends State<Navigation> {
           const Divider(thickness: 1, height: 1),
         ],
       ),
-      floatingActionButton: const AddTorrentButton(),
+      floatingActionButton: isTorrents ? const AddTorrentButton() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: NavigationBar(
         labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
         selectedIndex: _calculateNavigationBarSelectedIndex(context),
         onDestinationSelected: _handleNavigationBarDestinationSelected,
         destinations: destinations.map((Destination destination) {
+          final theme = Theme.of(context);
           return NavigationDestination(
             label: destination.label,
-            icon: destination.icon,
-            selectedIcon: destination.selectedIcon,
+            icon: Icon(
+              destination.icon,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            selectedIcon: Icon(
+              destination.selectedIcon,
+              color: theme.colorScheme.primary,
+            ),
             tooltip: destination.label,
           );
         }).toList(),
@@ -123,33 +137,43 @@ class _Navigation extends State<Navigation> {
 
   // Desktop Navigation
   Widget buildNavigationRailScaffold(BuildContext context) {
+    final isTorrents = _isTorrentsRoute(context);
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(toolbarHeight: 0),
         body: Row(
           children: <Widget>[
             NavigationRail(
-              leading: Padding(
-                padding: Platform.isMacOS
-                    ? const EdgeInsets.only(
-                        top: 20,
-                        bottom: 4,
-                        left: 4,
-                        right: 4,
-                      )
-                    : const EdgeInsets.symmetric(vertical: 4),
-                child: const AddTorrentButton(),
-              ),
+              leading: isTorrents
+                  ? Padding(
+                      padding: (!kIsWeb && Platform.isMacOS)
+                          ? const EdgeInsets.only(
+                              top: 20,
+                              bottom: 4,
+                              left: 4,
+                              right: 4,
+                            )
+                          : const EdgeInsets.symmetric(vertical: 4),
+                      child: const AddTorrentButton(),
+                    )
+                  : null,
               destinations: destinations.map((Destination destination) {
+                final theme = Theme.of(context);
                 return NavigationRailDestination(
                   label: Text(destination.label),
                   icon: Tooltip(
                     message: destination.label,
-                    child: destination.icon,
+                    child: Icon(
+                      destination.icon,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   selectedIcon: Tooltip(
                     message: destination.label,
-                    child: destination.selectedIcon,
+                    child: Icon(
+                      destination.selectedIcon,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                 );
               }).toList(),

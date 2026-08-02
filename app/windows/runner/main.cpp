@@ -30,7 +30,7 @@ bool SendAppLinkToInstance(const std::wstring& title) {
           break;
     }
 
-    SetWindowPos(0, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+    SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
     SetForegroundWindow(hwnd);
     // END (Optional) Restore
 
@@ -66,7 +66,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"gravitytorrent", origin, size)) {
+  if (!window.Create(L"Gravity Torrent", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

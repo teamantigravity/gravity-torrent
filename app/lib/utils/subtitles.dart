@@ -16,12 +16,12 @@ const subtitleExtensions = <String>{
 };
 
 int countSlashesRegex(String text) {
-  final regex = RegExp('/');
+  final regex = RegExp(r'[/\\]');
   return regex.allMatches(text).length;
 }
 
 String truncateFromLastSlash(String text) {
-  int lastSlashIndex = text.lastIndexOf('/');
+  final int lastSlashIndex = text.lastIndexOf(RegExp(r'[/\\]'));
   if (lastSlashIndex != -1) {
     return text.substring(lastSlashIndex + 1);
   } else {
@@ -59,12 +59,11 @@ String? detectSubtitleLanguage(String fileName) {
   // language suffix to extract. Treating the whole title as a language code
   // would false-positive on short movie titles (e.g. "Up", "Room").
   if (parts.length < 2) return null;
-  final tag = parts.reversed.firstWhere(
-    (p) => p.isNotEmpty && RegExp(r'^[a-zA-Z]{2,7}$').hasMatch(p),
-    orElse: () => '',
-  );
-  if (tag.isNotEmpty) {
-    return _normalizeLanguageTag(tag.toLowerCase());
+  final languageRe = RegExp(r'^[a-zA-Z]{2,7}$');
+  for (final part in parts.reversed) {
+    if (part.isEmpty || !languageRe.hasMatch(part)) continue;
+    final normalized = _normalizeLanguageTag(part.toLowerCase());
+    if (normalized != null) return normalized;
   }
   return null;
 }
@@ -132,29 +131,30 @@ String? _normalizeLanguageTag(String tag) {
     'vie': 'vi',
     'vietnamese': 'vi',
   };
-  return knownNames[tag] ?? tag;
+  if (knownNames.containsKey(tag)) return knownNames[tag];
+  if (tag.length == 2 || tag.length == 3) return tag;
+  return null;
 }
 
 List<File> getExternalSubtitles(File file, Torrent torrent) {
-  final slashesCount = countSlashesRegex(file.name);
-  final externalSubtitlesFiles = torrent.files
-      .where(
-        (f) =>
-            slashesCount == countSlashesRegex(f.name) &&
-            isSubtitleFileName(f.name),
-      )
-      .toList();
+  final lastSlash = file.name.lastIndexOf(RegExp(r'[/\\]'));
+  final dirname = lastSlash != -1 ? file.name.substring(0, lastSlash) : '';
 
-  return externalSubtitlesFiles;
+  return torrent.files.where((f) {
+    if (!isSubtitleFileName(f.name)) return false;
+    final fLastSlash = f.name.lastIndexOf(RegExp(r'[/\\]'));
+    final fDirname = fLastSlash != -1 ? f.name.substring(0, fLastSlash) : '';
+    return fDirname == dirname;
+  }).toList();
 }
 
 Future<void> downloadSubtitles(
   File file,
   Torrent torrent, {
-  CancelableCompleter? cancelableCompleter,
+  CancelableCompleter<void>? cancelableCompleter,
 }) async {
   final List<File> subtitles = getExternalSubtitles(file, torrent);
-  for (var sub in subtitles) {
+  for (final sub in subtitles) {
     if (cancelableCompleter?.isCanceled ?? false) return;
     await torrent.setSequentialDownloadFromPiece(sub.beginPiece);
     await _waitForFileComplete(
@@ -168,11 +168,11 @@ Future<void> downloadSubtitles(
 Future<void> _waitForFileComplete({
   required Torrent torrent,
   required String fileName,
-  CancelableCompleter? cancelableCompleter,
+  CancelableCompleter<void>? cancelableCompleter,
 }) async {
   final file = torrent.files.firstWhereOrNull((f) => f.name == fileName);
   if (file == null) return;
-  final pieceCount = file.endPiece - file.beginPiece;
+  final pieceCount = file.endPiece - file.beginPiece + 1;
   await waitForPieces(
     torrent: torrent,
     file: file,

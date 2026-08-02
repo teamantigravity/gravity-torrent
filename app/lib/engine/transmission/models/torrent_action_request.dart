@@ -7,12 +7,12 @@ class TorrentActionRequest {
   TorrentActionRequest({required this.action, required this.arguments});
 
   Map<String, dynamic> toJson() {
-    var method = switch (action) {
+    final method = switch (action) {
       TorrentAction.start => 'torrent-start',
       TorrentAction.startNow => 'torrent-start-now',
       TorrentAction.stop => 'torrent-stop',
       TorrentAction.verify => 'torrent-verify',
-      TorrentAction.reannounce => 'reannounce',
+      TorrentAction.reannounce => 'torrent-reannounce',
     };
 
     return {'method': method, 'arguments': arguments.toJson()};

@@ -1,15 +1,18 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pretty_bytes/pretty_bytes.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/platforms/android/foreground_service.dart'
     as foreground;
+import 'package:gravity_torrent/services/notification_channel_service.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/utils/device.dart';
+import 'package:gravity_torrent/utils/lifecycle.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 
 enum NotificationsDetailsTypes { downloadsCompletedAndroidNotificationDetails }
@@ -21,7 +24,7 @@ const _pendingNotificationActionKey =
     'gravity_torrent_pending_notification_action';
 
 const downloadsCompletedAndroidNotificationDetails = AndroidNotificationDetails(
-  'downloads_completed',
+  'completion',
   'Downloads completed',
   channelDescription:
       'This channel is used for downloads completed notifications.',
@@ -30,15 +33,7 @@ const downloadsCompletedAndroidNotificationDetails = AndroidNotificationDetails(
 FlutterLocalNotificationsPlugin get flutterLocalNotificationsPlugin =>
     foreground.flutterLocalNotificationsPlugin;
 
-_removeNotificationChannels() async {
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.deleteNotificationChannel(channelId: 'downloads_completed');
-}
-
 Future<void> initializeNotifications() async {
-  await _removeNotificationChannels();
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('ic_stat_name');
 
@@ -117,17 +112,16 @@ showNotification({
 }
 
 showCompletedNotification(String name, {int? id, Duration? duration}) async {
+  if (!NotificationChannelService.completionEnabled) return;
+
   String body = name;
   if (duration != null) {
     body += '\nCompleted in ${duration.inMinutes}m ${duration.inSeconds % 60}s';
   }
-  await showNotification(
+  await NotificationChannelService.showCompletion(
     id: id ?? _completedNotificationId,
     title: 'Download completed',
     body: body,
-    payload: 'completed',
-    notificationsDetailsType:
-        NotificationsDetailsTypes.downloadsCompletedAndroidNotificationDetails,
   );
 }
 
@@ -152,6 +146,8 @@ showDownloadProgressNotification({
   required int count,
   int? rateDownBytes,
 }) async {
+  if (!NotificationChannelService.progressEnabled) return;
+
   // On Android the persistent foreground service notification already shows
   // progress and speed, so avoid posting a duplicate notification.
   if (defaultTargetPlatform == TargetPlatform.android) {
@@ -166,11 +162,11 @@ showDownloadProgressNotification({
     );
   }
 
-  final NotificationDetails notificationDetails = NotificationDetails(
-    iOS: const DarwinNotificationDetails(
+  const NotificationDetails notificationDetails = NotificationDetails(
+    iOS: DarwinNotificationDetails(
       categoryIdentifier: 'download_progress',
     ),
-    macOS: const DarwinNotificationDetails(
+    macOS: DarwinNotificationDetails(
       categoryIdentifier: 'download_progress',
     ),
   );
@@ -193,11 +189,17 @@ Future<void> cancelDownloadProgressNotification() async {
 }
 
 Future<void> _handleNotificationResponse(NotificationResponse response) async {
+  WidgetsFlutterBinding.ensureInitialized();
   final actionId = response.actionId ?? response.payload;
   if (actionId == null) return;
 
   // Body taps just open the app; no action needs to be handled here.
   if (actionId == 'progress' || actionId == 'completed') {
+    return;
+  }
+
+  if (actionId == 'exit') {
+    await closeApp();
     return;
   }
 
@@ -212,19 +214,16 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
   }
 
   final engine = getIt<Engine>();
-  await _executeNotificationAction(actionId, engine);
+  await executeNotificationAction(actionId, engine);
 }
 
 Future<void> _storePendingNotificationAction(String actionId) async {
   await SharedPrefsStorage.setString(_pendingNotificationActionKey, actionId);
 }
 
-Future<void> _executeNotificationAction(String actionId, Engine engine) async {
+Future<void> executeNotificationAction(String actionId, Engine engine) async {
   if (actionId == 'exit') {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      await foreground.stopForegroundService();
-    }
-    await SystemNavigator.pop();
+    await closeApp();
     return;
   }
 
@@ -271,7 +270,7 @@ Future<void> processPendingNotificationAction() async {
   }
 
   final engine = getIt<Engine>();
-  await _executeNotificationAction(actionId, engine);
+  await executeNotificationAction(actionId, engine);
 }
 
 void onForegroundNotificationResponse(NotificationResponse response) {
@@ -280,5 +279,24 @@ void onForegroundNotificationResponse(NotificationResponse response) {
 
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final actionId = response.actionId ?? response.payload;
+  if (actionId == null) return;
+  if (actionId == 'progress' || actionId == 'completed') return;
+
+  final port = IsolateNameServer.lookupPortByName('notification_actions');
+  if (port != null) {
+    port.send(actionId);
+    return;
+  }
+
+  // If the port doesn't exist, the main isolate might be dead.
+  // If it's an exit action, we handle it directly to ensure the background isolate dies.
+  if (actionId == 'exit') {
+    unawaited(closeApp());
+    return;
+  }
+
   unawaited(_handleNotificationResponse(response));
 }

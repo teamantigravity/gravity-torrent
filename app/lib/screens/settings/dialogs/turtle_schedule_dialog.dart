@@ -47,6 +47,7 @@ class _TurtleScheduleDialogState extends State<TurtleScheduleDialog> {
       initialTime: _toTimeOfDay(isBegin ? _begin : _end),
     );
     if (picked == null) return;
+    if (!mounted) return;
     setState(() {
       final value = picked.hour * 60 + picked.minute;
       if (isBegin) {
@@ -64,7 +65,7 @@ class _TurtleScheduleDialogState extends State<TurtleScheduleDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
     final dayLabels = <String>[
       localizations.daySun,
       localizations.dayMon,

@@ -10,19 +10,26 @@ import kotlin.io.outputStream
 import kotlin.io.use
 
 fun getAssetFilePath(context: Context, assetFileName: String): String? {
-    val inputStream = context.assets.open(assetFileName)
-    val tempFile = File.createTempFile("cacert", null, context.cacheDir)
-    inputStream.use { input ->
-        tempFile.outputStream().use { output ->
-            input.copyTo(output)
+    val destFile = File(context.cacheDir, assetFileName)
+    if (!destFile.exists()) {
+        context.assets.open(assetFileName).use { input ->
+            destFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
         }
     }
-    return tempFile.absolutePath
+    return destFile.absolutePath
 }
 
 class MainActivity : AudioServiceFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        Os.setenv("CURL_CA_BUNDLE", getAssetFilePath(this, "cacert-2024-09-24.pem"), true)
+        try {
+            getAssetFilePath(this, "cacert-2024-09-24.pem")?.let { path ->
+                Os.setenv("CURL_CA_BUNDLE", path, true)
+            }
+        } catch (e: Exception) {
+            // CA bundle asset is not bundled; libcurl will use the system store.
+        }
         super.onCreate(savedInstanceState)
     }
 }

@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 
 class ResetTorrentsSettingsDialog extends StatelessWidget {
-  final Function onOK;
+  final void Function() onOK;
 
   const ResetTorrentsSettingsDialog({super.key, required this.onOK});
 
-  void handleOK() async {
+  void handleOK() {
     onOK();
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return AlertDialog(
       content: Column(

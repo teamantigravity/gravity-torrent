@@ -40,13 +40,17 @@ class WifiGuardService {
   /// The last known list of local IP addresses, used to detect interface changes.
   List<String> _lastIpAddresses = [];
 
+  bool _disposed = false;
+  Future<void>? _lock;
+
   bool get isEnabled => _enabled;
   WifiGuardMode get mode => _mode;
 
   Future<void> load() async {
-    if (_loaded) return;
+    if (_disposed || _loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     final modeStr = await SharedPrefsStorage.getString(_modeKey);
+    if (_disposed) return;
     _mode = modeStr == 'vpnKillSwitch'
         ? WifiGuardMode.vpnKillSwitch
         : WifiGuardMode.wifiOnly;
@@ -55,8 +59,14 @@ class WifiGuardService {
   }
 
   Future<void> setEnabled(bool value) async {
+    if (_disposed) return;
+    return _withLock(() => _setEnabledImpl(value));
+  }
+
+  Future<void> _setEnabledImpl(bool value) async {
     _enabled = value;
     await SharedPrefsStorage.setBool(_enabledKey, value);
+    if (_disposed) return;
     if (value) {
       _subscribe();
     } else {
@@ -66,19 +76,27 @@ class WifiGuardService {
   }
 
   Future<void> setMode(WifiGuardMode mode) async {
+    if (_disposed) return;
+    return _withLock(() => _setModeImpl(mode));
+  }
+
+  Future<void> _setModeImpl(WifiGuardMode mode) async {
     _mode = mode;
     await SharedPrefsStorage.setString(
       _modeKey,
       mode == WifiGuardMode.vpnKillSwitch ? 'vpnKillSwitch' : 'wifiOnly',
     );
+    if (_disposed) return;
     // Re-seed the IP snapshot when switching modes.
     _lastIpAddresses = await _currentIpAddresses();
+    _pausedByGuard.clear();
   }
 
   void _subscribe() {
     _unsubscribe();
-    // Seed initial IP list for kill-switch comparison.
-    _currentIpAddresses().then((ips) => _lastIpAddresses = ips);
+    // Start with an empty IP snapshot. The first connectivity event will seed
+    // the baseline inside the lock, avoiding a race with the listener.
+    _lastIpAddresses = [];
     _connectivitySub =
         Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
   }
@@ -88,10 +106,23 @@ class WifiGuardService {
     _connectivitySub = null;
   }
 
-  Future<void> _onConnectivityChanged(
+  void _onConnectivityChanged(List<ConnectivityResult> results) {
+    if (_disposed) return;
+    unawaited(
+      _withLock(() => _onConnectivityChangedImpl(results)).catchError(
+        (Object e) {
+          if (kDebugMode) {
+            debugPrint('WifiGuardService connectivity handler error: $e');
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _onConnectivityChangedImpl(
     List<ConnectivityResult> results,
   ) async {
-    if (!_enabled) return;
+    if (!_enabled || _disposed) return;
     final hasWifi = results.contains(ConnectivityResult.wifi);
     final hasAny = results.isNotEmpty &&
         !results.every((r) => r == ConnectivityResult.none);
@@ -120,8 +151,6 @@ class WifiGuardService {
             );
           }
           await _pauseAll();
-        } else if (_pausedByGuard.isNotEmpty) {
-          await _resumeAll();
         }
         _lastIpAddresses = currentIps;
       }
@@ -129,6 +158,7 @@ class WifiGuardService {
   }
 
   Future<List<String>> _currentIpAddresses() async {
+    if (kIsWeb) return [];
     try {
       final interfaces = await NetworkInterface.list(
         includeLinkLocal: false,
@@ -155,14 +185,19 @@ class WifiGuardService {
   }
 
   Future<void> _pauseAll() async {
+    if (_disposed) return;
     try {
+      if (!getIt.isRegistered<Engine>()) return;
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
+      if (_disposed) return;
       for (final torrent in torrents) {
         if (torrent.status == TorrentStatus.downloading ||
             torrent.status == TorrentStatus.seeding ||
             torrent.status == TorrentStatus.queuedToDownload ||
-            torrent.status == TorrentStatus.queuedToSeed) {
+            torrent.status == TorrentStatus.queuedToSeed ||
+            torrent.status == TorrentStatus.queuedToCheck ||
+            torrent.status == TorrentStatus.checking) {
           try {
             await engine.pauseTorrent(torrent.id);
             _pausedByGuard.add(torrent.id);
@@ -184,37 +219,69 @@ class WifiGuardService {
   }
 
   Future<void> _resumeAll() async {
+    if (_disposed) return;
     if (_pausedByGuard.isEmpty) return;
+    if (!getIt.isRegistered<Engine>()) {
+      _pausedByGuard.clear();
+      return;
+    }
+
+    final idsToResume = List<int>.from(_pausedByGuard);
+
     try {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
+      if (_disposed) return;
       final existingIds = {for (final t in torrents) t.id};
-      for (final id in List<int>.from(_pausedByGuard)) {
+
+      for (final id in idsToResume) {
         if (!existingIds.contains(id)) {
           _pausedByGuard.remove(id);
           continue;
         }
+
         try {
           await engine.resumeTorrent(id);
+          _pausedByGuard.remove(id);
         } catch (e) {
           if (kDebugMode) {
             debugPrint('WifiGuardService: failed to resume $id: $e');
           }
         }
       }
+
       if (kDebugMode) {
-        debugPrint(
-          'WifiGuardService: resumed ${_pausedByGuard.length} torrents',
-        );
+        final resumedCount = idsToResume.length - _pausedByGuard.length;
+        debugPrint('WifiGuardService: resumed $resumedCount torrents');
       }
     } catch (e) {
       if (kDebugMode) debugPrint('WifiGuardService _resumeAll error: $e');
-    } finally {
-      _pausedByGuard.clear();
     }
   }
 
+  /// Serialize async guard operations so pause/resume do not overlap.
+  Future<T> _withLock<T>(Future<T> Function() task) {
+    final previous = _lock;
+    final current = Future<T>(() async {
+      if (previous != null) {
+        try {
+          await previous;
+        } catch (_) {}
+      }
+      return task();
+    });
+    _lock = current;
+    unawaited(
+      current.whenComplete(() {
+        if (_lock == current) _lock = null;
+      }),
+    );
+    return current;
+  }
+
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _unsubscribe();
   }
 }
