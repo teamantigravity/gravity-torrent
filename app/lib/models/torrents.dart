@@ -110,16 +110,15 @@ class TorrentsModel extends ChangeNotifier {
     if (_disposed) return;
     await fetchTorrents();
     // Indefinitely refresh
-    _timer = Timer.periodic(
-      const Duration(seconds: refreshIntervalSeconds),
-      (timer) {
-        if (_disposed) {
-          timer.cancel();
-          return;
-        }
-        unawaited(fetchTorrents());
-      },
-    );
+    _timer = Timer.periodic(const Duration(seconds: refreshIntervalSeconds), (
+      timer,
+    ) {
+      if (_disposed) {
+        timer.cancel();
+        return;
+      }
+      unawaited(fetchTorrents());
+    });
   }
 
   void stopTimer() {
@@ -148,7 +147,7 @@ class TorrentsModel extends ChangeNotifier {
         await SharedPrefsStorage.getBool('showFavoritesOnly') ?? false;
     stopSeedingWhenComplete =
         await SharedPrefsStorage.getBool('stopSeedingWhenComplete') ??
-            stopSeedingWhenComplete;
+        stopSeedingWhenComplete;
     await _loadFavorites();
 
     try {
@@ -168,8 +167,9 @@ class TorrentsModel extends ChangeNotifier {
 
   Future<void> _loadPersistedState() async {
     try {
-      final idsRaw =
-          await SharedPrefsStorage.getString(_notifiedCompletedIdsKey);
+      final idsRaw = await SharedPrefsStorage.getString(
+        _notifiedCompletedIdsKey,
+      );
       if (idsRaw != null && idsRaw.isNotEmpty) {
         final decoded = jsonDecode(idsRaw);
         if (decoded is List) {
@@ -245,9 +245,11 @@ class TorrentsModel extends ChangeNotifier {
     // If turning on, immediately pause any currently-seeding torrents
     if (value) {
       final seedingIds = torrents
-          .where((t) =>
-              t.status == TorrentStatus.seeding &&
-              !_manuallyResumedSeedingIds.contains(t.id),)
+          .where(
+            (t) =>
+                t.status == TorrentStatus.seeding &&
+                !_manuallyResumedSeedingIds.contains(t.id),
+          )
           .map((t) => t.id)
           .toList();
       if (seedingIds.isNotEmpty) {
@@ -406,9 +408,7 @@ class TorrentsModel extends ChangeNotifier {
   Future<void> pauseSelected(Set<int> ids) async {
     if (ids.isEmpty) return;
     final toPause = torrents
-        .where(
-          (t) => ids.contains(t.id) && t.status != TorrentStatus.stopped,
-        )
+        .where((t) => ids.contains(t.id) && t.status != TorrentStatus.stopped)
         .map((t) => t.id)
         .toList();
     if (toPause.isEmpty) return;
@@ -424,9 +424,7 @@ class TorrentsModel extends ChangeNotifier {
   Future<void> resumeSelected(Set<int> ids) async {
     if (ids.isEmpty) return;
     final toResume = torrents
-        .where(
-          (t) => ids.contains(t.id) && t.status == TorrentStatus.stopped,
-        )
+        .where((t) => ids.contains(t.id) && t.status == TorrentStatus.stopped)
         .map((t) => t.id)
         .toList();
     if (toResume.isEmpty) return;
@@ -521,13 +519,14 @@ class TorrentsModel extends ChangeNotifier {
 
       // Update the persistent Android foreground service notification with live
       // progress and speed on every refresh.
-      final downloading =
-          fetched.where((t) => t.status == TorrentStatus.downloading).toList();
+      final downloading = fetched
+          .where((t) => t.status == TorrentStatus.downloading)
+          .toList();
 
       if (downloading.isNotEmpty) {
         final totalProgress =
             downloading.fold<double>(0, (sum, t) => sum + t.progress) /
-                downloading.length;
+            downloading.length;
         final rateDown = downloading.fold<int>(
           0,
           (sum, t) => sum + t.rateDownload,
@@ -606,9 +605,11 @@ class TorrentsModel extends ChangeNotifier {
       // Auto-pause seeding torrents if user has that preference on
       if (stopSeedingWhenComplete) {
         final seedingIds = fetched
-            .where((t) =>
-                t.status == TorrentStatus.seeding &&
-                !_manuallyResumedSeedingIds.contains(t.id),)
+            .where(
+              (t) =>
+                  t.status == TorrentStatus.seeding &&
+                  !_manuallyResumedSeedingIds.contains(t.id),
+            )
             .map((t) => t.id)
             .toList();
         if (seedingIds.isNotEmpty) {
@@ -679,8 +680,10 @@ class TorrentsModel extends ChangeNotifier {
         _safeRecordAnalytics(fetched);
       }
 
-      await SeedRatioService.instance
-          .checkAndStop(torrents, _manuallyResumedSeedingIds);
+      await SeedRatioService.instance.checkAndStop(
+        torrents,
+        _manuallyResumedSeedingIds,
+      );
 
       for (final t in torrents) {
         SpeedHistoryService.instance.record(t.id, t.rateDownload.toDouble());
@@ -724,9 +727,7 @@ class TorrentsModel extends ChangeNotifier {
 
   void processDisplayedTorrents() {
     if (_disposed) return;
-    var result = _filterTorrents(
-      _filterTorrentsName(_sortTorrents(torrents)),
-    );
+    var result = _filterTorrents(_filterTorrentsName(_sortTorrents(torrents)));
     if (fileTypeFilter != FileTypeCategory.all) {
       result = FileTypeFilterService.filterTorrents(
         result,
@@ -754,10 +755,11 @@ class TorrentsModel extends ChangeNotifier {
       AnalyticsService.instance
           .recordTorrentStats(torrents)
           .catchError((Object e, StackTrace s) {
-        if (kDebugMode) debugPrint('Analytics error: $e\n$s');
-      }).whenComplete(() {
-        if (!_disposed) notifyListeners();
-      }),
+            if (kDebugMode) debugPrint('Analytics error: $e\n$s');
+          })
+          .whenComplete(() {
+            if (!_disposed) notifyListeners();
+          }),
     );
   }
 

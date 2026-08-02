@@ -105,10 +105,12 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
       }
 
       if (!mounted) return;
-      String? effectiveDownloadDir = pickedDownloadDir ??
-          Provider.of<SessionModel>(context, listen: false)
-              .session
-              ?.downloadDir;
+      String? effectiveDownloadDir =
+          pickedDownloadDir ??
+          Provider.of<SessionModel>(
+            context,
+            listen: false,
+          ).session?.downloadDir;
       if (effectiveDownloadDir == null || effectiveDownloadDir.isEmpty) {
         try {
           final dir = await getApplicationDocumentsDirectory();
@@ -238,8 +240,8 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
       final localizations = AppLocalizations.of(context);
       final message =
           (e is TorrentAddError && e.message != null && e.message!.isNotEmpty)
-              ? e.message!
-              : localizations.invalidTorrent;
+          ? e.message!
+          : localizations.invalidTorrent;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
@@ -326,10 +328,7 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
           children: [
             ...recentDirs.map((dir) {
               return ActionChip(
-                label: Text(
-                  dir,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                label: Text(dir, overflow: TextOverflow.ellipsis),
                 onPressed: () {
                   setState(() {
                     pickedDownloadDir = dir;
@@ -387,8 +386,9 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
       children: [
         Expanded(
           child: FilledButton(
-            onPressed:
-                _torrentLink.isEmpty ? () => _handleSelectTorrentFile() : null,
+            onPressed: _torrentLink.isEmpty
+                ? () => _handleSelectTorrentFile()
+                : null,
             child: Text(
               _filename != null ? _filename! : localizations.selectTorrentFile,
               overflow: TextOverflow.ellipsis,
@@ -428,12 +428,14 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final downloadDir = pickedDownloadDir ??
+    final downloadDir =
+        pickedDownloadDir ??
         Provider.of<SessionModel>(context, listen: true).session?.downloadDir ??
         '';
 
-    final String? decodedLink =
-        isAppLink(_torrentLink) ? getTorrentLink(_torrentLink) : null;
+    final String? decodedLink = isAppLink(_torrentLink)
+        ? getTorrentLink(_torrentLink)
+        : null;
     final String? link = isAppLink(_torrentLink) ? decodedLink : _torrentLink;
     final effectiveLink = _filename ?? link;
     final isValid = effectiveLink != null && effectiveLink.isNotEmpty;

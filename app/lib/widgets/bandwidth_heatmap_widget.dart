@@ -31,8 +31,9 @@ class BandwidthHeatmapWidget extends StatelessWidget {
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
-            final availableWidth =
-                constraints.maxWidth.isFinite ? constraints.maxWidth : 360.0;
+            final availableWidth = constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : 360.0;
             final cellWidth = availableWidth / 25;
             return Column(
               children: [
@@ -77,9 +78,13 @@ class BandwidthHeatmapWidget extends StatelessWidget {
                             },
                             child: Container(
                               width: math.max(
-                                  0.0, cellWidth - 2,), // Account for margin
+                                0.0,
+                                cellWidth - 2,
+                              ), // Account for margin
                               height: math.max(
-                                  0.0, cellWidth - 2,), // Account for margin
+                                0.0,
+                                cellWidth - 2,
+                              ), // Account for margin
                               margin: const EdgeInsets.all(1),
                               color: _getColorForLimit(
                                 service.schedule[d][h],

@@ -25,7 +25,8 @@ const _rendererDescription = '''
 void main() {
   group('parseSsdpLocation', () {
     test('reads the LOCATION header case-insensitively', () {
-      const response = 'HTTP/1.1 200 OK\r\n'
+      const response =
+          'HTTP/1.1 200 OK\r\n'
           'CACHE-CONTROL: max-age=1800\r\n'
           'location: http://192.168.1.50:8200/desc.xml\r\n'
           'ST: urn:schemas-upnp-org:device:MediaRenderer:1\r\n\r\n';
@@ -155,10 +156,7 @@ void main() {
 
   group('escapeXml', () {
     test('escapes every XML metacharacter', () {
-      expect(
-        escapeXml('''a&b<c>d"e'f'''),
-        'a&amp;b&lt;c&gt;d&quot;e&apos;f',
-      );
+      expect(escapeXml('''a&b<c>d"e'f'''), 'a&amp;b&lt;c&gt;d&quot;e&apos;f');
     });
 
     test('escapes ampersands before the entities it introduces', () {
@@ -194,7 +192,9 @@ void main() {
         streamUrl: 'http://host/a?b=1&c=2',
       );
       expect(
-          metadata, contains('Tom &amp;amp; Jerry &amp;lt;hack&amp;gt;.mp4'),);
+        metadata,
+        contains('Tom &amp;amp; Jerry &amp;lt;hack&amp;gt;.mp4'),
+      );
       expect(metadata, isNot(contains('<hack>')));
       expect(metadata, contains('http://host/a?b=1&amp;amp;c=2'));
     });
