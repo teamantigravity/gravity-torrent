@@ -399,7 +399,9 @@ class TorrentsModel extends ChangeNotifier {
     for (final t in torrents) {
       if (torrentIds.contains(t.id)) {
         for (final file in t.files) {
-          final filePath = p.normalize(p.absolute(p.join(t.location, file.name)));
+          final filePath = p.normalize(
+            p.absolute(p.join(t.location, file.name)),
+          );
           _extractedPaths.remove(filePath);
         }
       }
