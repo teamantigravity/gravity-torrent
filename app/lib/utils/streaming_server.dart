@@ -297,7 +297,8 @@ class StreamingServer {
     final startStr = match.group(1);
     final endStr = match.group(2);
 
-    if ((startStr == null || startStr.isEmpty) && (endStr == null || endStr.isEmpty)) {
+    if ((startStr == null || startStr.isEmpty) &&
+        (endStr == null || endStr.isEmpty)) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
       request.response.headers.set('Content-Range', 'bytes */$fileSize');
       return;
@@ -442,7 +443,8 @@ class StreamingServer {
         currentEnd = end;
       }
 
-      final startPiece = ((_fileOffset ?? 0) + currentStart) ~/ torrent.pieceSize;
+      final startPiece =
+          ((_fileOffset ?? 0) + currentStart) ~/ torrent.pieceSize;
       final endPiece = ((_fileOffset ?? 0) + currentEnd) ~/ torrent.pieceSize;
       final pieceCount = endPiece - startPiece + 1;
       
@@ -453,7 +455,8 @@ class StreamingServer {
       );
       if (kDebugMode) {
         debugPrint(
-          'streaming_server: reading pieces: $startPiece-$endPiece start: $start end: $end',
+          'streaming_server: reading pieces: $startPiece-$endPiece '
+          'start: $start end: $end',
         );
       }
       final readStream = file.openRead(currentStart, currentEnd + 1);

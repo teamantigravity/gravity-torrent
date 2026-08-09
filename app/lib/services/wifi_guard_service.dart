@@ -211,7 +211,9 @@ class WifiGuardService {
               _pausedByGuard.add(torrent.id);
             } catch (e) {
               if (kDebugMode) {
-                debugPrint('WifiGuardService: failed to pause ${torrent.id}: $e');
+                debugPrint(
+                  'WifiGuardService: failed to pause ${torrent.id}: $e',
+                );
               }
             }
           }());

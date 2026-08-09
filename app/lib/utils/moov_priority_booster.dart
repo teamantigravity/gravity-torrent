@@ -61,13 +61,16 @@ class MoovPriorityBooster {
       // 4. Update sequential download start piece to ensure correct order
       await torrent.setSequentialDownloadFromPiece(startPiece);
 
-      // 5. Restore the speed limit once the moov atom and header pieces are ready
+      // 5. Restore the speed limit once the moov atom and header pieces
+      // are ready
       unawaited(() async {
         try {
-          // Transmission RPC limitations: the moov atom might be at the very end
+          // Transmission RPC limitations: the moov atom might be at the
+          // very end
           // of the file, but we can't reliably prioritize *just* the end piece
           // without prioritizing the whole file. We rely on the sequential 
-          // download mode and file high-priority to fetch the start and end pieces.
+          // download mode and file high-priority to fetch the start and
+          // end pieces.
           await waitForPiecesList(
             torrent: torrent,
             neededPieces: [startPiece, endPiece],
@@ -76,7 +79,10 @@ class MoovPriorityBooster {
         } finally {
           try {
             if (originalLimitDownEnabled) {
-              await engine.setTorrentSpeedLimit(torrent.id, downloadLimit: originalLimitDown);
+              await engine.setTorrentSpeedLimit(
+                torrent.id,
+                downloadLimit: originalLimitDown,
+              );
             }
           } catch (_) {}
         }

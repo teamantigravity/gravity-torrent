@@ -18,7 +18,12 @@ class _TorrentPieceWaiter {
   final Completer<void> completer;
   final bool Function()? onCancelled;
 
-  _TorrentPieceWaiter(this.torrentId, this.neededPieces, this.completer, this.onCancelled);
+  _TorrentPieceWaiter(
+    this.torrentId,
+    this.neededPieces,
+    this.completer,
+    this.onCancelled,
+  );
 }
 
 final List<_TorrentPieceWaiter> _waiters = [];
@@ -40,10 +45,13 @@ void _startSharedTimer() {
       for (final id in ids) {
         try {
           final t = await engine.fetchTorrent(id);
-          final waitersForId = _waiters.where((w) => w.torrentId == id).toList();
+          final waitersForId =
+              _waiters.where((w) => w.torrentId == id).toList();
           for (final w in waitersForId) {
             if (w.onCancelled != null && w.onCancelled!()) {
-              if (!w.completer.isCompleted) w.completer.completeError(CancellationException());
+              if (!w.completer.isCompleted) {
+                w.completer.completeError(CancellationException());
+              }
               _waiters.remove(w);
             } else if (t.hasLoadedPieces(w.neededPieces)) {
               if (!w.completer.isCompleted) w.completer.complete();
@@ -51,7 +59,8 @@ void _startSharedTimer() {
             }
           }
         } catch (e) {
-          final waitersForId = _waiters.where((w) => w.torrentId == id).toList();
+          final waitersForId =
+              _waiters.where((w) => w.torrentId == id).toList();
           for (final w in waitersForId) {
             if (!w.completer.isCompleted) w.completer.completeError(e);
             _waiters.remove(w);
@@ -95,7 +104,9 @@ Future<void> waitForPiecesList({
     return completer.future;
   }
 
-  _waiters.add(_TorrentPieceWaiter(torrent.id, neededPieces, completer, onCancelled));
+  _waiters.add(
+    _TorrentPieceWaiter(torrent.id, neededPieces, completer, onCancelled),
+  );
   _startSharedTimer();
 
   return completer.future;

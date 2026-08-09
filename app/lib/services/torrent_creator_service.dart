@@ -123,7 +123,8 @@ class TorrentCreatorService {
     }
 
     // Auto piece length: roughly aim for 1000–2000 pieces
-    final effectivePieceLength = pieceLength ?? _autoPieceLength(estimatedTotal);
+    final effectivePieceLength =
+        pieceLength ?? _autoPieceLength(estimatedTotal);
 
     // Read all file data and compute piece hashes and actual sizes
     final fileSizes = <int>[];

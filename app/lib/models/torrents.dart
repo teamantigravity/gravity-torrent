@@ -513,7 +513,9 @@ class TorrentsModel extends ChangeNotifier {
         for (final t in torrents) {
           if (deletedIds.contains(t.id)) {
             for (final file in t.files) {
-              final filePath = p.normalize(p.absolute(p.join(t.location, file.name)));
+              final filePath = p.normalize(
+                p.absolute(p.join(t.location, file.name)),
+              );
               _extractedPaths.remove(filePath);
             }
           }
@@ -522,12 +524,15 @@ class TorrentsModel extends ChangeNotifier {
         unawaited(_persistExtractedPaths());
       }
 
-      _manuallyResumedSeedingIds.removeWhere((id, _) => !fetchedIds.contains(id));
+      _manuallyResumedSeedingIds.removeWhere(
+        (id, _) => !fetchedIds.contains(id),
+      );
       final now = DateTime.now();
       for (final t in fetched) {
         if (t.status == TorrentStatus.stopped) {
           final lockTime = _manuallyResumedSeedingIds[t.id];
-          if (lockTime != null && now.difference(lockTime) > const Duration(seconds: 15)) {
+          if (lockTime != null &&
+              now.difference(lockTime) > const Duration(seconds: 15)) {
             _manuallyResumedSeedingIds.remove(t.id);
           }
         }
@@ -718,7 +723,9 @@ class TorrentsModel extends ChangeNotifier {
     final baseDir = p.normalize(p.absolute(torrent.location));
     for (final file in torrent.files) {
       if (!file.wanted || file.bytesCompleted != file.length) continue;
-      final filePath = p.normalize(p.absolute(p.join(torrent.location, file.name)));
+      final filePath = p.normalize(
+        p.absolute(p.join(torrent.location, file.name)),
+      );
       // Reject any path that resolves outside the download directory.
       if (!p.isWithin(baseDir, filePath) && filePath != baseDir) {
         if (kDebugMode) {

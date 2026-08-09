@@ -78,7 +78,8 @@ class BackupService {
 
   /// Creates a backup file containing all app settings and torrent state.
   ///
-  /// If [passphrase] is provided, the backup is AES-256-GCM authenticated encryption.
+  /// If [passphrase] is provided, the backup is AES-256-GCM authenticated
+  /// encryption.
   /// Returns the path to the generated backup file.
   static Future<BackupRestoreResult> export({
     String? passphrase,
@@ -166,7 +167,8 @@ class BackupService {
             .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
             .length;
         final warnMsg = localCount > 0
-            ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+            ? ' (Warning: $localCount local torrent(s) without '
+                'magnet links were not fully backed up)'
             : '';
         return BackupRestoreResult(
           success: true,
@@ -191,7 +193,8 @@ class BackupService {
           .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
           .length;
       final warnMsg = localCount > 0
-          ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+          ? ' (Warning: $localCount local torrent(s) without '
+              'magnet links were not fully backed up)'
           : '';
 
       return BackupRestoreResult(
@@ -322,7 +325,8 @@ class BackupService {
       if (storedHash != computedHash) {
         return const BackupRestoreResult(
           success: false,
-          message: 'Backup file integrity check failed — file may be corrupted',
+          message: 'Backup file integrity check failed — '
+              'file may be corrupted',
         );
       }
 
@@ -418,8 +422,8 @@ class BackupService {
 
       return BackupRestoreResult(
         success: true,
-        message:
-            'Restored ${settings.length} settings and ${torrents.length} torrents',
+        message: 'Restored ${settings.length} settings and '
+            '${torrents.length} torrents',
         metadata: metadata,
       );
     } catch (e) {
