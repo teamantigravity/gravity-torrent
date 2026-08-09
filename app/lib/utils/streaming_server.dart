@@ -235,11 +235,6 @@ class StreamingServer {
       request.response.statusCode = HttpStatus.internalServerError;
       return;
     }
-    await _waitForPieces(
-      from: torrentFile.beginPiece,
-      count: 1,
-      cancelableCompleter: cancelableCompleter,
-    );
     final fileSize = torrentFile.length;
     final rangeHeader = request.headers.value('range');
 
@@ -441,15 +436,18 @@ class StreamingServer {
         currentEnd = end;
       }
 
-      final piece = ((_fileOffset ?? 0) + currentStart) ~/ torrent.pieceSize;
+      final startPiece = ((_fileOffset ?? 0) + currentStart) ~/ torrent.pieceSize;
+      final endPiece = ((_fileOffset ?? 0) + currentEnd) ~/ torrent.pieceSize;
+      final pieceCount = endPiece - startPiece + 1;
+      
       await _waitForPieces(
-        from: piece,
-        count: 1,
+        from: startPiece,
+        count: pieceCount,
         cancelableCompleter: cancelableCompleter,
       );
       if (kDebugMode) {
         debugPrint(
-          'streaming_server: reading piece: $piece start: $start end: $end',
+          'streaming_server: reading pieces: $startPiece-$endPiece start: $start end: $end',
         );
       }
       final readStream = file.openRead(currentStart, currentEnd + 1);

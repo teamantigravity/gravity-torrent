@@ -38,24 +38,22 @@ class _AudioTrackSelectorDialogState extends State<AudioTrackSelectorDialog> {
     return AlertDialog(
       title: Text(l.audioTracks),
       content: SingleChildScrollView(
-        child: RadioGroup<String>(
-          groupValue: widget.currentValue,
-          onChanged: (id) {
-            final track = widget.tracks.firstWhere((t) => t.id == id);
-            widget.onTrackSelected(track);
-            Navigator.of(context).pop();
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ...widget.tracks.map((track) {
-                return RadioListTile<String>(
-                  title: Text(getTitle(context, track)),
-                  value: track.id,
-                );
-              }),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ...widget.tracks.map((track) {
+              return RadioListTile<String>(
+                title: Text(getTitle(context, track)),
+                value: track.id,
+                groupValue: widget.currentValue,
+                onChanged: (id) {
+                  final t = widget.tracks.firstWhere((t) => t.id == id);
+                  widget.onTrackSelected(t);
+                  Navigator.of(context).pop();
+                },
+              );
+            }),
+          ],
         ),
       ),
       actions: <Widget>[

@@ -61,7 +61,7 @@ class TorrentsModel extends ChangeNotifier {
   Set<int> _favorites = {};
   final _notifiedCompletedIds = <int>{};
   final _extractedPaths = <String>{};
-  final _manuallyResumedSeedingIds = <int>{};
+  final _manuallyResumedSeedingIds = <int, DateTime>{};
 
   static const _notifiedCompletedIdsKey =
       'gravity_torrent_notified_completed_ids';
@@ -248,7 +248,7 @@ class TorrentsModel extends ChangeNotifier {
           .where(
             (t) =>
                 t.status == TorrentStatus.seeding &&
-                !_manuallyResumedSeedingIds.contains(t.id),
+                !_manuallyResumedSeedingIds.containsKey(t.id),
           )
           .map((t) => t.id)
           .toList();
@@ -386,22 +386,30 @@ class TorrentsModel extends ChangeNotifier {
   Future<void> removeAllTorrents(List<int> torrentIds, bool withData) async {
     if (torrentIds.isEmpty) return;
 
+    await engine.removeTorrents(torrentIds, withData);
+
     for (final id in torrentIds) {
       SpeedHistoryService.instance.removeTorrent(id);
       _notifiedCompletedIds.remove(id);
+      if (_favorites.contains(id)) {
+        _favorites.remove(id);
+        unawaited(TorrentFavoritesService.instance.setFavorite(id, false));
+      }
     }
     for (final t in torrents) {
       if (torrentIds.contains(t.id)) {
         for (final file in t.files) {
-          final filePath = p.normalize(p.join(t.location, file.name));
+          final filePath = p.normalize(p.absolute(p.join(t.location, file.name)));
           _extractedPaths.remove(filePath);
         }
       }
     }
+    
+    torrents.removeWhere((t) => torrentIds.contains(t.id));
+
     unawaited(_persistNotifiedCompletedIds());
     unawaited(_persistExtractedPaths());
 
-    await engine.removeTorrents(torrentIds, withData);
     unawaited(_triggerRefetch());
   }
 
@@ -414,7 +422,9 @@ class TorrentsModel extends ChangeNotifier {
     if (toPause.isEmpty) return;
     try {
       await engine.pauseTorrents(toPause);
-      _manuallyResumedSeedingIds.removeAll(toPause);
+      for (final id in toPause) {
+        _manuallyResumedSeedingIds.remove(id);
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to pause selected torrents: $e');
     }
@@ -432,7 +442,7 @@ class TorrentsModel extends ChangeNotifier {
       await engine.resumeTorrents(toResume);
       for (final t in torrents) {
         if (toResume.contains(t.id) && t.progress >= 1.0) {
-          _manuallyResumedSeedingIds.add(t.id);
+          _manuallyResumedSeedingIds[t.id] = DateTime.now();
         }
       }
       _quotaPauseEnforced = false;
@@ -450,7 +460,9 @@ class TorrentsModel extends ChangeNotifier {
     if (toPause.isEmpty) return;
     try {
       await engine.pauseTorrents(toPause);
-      _manuallyResumedSeedingIds.removeAll(toPause);
+      for (final id in toPause) {
+        _manuallyResumedSeedingIds.remove(id);
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to pause all torrents: $e');
     }
@@ -467,7 +479,7 @@ class TorrentsModel extends ChangeNotifier {
       await engine.resumeTorrents(toResume);
       for (final t in torrents) {
         if (toResume.contains(t.id) && t.progress >= 1.0) {
-          _manuallyResumedSeedingIds.add(t.id);
+          _manuallyResumedSeedingIds[t.id] = DateTime.now();
         }
       }
       _quotaPauseEnforced = false;
@@ -501,7 +513,7 @@ class TorrentsModel extends ChangeNotifier {
         for (final t in torrents) {
           if (deletedIds.contains(t.id)) {
             for (final file in t.files) {
-              final filePath = p.normalize(p.join(t.location, file.name));
+              final filePath = p.normalize(p.absolute(p.join(t.location, file.name)));
               _extractedPaths.remove(filePath);
             }
           }
@@ -510,10 +522,14 @@ class TorrentsModel extends ChangeNotifier {
         unawaited(_persistExtractedPaths());
       }
 
-      _manuallyResumedSeedingIds.retainWhere((id) => fetchedIds.contains(id));
+      _manuallyResumedSeedingIds.removeWhere((id, _) => !fetchedIds.contains(id));
+      final now = DateTime.now();
       for (final t in fetched) {
         if (t.status == TorrentStatus.stopped) {
-          _manuallyResumedSeedingIds.remove(t.id);
+          final lockTime = _manuallyResumedSeedingIds[t.id];
+          if (lockTime != null && now.difference(lockTime) > const Duration(seconds: 15)) {
+            _manuallyResumedSeedingIds.remove(t.id);
+          }
         }
       }
 
@@ -607,7 +623,7 @@ class TorrentsModel extends ChangeNotifier {
             .where(
               (t) =>
                   t.status == TorrentStatus.seeding &&
-                  !_manuallyResumedSeedingIds.contains(t.id),
+                  !_manuallyResumedSeedingIds.containsKey(t.id),
             )
             .map((t) => t.id)
             .toList();
@@ -681,7 +697,7 @@ class TorrentsModel extends ChangeNotifier {
 
       await SeedRatioService.instance.checkAndStop(
         torrents,
-        _manuallyResumedSeedingIds,
+        _manuallyResumedSeedingIds.keys.toSet(),
       );
 
       for (final t in torrents) {
@@ -702,7 +718,7 @@ class TorrentsModel extends ChangeNotifier {
     final baseDir = p.normalize(p.absolute(torrent.location));
     for (final file in torrent.files) {
       if (!file.wanted || file.bytesCompleted != file.length) continue;
-      final filePath = p.normalize(p.join(torrent.location, file.name));
+      final filePath = p.normalize(p.absolute(p.join(torrent.location, file.name)));
       // Reject any path that resolves outside the download directory.
       if (!p.isWithin(baseDir, filePath) && filePath != baseDir) {
         if (kDebugMode) {

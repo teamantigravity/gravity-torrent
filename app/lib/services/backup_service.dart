@@ -85,6 +85,7 @@ class BackupService {
     String? outputDirectory,
   }) async {
     try {
+      await SharedPrefs.init();
       // Collect all settings from SharedPreferences
       final allKeys = SharedPrefs.getKeys();
       final settings = <String, dynamic>{};
@@ -349,6 +350,15 @@ class BackupService {
       final metadata =
           BackupMetadata.fromJson(payload['metadata'] as Map<String, dynamic>);
 
+      // Check engine availability before writing settings
+      if (!getIt.isRegistered<Engine>()) {
+        debugPrint('BackupService: engine not registered, cannot restore');
+        return const BackupRestoreResult(
+          success: false,
+          message: 'Engine not ready, cannot restore backup',
+        );
+      }
+
       // Restore settings
       final settings = payload['settings'] as Map<String, dynamic>? ?? {};
       for (final entry in settings.entries) {
@@ -358,7 +368,7 @@ class BackupService {
           await SharedPrefs.setBool(key, value);
         } else if (value is num) {
           final existing = SharedPrefs.get(key);
-          if (value is double || existing is double || _isFloatKey(key)) {
+          if (value is double || existing is double) {
             await SharedPrefs.setDouble(key, value.toDouble());
           } else {
             await SharedPrefs.setInt(key, value.toInt());
@@ -380,15 +390,8 @@ class BackupService {
       // Restore torrent magnet links
       final torrents = (payload['torrents'] as List<dynamic>?) ?? [];
       try {
-        if (!getIt.isRegistered<Engine>()) {
-          debugPrint('BackupService: engine not registered, skipping torrents');
-          return const BackupRestoreResult(
-            success: false,
-            message: 'Engine not ready, cannot restore torrents',
-          );
-        }
         final engine = getIt<Engine>();
-        for (final t in torrents) {
+        await Future.wait(torrents.map((t) async {
           final map = t as Map<String, dynamic>;
           final magnetLink = map['magnetLink'] as String?;
           if (magnetLink != null && magnetLink.isNotEmpty) {
@@ -402,7 +405,7 @@ class BackupService {
               debugPrint('BackupService: could not re-add torrent — $e');
             }
           }
-        }
+        }));
       } catch (e) {
         debugPrint('BackupService: torrent restoration skipped — $e');
       }
@@ -428,7 +431,7 @@ class BackupService {
     final key = encrypt_lib.Key(Uint8List.fromList(keyBytes));
     final iv = encrypt_lib.IV.fromSecureRandom(16);
     final encrypter = encrypt_lib.Encrypter(
-      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc),
+      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.gcm),
     );
     final encrypted = encrypter.encryptBytes(utf8.encode(plaintext), iv: iv);
 
@@ -450,7 +453,7 @@ class BackupService {
     final ciphertext = Uint8List.sublistView(cipherBytes, 16);
 
     final encrypter = encrypt_lib.Encrypter(
-      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc),
+      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.gcm),
     );
     final decrypted = encrypter.decryptBytes(
       encrypt_lib.Encrypted(ciphertext),
@@ -458,17 +461,6 @@ class BackupService {
     );
 
     return utf8.decode(decrypted);
-  }
-
-  static bool _isFloatKey(String key) {
-    final lower = key.toLowerCase();
-    return lower.contains('ratio') ||
-        lower.contains('speed') ||
-        lower.contains('percent') ||
-        lower.contains('float') ||
-        lower.contains('double') ||
-        lower.contains('multiplier') ||
-        lower.contains('threshold');
   }
 
   static String _currentPlatform() {

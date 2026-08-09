@@ -100,7 +100,7 @@ class SchedulerService {
   bool _enabled = false;
   bool _loaded = false;
   bool _disposed = false;
-  bool _isEnforcing = false;
+  Future<void>? _lock;
   Timer? _timer;
   final Set<int> _pausedByScheduler = {};
 
@@ -178,12 +178,11 @@ class SchedulerService {
   }
 
   Future<void> _enforce() async {
-    if (_disposed) return;
-    if (_isEnforcing) return;
+    return _withLock(_enforceImpl);
+  }
 
-    _isEnforcing = true;
-    try {
-      if (_disposed) return;
+  Future<void> _enforceImpl() async {
+    if (_disposed) return;
       if (!_enabled) return;
       if (!RemoteConfigService.instance.isFeatureEnabled('enableScheduler')) {
         return;
@@ -196,7 +195,7 @@ class SchedulerService {
       try {
         final engine = getIt<Engine>();
         final torrents = await engine.fetchTorrents();
-        if (_disposed) return;
+        if (_disposed || !_enabled) return;
 
         if (shouldDownload) {
           // Resume torrents paused by the scheduler
@@ -263,9 +262,6 @@ class SchedulerService {
       } catch (e) {
         if (kDebugMode) debugPrint('SchedulerService _enforce error: $e');
       }
-    } finally {
-      _isEnforcing = false;
-    }
   }
 
   Future<void> _resumeAll() async {
@@ -313,6 +309,25 @@ class SchedulerService {
     if (_disposed) return;
     _stopTimer();
     _disposed = true;
+  }
+
+  Future<T> _withLock<T>(Future<T> Function() task) {
+    final previous = _lock;
+    final current = Future<T>(() async {
+      if (previous != null) {
+        try {
+          await previous;
+        } catch (_) {}
+      }
+      return task();
+    });
+    _lock = current;
+    unawaited(
+      current.whenComplete(() {
+        if (_lock == current) _lock = null;
+      }),
+    );
+    return current;
   }
 }
 

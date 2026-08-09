@@ -42,7 +42,7 @@ class PlaylistQueueSheet extends StatelessWidget {
                   child: ReorderableListView.builder(
                     scrollController: scrollController,
                     itemCount: svc.queue.length,
-                    onReorderItem: svc.reorderQueue,
+                    onReorder: svc.reorderQueue,
                     itemBuilder: (context, i) {
                       final item = svc.queue[i];
                       final isCurrent = i == svc.currentIndex;

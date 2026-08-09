@@ -95,13 +95,12 @@ class AutoExtractService extends ChangeNotifier {
             // Single gzipped file - handled via streaming
             final originalFileName = p.basename(filePath);
             final outPath = p.join(
-              targetFolder.parent.path,
+              targetFolder.path,
               originalFileName.replaceFirst(
                 RegExp(r'\.gz$', caseSensitive: false),
                 '',
               ),
             );
-            await targetFolder.parent.create(recursive: true);
             try {
               await Isolate.run(() async {
                 final inputStream = InputFileStream(filePath);

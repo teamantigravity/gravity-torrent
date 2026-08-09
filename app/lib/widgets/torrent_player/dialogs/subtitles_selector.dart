@@ -25,28 +25,26 @@ class _SubtitlesSelectorDialogState extends State<SubtitlesSelectorDialog> {
     return AlertDialog(
       title: Text(l.subtitles),
       content: SingleChildScrollView(
-        child: RadioGroup<String>(
-          groupValue: widget.currentValue,
-          onChanged: (id) {
-            final sub = widget.subtitles.firstWhere((s) => s.id == id);
-            widget.onSubtitleSelected(sub);
-            Navigator.of(context).pop();
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ...widget.subtitles.where((s) => s.id != 'auto').toList().map((
-                sub,
-              ) {
-                return RadioListTile<String>(
-                  title: Text(
-                    sub.id == 'no' ? l.noSubtitle : sub.title ?? l.unknown,
-                  ),
-                  value: sub.id,
-                );
-              }),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ...widget.subtitles.where((s) => s.id != 'auto').toList().map((
+              sub,
+            ) {
+              return RadioListTile<String>(
+                title: Text(
+                  sub.id == 'no' ? l.noSubtitle : sub.title ?? l.unknown,
+                ),
+                value: sub.id,
+                groupValue: widget.currentValue,
+                onChanged: (id) {
+                  final s = widget.subtitles.firstWhere((s) => s.id == id);
+                  widget.onSubtitleSelected(s);
+                  Navigator.of(context).pop();
+                },
+              );
+            }),
+          ],
         ),
       ),
       actions: <Widget>[
