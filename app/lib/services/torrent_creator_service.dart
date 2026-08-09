@@ -163,7 +163,7 @@ class TorrentCreatorService {
       }
       fileSizes.add(fileActualSize);
       totalBytes += fileActualSize;
-      
+
       fileIndex++;
       onProgress?.call(
         TorrentCreatorProgress(
@@ -231,9 +231,9 @@ class TorrentCreatorService {
     final encoded = _Bencode.encode(torrent);
     final outputName = '${p.basenameWithoutExtension(baseName)}.torrent';
     final outputPath = p.join(outputDirectory, outputName);
-    
+
     await Directory(outputDirectory).create(recursive: true);
-    
+
     final outputFile = File(outputPath);
     await outputFile.writeAsBytes(encoded);
 

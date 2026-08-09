@@ -406,7 +406,7 @@ class TorrentsModel extends ChangeNotifier {
         }
       }
     }
-    
+
     torrents.removeWhere((t) => torrentIds.contains(t.id));
 
     unawaited(_persistNotifiedCompletedIds());

@@ -1061,13 +1061,9 @@ class TransmissionEngine extends Engine {
         speedLimitDownEnabled: downloadLimit != null ? downloadLimit > 0 : null,
         speedLimitUpEnabled: uploadLimit != null ? uploadLimit > 0 : null,
         speedLimitDown:
-            (downloadLimit != null && downloadLimit > 0)
-                ? downloadLimit
-                : null,
+            (downloadLimit != null && downloadLimit > 0) ? downloadLimit : null,
         speedLimitUp:
-            (uploadLimit != null && uploadLimit > 0)
-                ? uploadLimit
-                : null,
+            (uploadLimit != null && uploadLimit > 0) ? uploadLimit : null,
       ),
     );
     _expectSuccess(

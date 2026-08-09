@@ -196,7 +196,7 @@ class WifiGuardService {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       if (_disposed) return;
-      
+
       final futures = <Future<void>>[];
       for (final torrent in torrents) {
         if (torrent.status == TorrentStatus.downloading ||
@@ -220,7 +220,7 @@ class WifiGuardService {
         }
       }
       await Future.wait(futures);
-      
+
       if (kDebugMode) {
         debugPrint(
           'WifiGuardService: paused ${_pausedByGuard.length} torrents',
@@ -265,7 +265,7 @@ class WifiGuardService {
           }
         }());
       }
-      
+
       await Future.wait(futures);
 
       if (kDebugMode) {
