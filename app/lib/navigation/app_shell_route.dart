@@ -148,16 +148,13 @@ class _AppShellRouteState extends State<AppShellRoute> with WindowListener {
         if (kDebugMode) debugPrint('app_links stream error: $e');
       },
     );
-    _appLinks
-        .getInitialLink()
-        .then((uri) {
-          if (uri != null && mounted) {
-            _handleUri(uri);
-          }
-        })
-        .catchError((Object e) {
-          if (kDebugMode) debugPrint('getInitialLink error: $e');
-        });
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null && mounted) {
+        _handleUri(uri);
+      }
+    }).catchError((Object e) {
+      if (kDebugMode) debugPrint('getInitialLink error: $e');
+    });
   }
 
   void _handleUri(Uri uri) {

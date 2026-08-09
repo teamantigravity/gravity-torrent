@@ -38,10 +38,8 @@ class BatteryService {
     if (_disposed || _loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     if (_disposed) return;
-    _threshold =
-        (await SharedPrefsStorage.getString(
-          _thresholdKey,
-        ).then((s) => s != null ? int.tryParse(s) : null)) ??
+    _threshold = (await SharedPrefsStorage.getString(_thresholdKey)
+            .then((s) => s != null ? int.tryParse(s) : null)) ??
         20;
     if (_disposed) return;
     _loaded = true;
@@ -149,7 +147,9 @@ class BatteryService {
       await session.update(SessionBase(altSpeedEnabled: true));
       _throttledByBattery = true;
       if (kDebugMode) {
-        debugPrint('BatteryService: throttle enabled (battery low)');
+        debugPrint(
+          'BatteryService: throttle enabled (battery low)',
+        );
       }
     } catch (e) {
       if (kDebugMode) debugPrint('BatteryService _enableThrottle error: $e');
@@ -170,7 +170,9 @@ class BatteryService {
       await session.update(SessionBase(altSpeedEnabled: false));
       _throttledByBattery = false;
       if (kDebugMode) {
-        debugPrint('BatteryService: normal speed restored');
+        debugPrint(
+          'BatteryService: normal speed restored',
+        );
       }
     } catch (e) {
       if (kDebugMode) {

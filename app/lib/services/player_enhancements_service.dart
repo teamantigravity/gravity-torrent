@@ -91,8 +91,8 @@ class PlayerEnhancementsService extends ChangeNotifier {
   int get currentIndex => _currentIndex;
   PlaylistItem? get currentItem =>
       _currentIndex >= 0 && _currentIndex < _queue.length
-      ? _queue[_currentIndex]
-      : null;
+          ? _queue[_currentIndex]
+          : null;
 
   // ── Resume position ──────────────────────────────────────────────────────
   static const _resumePrefix = 'player_resume_';

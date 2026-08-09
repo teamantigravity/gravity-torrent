@@ -29,8 +29,7 @@ class _WindowTitleBarState extends State<WindowTitleBar> {
         final isMaximized = state?.isMaximized == true;
         return YaruWindowTitleBar(
           leading: widget.leading,
-          backgroundColor:
-              widget.backgroundColor ??
+          backgroundColor: widget.backgroundColor ??
               Theme.of(context).scaffoldBackgroundColor,
           border: BorderSide.none,
           isActive: state?.isActive,

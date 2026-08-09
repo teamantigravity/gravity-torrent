@@ -5,9 +5,9 @@ class TorrentAddRequest {
   TorrentAddRequest({required this.arguments});
 
   Map<String, dynamic> toJson() => {
-    'method': method,
-    'arguments': arguments.toJson(),
-  };
+        'method': method,
+        'arguments': arguments.toJson(),
+      };
 }
 
 class TorrentAddRequestArguments {

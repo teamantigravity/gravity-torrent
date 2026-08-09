@@ -31,7 +31,7 @@ enum _MultiSelectAction {
   copyMagnetLinks,
   copyInfoHashes,
   copyTorrentNames,
-  share,
+  share
 }
 
 const String assetName = 'assets/undraw_download.svg';
@@ -67,9 +67,8 @@ class _StatChip extends StatelessWidget {
             Text(label, style: theme.textTheme.labelSmall),
             Text(
               value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -246,20 +245,17 @@ class _TorrentScreen extends State<TorrentsScreen> {
         '${localizations.checking} (${count(TorrentStatus.checking)})',
       ),
       MapEntry(
-        TorrentStatus.queuedToDownload,
-        '${localizations.queuedToDownload} '
-        '(${count(TorrentStatus.queuedToDownload)})',
-      ),
+          TorrentStatus.queuedToDownload,
+          '${localizations.queuedToDownload} '
+          '(${count(TorrentStatus.queuedToDownload)})'),
       MapEntry(
-        TorrentStatus.queuedToSeed,
-        '${localizations.queuedToSeed} '
-        '(${count(TorrentStatus.queuedToSeed)})',
-      ),
+          TorrentStatus.queuedToSeed,
+          '${localizations.queuedToSeed} '
+          '(${count(TorrentStatus.queuedToSeed)})'),
       MapEntry(
-        TorrentStatus.queuedToCheck,
-        '${localizations.queuedToCheck} '
-        '(${count(TorrentStatus.queuedToCheck)})',
-      ),
+          TorrentStatus.queuedToCheck,
+          '${localizations.queuedToCheck} '
+          '(${count(TorrentStatus.queuedToCheck)})'),
     ];
   }
 
@@ -298,7 +294,9 @@ class _TorrentScreen extends State<TorrentsScreen> {
               children: [
                 _buildActionDivider(),
                 SlidableAction(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
                   onPressed: (_) => showDeviceSheet(
                     context,
                     torrent.name,
@@ -312,13 +310,17 @@ class _TorrentScreen extends State<TorrentsScreen> {
                 ),
                 _buildActionDivider(),
                 SlidableAction(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
                   onPressed: (_) => shareLink(context, torrent.magnetLink),
                   icon: Icons.share,
                 ),
                 _buildActionDivider(),
                 SlidableAction(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
                   onPressed: (_) async {
                     final l10n = AppLocalizations.of(context);
                     await Clipboard.setData(
@@ -338,7 +340,9 @@ class _TorrentScreen extends State<TorrentsScreen> {
                 ),
                 _buildActionDivider(),
                 SlidableAction(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
                   onPressed: torrent.hash == null
                       ? null
                       : (_) async {
@@ -360,13 +364,17 @@ class _TorrentScreen extends State<TorrentsScreen> {
                 ),
                 _buildActionDivider(),
                 SlidableAction(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
                   onPressed: (_) => torrent.openFolder(context),
                   icon: Icons.folder_outlined,
                 ),
                 _buildActionDivider(),
                 SlidableAction(
-                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface,
                   onPressed: (_) => showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -485,16 +493,16 @@ class _TorrentScreen extends State<TorrentsScreen> {
             tooltip: l.pauseAllTorrents,
             onPressed:
                 model.torrents.any((t) => t.status != TorrentStatus.stopped)
-                ? () async => model.pauseAllTorrents()
-                : null,
+                    ? () async => model.pauseAllTorrents()
+                    : null,
           ),
           IconButton(
             icon: const Icon(Icons.play_arrow),
             tooltip: l.resumeAllTorrents,
             onPressed:
                 model.torrents.any((t) => t.status == TorrentStatus.stopped)
-                ? () async => model.resumeAllTorrents()
-                : null,
+                    ? () async => model.resumeAllTorrents()
+                    : null,
           ),
           IconButton(
             icon: Icon(
@@ -528,12 +536,10 @@ class _TorrentScreen extends State<TorrentsScreen> {
     final selectedTorrents = model.torrents
         .where((t) => _selectedTorrentIds.contains(t.id))
         .toList();
-    final canPause = selectedTorrents.any(
-      (t) => t.status != TorrentStatus.stopped,
-    );
-    final canResume = selectedTorrents.any(
-      (t) => t.status == TorrentStatus.stopped,
-    );
+    final canPause =
+        selectedTorrents.any((t) => t.status != TorrentStatus.stopped);
+    final canResume =
+        selectedTorrents.any((t) => t.status == TorrentStatus.stopped);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
@@ -545,16 +551,15 @@ class _TorrentScreen extends State<TorrentsScreen> {
             tooltip: l.cancel,
           ),
           Checkbox(
-            value:
-                model.displayedTorrents.isNotEmpty &&
+            value: model.displayedTorrents.isNotEmpty &&
                 model.displayedTorrents.every(
                   (t) => _selectedTorrentIds.contains(t.id),
                 ),
             onChanged: model.displayedTorrents.isEmpty
                 ? null
                 : (_) => _toggleSelectAllVisible(
-                    model.displayedTorrents.map((t) => t.id).toList(),
-                  ),
+                      model.displayedTorrents.map((t) => t.id).toList(),
+                    ),
           ),
           const SizedBox(width: 8),
           Text(
@@ -677,8 +682,10 @@ class _TorrentScreen extends State<TorrentsScreen> {
                 icon: const Icon(Icons.filter_list),
                 items: options
                     .map(
-                      (e) =>
-                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                      (e) => DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value),
+                      ),
                     )
                     .toList(),
                 onChanged: (status) => model.setStatusFilter(status),
@@ -729,7 +736,10 @@ class _TorrentScreen extends State<TorrentsScreen> {
               (query) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ActionChip(
-                  label: Text(query, overflow: TextOverflow.ellipsis),
+                  label: Text(
+                    query,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   onPressed: () => model.setFilterText(query),
                 ),
               ),
@@ -808,9 +818,8 @@ class _TorrentScreen extends State<TorrentsScreen> {
         child: Consumer<TorrentsModel>(
           builder: (context, torrentsModel, child) {
             if (_isSelectionMode) {
-              final visibleIds = torrentsModel.displayedTorrents
-                  .map((t) => t.id)
-                  .toSet();
+              final visibleIds =
+                  torrentsModel.displayedTorrents.map((t) => t.id).toSet();
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
                 final idsToRemove = _selectedTorrentIds
@@ -863,11 +872,31 @@ class _TorrentScreen extends State<TorrentsScreen> {
             return Column(
               children: [
                 if (_isSelectionMode)
-                  _buildSelectionBar(context, app, torrentsModel, localizations)
+                  _buildSelectionBar(
+                    context,
+                    app,
+                    torrentsModel,
+                    localizations,
+                  )
                 else
-                  _buildActionBar(context, app, torrentsModel, localizations),
-                _buildStatsHeader(context, app, torrentsModel, localizations),
-                _buildStatusFilter(context, app, torrentsModel, localizations),
+                  _buildActionBar(
+                    context,
+                    app,
+                    torrentsModel,
+                    localizations,
+                  ),
+                _buildStatsHeader(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
+                _buildStatusFilter(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
                 _buildFileTypeFilterChips(
                   context,
                   app,
@@ -886,8 +915,15 @@ class _TorrentScreen extends State<TorrentsScreen> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                _buildRecentQueries(context, app, torrentsModel, localizations),
-                Expanded(child: _buildTorrentListView(torrentsModel, context)),
+                _buildRecentQueries(
+                  context,
+                  app,
+                  torrentsModel,
+                  localizations,
+                ),
+                Expanded(
+                  child: _buildTorrentListView(torrentsModel, context),
+                ),
                 const AdBannerSlot(),
               ],
             );

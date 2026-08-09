@@ -78,11 +78,14 @@ class BandwidthHeatmapService extends ChangeNotifier {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (_isEnforcing) return;
-      _isEnforcing = true;
-      _enforceLimit().whenComplete(() => _isEnforcing = false);
-    });
+    _timer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) {
+        if (_isEnforcing) return;
+        _isEnforcing = true;
+        _enforceLimit().whenComplete(() => _isEnforcing = false);
+      },
+    );
     unawaited(_enforceLimit());
   }
 

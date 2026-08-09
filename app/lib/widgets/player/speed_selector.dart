@@ -25,7 +25,12 @@ class SpeedSelector extends StatelessWidget {
             ),
           ),
           itemBuilder: (_) => PlayerEnhancementsService.speeds
-              .map((s) => PopupMenuItem(value: s, child: Text('${s}x')))
+              .map(
+                (s) => PopupMenuItem(
+                  value: s,
+                  child: Text('${s}x'),
+                ),
+              )
               .toList(),
         );
       },

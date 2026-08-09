@@ -91,7 +91,9 @@ class _RssScreenState extends State<RssScreen> {
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
-                      Text(l.rssAutoDownloadDescription),
+                      Text(
+                        l.rssAutoDownloadDescription,
+                      ),
                     ],
                   ),
                 ),
@@ -168,7 +170,9 @@ class _RssScreenState extends State<RssScreen> {
                                 ),
                                 subtitle: feed.keyword.isNotEmpty
                                     ? Text(l.filter(feed.keyword))
-                                    : Text(l.allItems),
+                                    : Text(
+                                        l.allItems,
+                                      ),
                                 value: feed.enabled,
                                 onChanged: (v) async {
                                   final currentIndex = _feeds.indexWhere(
@@ -187,12 +191,12 @@ class _RssScreenState extends State<RssScreen> {
                                     () => _feeds[currentIndex] = updated,
                                   );
 
-                                  final serviceIndex = RssService.instance.feeds
-                                      .indexWhere(
-                                        (f) =>
-                                            f.url == feed.url &&
-                                            f.keyword == feed.keyword,
-                                      );
+                                  final serviceIndex =
+                                      RssService.instance.feeds.indexWhere(
+                                    (f) =>
+                                        f.url == feed.url &&
+                                        f.keyword == feed.keyword,
+                                  );
                                   if (serviceIndex != -1) {
                                     await RssService.instance.updateFeedAt(
                                       serviceIndex,
@@ -274,9 +278,11 @@ class _AddFeedDialogState extends State<_AddFeedDialog> {
             if (uri == null ||
                 !uri.hasAbsolutePath ||
                 (!url.startsWith('http://') && !url.startsWith('https://'))) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(l.validUrlRequired)));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l.validUrlRequired),
+                ),
+              );
               return;
             }
             final feed = RssFeed(

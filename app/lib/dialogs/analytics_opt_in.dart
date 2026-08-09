@@ -8,29 +8,21 @@ class AnalyticsOptInDialog extends StatelessWidget {
   const AnalyticsOptInDialog({super.key});
 
   void _handleRefuseClick(BuildContext context) {
-    Provider.of<AppModel>(
-      context,
-      listen: false,
-    ).setAnalyticsOptInDisplayed(true);
+    Provider.of<AppModel>(context, listen: false)
+        .setAnalyticsOptInDisplayed(true);
     unawaited(
-      Provider.of<FeatureFlagsModel>(
-        context,
-        listen: false,
-      ).setEnableAnalytics(false),
+      Provider.of<FeatureFlagsModel>(context, listen: false)
+          .setEnableAnalytics(false),
     );
     Navigator.of(context).pop();
   }
 
   void _handleAcceptClick(BuildContext context) {
-    Provider.of<AppModel>(
-      context,
-      listen: false,
-    ).setAnalyticsOptInDisplayed(true);
+    Provider.of<AppModel>(context, listen: false)
+        .setAnalyticsOptInDisplayed(true);
     unawaited(
-      Provider.of<FeatureFlagsModel>(
-        context,
-        listen: false,
-      ).setEnableAnalytics(true),
+      Provider.of<FeatureFlagsModel>(context, listen: false)
+          .setEnableAnalytics(true),
     );
     Navigator.of(context).pop();
   }

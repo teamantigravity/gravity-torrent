@@ -49,7 +49,9 @@ class SleepTimerButton extends StatelessWidget {
                 value: null,
                 child: Text(
                   l.cancelSleepTimer,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                 ),
               ),
           ],

@@ -59,7 +59,7 @@ class AppModel extends ChangeNotifier {
       // Load terms of use status
       termsOfUseAccepted =
           await SharedPrefsStorage.getBool('termsOfUseAccepted') ??
-          termsOfUseAccepted;
+              termsOfUseAccepted;
       // Load check for update value
       checkForUpdate =
           await SharedPrefsStorage.getBool('checkForUpdate') ?? checkForUpdate;
@@ -68,27 +68,27 @@ class AppModel extends ChangeNotifier {
           await SharedPrefsStorage.getBool('amoledBlack') ?? amoledBlack;
       analyticsOptInDisplayed =
           await SharedPrefsStorage.getBool('analyticsOptInDisplayed') ??
-          analyticsOptInDisplayed;
+              analyticsOptInDisplayed;
       compactList =
           await SharedPrefsStorage.getBool('compactList') ?? compactList;
       showTorrentLabels =
           await SharedPrefsStorage.getBool('showTorrentLabels') ??
-          showTorrentLabels;
+              showTorrentLabels;
       showStatusFilterChips =
           await SharedPrefsStorage.getBool('showStatusFilterChips') ??
-          showStatusFilterChips;
+              showStatusFilterChips;
       showRecentSearchQueries =
           await SharedPrefsStorage.getBool('showRecentSearchQueries') ??
-          showRecentSearchQueries;
+              showRecentSearchQueries;
       showLiveSpeedHeader =
           await SharedPrefsStorage.getBool('showLiveSpeedHeader') ??
-          showLiveSpeedHeader;
+              showLiveSpeedHeader;
       showVisibleTorrentCount =
           await SharedPrefsStorage.getBool('showVisibleTorrentCount') ??
-          showVisibleTorrentCount;
+              showVisibleTorrentCount;
       showTorrentHealthBadge =
           await SharedPrefsStorage.getBool('showTorrentHealthBadge') ??
-          showTorrentHealthBadge;
+              showTorrentHealthBadge;
 
       // Load app version
       try {

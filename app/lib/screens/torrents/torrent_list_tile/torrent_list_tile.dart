@@ -45,9 +45,8 @@ class TorrentListTile extends StatelessWidget {
       builder: (context, torrentsModel, child) {
         return ListTile(
           dense: compact,
-          visualDensity: compact
-              ? VisualDensity.compact
-              : VisualDensity.standard,
+          visualDensity:
+              compact ? VisualDensity.compact : VisualDensity.standard,
           contentPadding: !isMobileSize(context)
               ? const EdgeInsets.only(left: 16, right: 16)
               : null,
@@ -176,14 +175,16 @@ class TorrentListTile extends StatelessWidget {
                         if (!scaffoldMessenger.mounted) return;
                         scaffoldMessenger.showSnackBar(
                           SnackBar(
-                            content: Text(switch (action) {
-                              _TorrentCopyAction.magnetLink =>
-                                localizations.magnetLinkCopied,
-                              _TorrentCopyAction.infoHash =>
-                                localizations.hashCopied,
-                              _TorrentCopyAction.name =>
-                                localizations.copiedToClipboard,
-                            }),
+                            content: Text(
+                              switch (action) {
+                                _TorrentCopyAction.magnetLink =>
+                                  localizations.magnetLinkCopied,
+                                _TorrentCopyAction.infoHash =>
+                                  localizations.hashCopied,
+                                _TorrentCopyAction.name =>
+                                  localizations.copiedToClipboard,
+                              },
+                            ),
                             backgroundColor: Colors.lightGreen,
                           ),
                         );
@@ -269,7 +270,10 @@ class TorrentListTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${prettyBytes(torrent.rateDownload.toDouble(), locale: localizations.localeName)}/s',
+                          '${prettyBytes(
+                            torrent.rateDownload.toDouble(),
+                            locale: localizations.localeName,
+                          )}/s',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -287,7 +291,10 @@ class TorrentListTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${prettyBytes(torrent.rateUpload.toDouble(), locale: localizations.localeName)}/s',
+                        '${prettyBytes(
+                          torrent.rateUpload.toDouble(),
+                          locale: localizations.localeName,
+                        )}/s',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,

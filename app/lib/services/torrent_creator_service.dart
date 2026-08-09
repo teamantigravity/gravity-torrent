@@ -163,7 +163,7 @@ class TorrentCreatorService {
       }
       fileSizes.add(fileActualSize);
       totalBytes += fileActualSize;
-
+      
       fileIndex++;
       onProgress?.call(
         TorrentCreatorProgress(
@@ -197,7 +197,10 @@ class TorrentCreatorService {
       for (int i = 0; i < files.length; i++) {
         final relPath = p.relative(files[i].path, from: inputPath);
         final parts = p.split(relPath);
-        fileList.add({'length': fileSizes[i], 'path': parts});
+        fileList.add({
+          'length': fileSizes[i],
+          'path': parts,
+        });
       }
       info['files'] = fileList;
     } else {
@@ -228,9 +231,9 @@ class TorrentCreatorService {
     final encoded = _Bencode.encode(torrent);
     final outputName = '${p.basenameWithoutExtension(baseName)}.torrent';
     final outputPath = p.join(outputDirectory, outputName);
-
+    
     await Directory(outputDirectory).create(recursive: true);
-
+    
     final outputFile = File(outputPath);
     await outputFile.writeAsBytes(encoded);
 
@@ -260,7 +263,11 @@ class TorrentCreatorService {
     final file = File(torrentFilePath);
     final bytes = await file.readAsBytes();
     // Use base64 metainfo so it works regardless of daemon location.
-    await engine.addTorrent(null, base64Encode(bytes), downloadDir);
+    await engine.addTorrent(
+      null,
+      base64Encode(bytes),
+      downloadDir,
+    );
   }
 
   static int _autoPieceLength(int totalBytes) {

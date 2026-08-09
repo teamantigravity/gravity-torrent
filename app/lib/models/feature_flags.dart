@@ -107,8 +107,7 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> _load() async {
     try {
       for (final feature in Feature.values) {
-        _values[feature] =
-            await SharedPrefsStorage.getBool(feature.name) ??
+        _values[feature] = await SharedPrefsStorage.getBool(feature.name) ??
             _featureDefaults[feature] ??
             false;
       }
@@ -140,9 +139,11 @@ class FeatureFlagsModel extends ChangeNotifier {
 
   /// Effective boolean helper used by setters so service calls honour the
   /// remote kill-switch even when the user toggles the local preference.
-  bool _effective(Feature feature, bool localValue) => RemoteConfigService
-      .instance
-      .isFeatureEnabled(feature.name, defaultValue: localValue);
+  bool _effective(Feature feature, bool localValue) =>
+      RemoteConfigService.instance.isFeatureEnabled(
+        feature.name,
+        defaultValue: localValue,
+      );
 
   Future<void> setUseDynamicColor(bool value) async {
     await _persist(Feature.useDynamicColor, value);
@@ -162,14 +163,11 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> setEnableRemoteControl(bool value) async {
     await _persist(Feature.enableRemoteControl, value);
     if (!_disposed) notifyListeners();
-    _updateQueue = _updateQueue.then(
-      (_) => RemoteControlService.instance
-          .setEnabled(_effective(Feature.enableRemoteControl, value))
-          .catchError((e) {
-            if (kDebugMode)
-              debugPrint('RemoteControlService toggle failed: $e');
-          }),
-    );
+    _updateQueue = _updateQueue.then((_) => RemoteControlService.instance
+        .setEnabled(_effective(Feature.enableRemoteControl, value))
+        .catchError((e) {
+      if (kDebugMode) debugPrint('RemoteControlService toggle failed: $e');
+    }));
   }
 
   Future<void> setEnableAnalytics(bool value) async {
@@ -180,9 +178,8 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> setEnableAppLock(bool value) async {
     await _persist(Feature.enableAppLock, value);
     try {
-      await AppLockService.instance.setEnabled(
-        _effective(Feature.enableAppLock, value),
-      );
+      await AppLockService.instance
+          .setEnabled(_effective(Feature.enableAppLock, value));
     } catch (e, st) {
       if (kDebugMode) debugPrint('AppLockService toggle failed: $e\n$st');
     }
@@ -204,49 +201,41 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> setEnableScheduler(bool value) async {
     await _persist(Feature.enableScheduler, value);
     if (!_disposed) notifyListeners();
-    _updateQueue = _updateQueue.then(
-      (_) => SchedulerService.instance
-          .setEnabled(_effective(Feature.enableScheduler, value))
-          .catchError((e) {
-            if (kDebugMode) debugPrint('SchedulerService toggle failed: $e');
-          }),
-    );
+    _updateQueue = _updateQueue.then((_) => SchedulerService.instance
+        .setEnabled(_effective(Feature.enableScheduler, value))
+        .catchError((e) {
+      if (kDebugMode) debugPrint('SchedulerService toggle failed: $e');
+    }));
   }
 
   Future<void> setEnableQuota(bool value) async {
     await _persist(Feature.enableQuota, value);
     if (!_disposed) notifyListeners();
-    _updateQueue = _updateQueue.then(
-      (_) => QuotaService.instance
-          .setEnabled(_effective(Feature.enableQuota, value))
-          .catchError((e) {
-            if (kDebugMode) debugPrint('QuotaService toggle failed: $e');
-          }),
-    );
+    _updateQueue = _updateQueue.then((_) => QuotaService.instance
+        .setEnabled(_effective(Feature.enableQuota, value))
+        .catchError((e) {
+      if (kDebugMode) debugPrint('QuotaService toggle failed: $e');
+    }));
   }
 
   Future<void> setEnableRssAutoDownload(bool value) async {
     await _persist(Feature.enableRssAutoDownload, value);
     if (!_disposed) notifyListeners();
-    _updateQueue = _updateQueue.then(
-      (_) => RssService.instance
-          .setEnabled(_effective(Feature.enableRssAutoDownload, value))
-          .catchError((e) {
-            if (kDebugMode) debugPrint('RssService toggle failed: $e');
-          }),
-    );
+    _updateQueue = _updateQueue.then((_) => RssService.instance
+        .setEnabled(_effective(Feature.enableRssAutoDownload, value))
+        .catchError((e) {
+      if (kDebugMode) debugPrint('RssService toggle failed: $e');
+    }));
   }
 
   Future<void> setEnableWifiOnly(bool value) async {
     await _persist(Feature.enableWifiOnly, value);
     if (!_disposed) notifyListeners();
-    _updateQueue = _updateQueue.then(
-      (_) => WifiGuardService.instance
-          .setEnabled(_effective(Feature.enableWifiOnly, value))
-          .catchError((e) {
-            if (kDebugMode) debugPrint('WifiGuardService toggle failed: $e');
-          }),
-    );
+    _updateQueue = _updateQueue.then((_) => WifiGuardService.instance
+        .setEnabled(_effective(Feature.enableWifiOnly, value))
+        .catchError((e) {
+      if (kDebugMode) debugPrint('WifiGuardService toggle failed: $e');
+    }));
   }
 
   Future<void> setEnableLanStreaming(bool value) async {
@@ -257,12 +246,10 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> setEnableBatterySaver(bool value) async {
     await _persist(Feature.enableBatterySaver, value);
     if (!_disposed) notifyListeners();
-    _updateQueue = _updateQueue.then(
-      (_) => BatteryService.instance
-          .setEnabled(_effective(Feature.enableBatterySaver, value))
-          .catchError((e) {
-            if (kDebugMode) debugPrint('BatteryService toggle failed: $e');
-          }),
-    );
+    _updateQueue = _updateQueue.then((_) => BatteryService.instance
+        .setEnabled(_effective(Feature.enableBatterySaver, value))
+        .catchError((e) {
+      if (kDebugMode) debugPrint('BatteryService toggle failed: $e');
+    }));
   }
 }

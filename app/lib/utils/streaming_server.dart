@@ -447,7 +447,7 @@ class StreamingServer {
           ((_fileOffset ?? 0) + currentStart) ~/ torrent.pieceSize;
       final endPiece = ((_fileOffset ?? 0) + currentEnd) ~/ torrent.pieceSize;
       final pieceCount = endPiece - startPiece + 1;
-
+      
       await _waitForPieces(
         from: startPiece,
         count: pieceCount,

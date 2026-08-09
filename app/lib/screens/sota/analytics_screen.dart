@@ -67,9 +67,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     await AnalyticsService.instance.clearHistory();
     if (mounted) setState(() {});
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.historyCleared)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.historyCleared)),
+      );
     }
   }
 
@@ -96,32 +96,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : history.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.bar_chart,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.outline,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.bar_chart,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        localizations.analyticsNoDataYet,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        localizations.analyticsEnableDescription,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    localizations.analyticsNoDataYet,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    localizations.analyticsEnableDescription,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator.adaptive(
-              onRefresh: _refresh,
-              child: _buildContent(context, history),
-            ),
+                )
+              : RefreshIndicator.adaptive(
+                  onRefresh: _refresh,
+                  child: _buildContent(context, history),
+                ),
     );
   }
 
@@ -130,9 +130,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Auto-scale chart values to the most readable unit (GB/MB/KB/B).
-    final maxBytes = history
-        .map((s) => max(s.downloadedBytes, s.uploadedBytes))
-        .reduce(max);
+    final maxBytes =
+        history.map((s) => max(s.downloadedBytes, s.uploadedBytes)).reduce(max);
     double divisor = 1.0;
     if (maxBytes > 1e9) {
       divisor = 1e9;
@@ -145,7 +144,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final spots = history
         .asMap()
         .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value.downloadedBytes / divisor))
+        .map(
+          (e) => FlSpot(e.key.toDouble(), e.value.downloadedBytes / divisor),
+        )
         .toList();
     final uploadSpots = history
         .asMap()
@@ -273,8 +274,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   ) {
     final localizations = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final totalDown = history.fold<int>(0, (sum, s) => sum + s.downloadedBytes);
-    final totalUp = history.fold<int>(0, (sum, s) => sum + s.uploadedBytes);
+    final totalDown = history.fold<int>(
+      0,
+      (sum, s) => sum + s.downloadedBytes,
+    );
+    final totalUp = history.fold<int>(
+      0,
+      (sum, s) => sum + s.uploadedBytes,
+    );
 
     return Row(
       children: [
@@ -296,9 +303,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       locale: localizations.localeName,
                     ),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ],
               ),
@@ -323,9 +330,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       locale: localizations.localeName,
                     ),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: colorScheme.secondary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                          color: colorScheme.secondary,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ],
               ),

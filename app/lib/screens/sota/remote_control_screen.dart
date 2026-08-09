@@ -116,7 +116,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                       }
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(localizations.tokenCopied)),
+                        SnackBar(
+                          content: Text(localizations.tokenCopied),
+                        ),
                       );
                     },
                   ),

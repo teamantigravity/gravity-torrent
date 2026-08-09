@@ -56,9 +56,8 @@ class PlaylistQueueSheet extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 16),
                           child: Icon(
                             Icons.delete,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onErrorContainer,
+                            color:
+                                Theme.of(context).colorScheme.onErrorContainer,
                           ),
                         ),
                         child: ListTile(

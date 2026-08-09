@@ -8,7 +8,10 @@ import 'package:gravity_torrent/utils/device.dart';
 class StoragePermissionDialog extends StatelessWidget {
   final bool isPermanentlyDenied;
 
-  const StoragePermissionDialog({super.key, required this.isPermanentlyDenied});
+  const StoragePermissionDialog({
+    super.key,
+    required this.isPermanentlyDenied,
+  });
 
   Future<void> _requestPermission(BuildContext context) async {
     try {

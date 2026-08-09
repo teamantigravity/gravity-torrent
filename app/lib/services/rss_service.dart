@@ -20,16 +20,16 @@ class RssFeed {
   const RssFeed({required this.url, this.keyword = '', this.enabled = true});
 
   Map<String, dynamic> toJson() => {
-    'url': url,
-    'keyword': keyword,
-    'enabled': enabled,
-  };
+        'url': url,
+        'keyword': keyword,
+        'enabled': enabled,
+      };
 
   factory RssFeed.fromJson(Map<String, dynamic> json) => RssFeed(
-    url: (json['url'] as String?) ?? '',
-    keyword: (json['keyword'] as String?) ?? '',
-    enabled: (json['enabled'] as bool?) ?? true,
-  );
+        url: (json['url'] as String?) ?? '',
+        keyword: (json['keyword'] as String?) ?? '',
+        enabled: (json['enabled'] as bool?) ?? true,
+      );
 }
 
 /// RSS auto-download service.
@@ -78,7 +78,9 @@ class RssService {
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
         final list = jsonDecode(rawSeen) as List<dynamic>;
-        _seenLinks = LinkedHashSet<String>.from(list.map((e) => e.toString()));
+        _seenLinks = LinkedHashSet<String>.from(
+          list.map((e) => e.toString()),
+        );
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('Failed to load seen links: $e\n$s');

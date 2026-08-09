@@ -10,7 +10,11 @@ class TorrentSpeedChart extends StatelessWidget {
   /// Chart height in logical pixels.
   final double height;
 
-  const TorrentSpeedChart({super.key, required this.speeds, this.height = 80});
+  const TorrentSpeedChart({
+    super.key,
+    required this.speeds,
+    this.height = 80,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +43,10 @@ class TorrentSpeedChart extends StatelessWidget {
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
-                  colors: [color.withAlpha(77), color.withAlpha(0)],
+                  colors: [
+                    color.withAlpha(77),
+                    color.withAlpha(0),
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -59,6 +66,9 @@ class TorrentSpeedChart extends StatelessWidget {
     if (speeds.length == 1) {
       return [FlSpot(0, speeds[0]), FlSpot(1, speeds[0])];
     }
-    return List.generate(speeds.length, (i) => FlSpot(i.toDouble(), speeds[i]));
+    return List.generate(
+      speeds.length,
+      (i) => FlSpot(i.toDouble(), speeds[i]),
+    );
   }
 }

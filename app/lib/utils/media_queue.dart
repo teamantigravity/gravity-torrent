@@ -113,7 +113,9 @@ String _stripLeadingZeros(String digits) {
 ///
 /// Samples are excluded unless they are the only playable files, so a
 /// sample-only torrent still plays instead of yielding an empty queue.
-List<torrent_file.File> orderedPlayableFiles(List<torrent_file.File> files) {
+List<torrent_file.File> orderedPlayableFiles(
+  List<torrent_file.File> files,
+) {
   final playable = files.where((f) => isPlayableMedia(f.name)).toList();
   final withoutSamples = playable.where((f) => !isSampleFile(f.name)).toList();
   final selected = withoutSamples.isEmpty ? playable : withoutSamples;

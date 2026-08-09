@@ -39,30 +39,30 @@ Future<void> initializeNotifications() async {
 
   final List<DarwinNotificationCategory> darwinNotificationCategories =
       <DarwinNotificationCategory>[
-        DarwinNotificationCategory(
-          'download_progress',
-          actions: <DarwinNotificationAction>[
-            DarwinNotificationAction.plain('pause_all', 'Pause all'),
-            DarwinNotificationAction.plain('resume_all', 'Resume all'),
-          ],
-        ),
-      ];
+    DarwinNotificationCategory(
+      'download_progress',
+      actions: <DarwinNotificationAction>[
+        DarwinNotificationAction.plain('pause_all', 'Pause all'),
+        DarwinNotificationAction.plain('resume_all', 'Resume all'),
+      ],
+    ),
+  ];
 
   final DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: false,
-        requestSoundPermission: false,
-        notificationCategories: darwinNotificationCategories,
-      );
+    requestAlertPermission: true,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+    notificationCategories: darwinNotificationCategories,
+  );
 
   final LinuxInitializationSettings initializationSettingsLinux =
       LinuxInitializationSettings(
-        defaultActionName: 'Open notification',
-        defaultIcon: isFlatpak()
-            ? ThemeLinuxIcon('com.teamantigravity.gravitytorrent')
-            : AssetsLinuxIcon('assets/tray_icon.png'),
-      );
+    defaultActionName: 'Open notification',
+    defaultIcon: isFlatpak()
+        ? ThemeLinuxIcon('com.teamantigravity.gravitytorrent')
+        : AssetsLinuxIcon('assets/tray_icon.png'),
+  );
 
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
@@ -157,12 +157,18 @@ showDownloadProgressNotification({
   final buffer = StringBuffer();
   buffer.write('$count download${count == 1 ? '' : 's'} in progress');
   if (count > 0) {
-    buffer.write(' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s');
+    buffer.write(
+      ' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s',
+    );
   }
 
   const NotificationDetails notificationDetails = NotificationDetails(
-    iOS: DarwinNotificationDetails(categoryIdentifier: 'download_progress'),
-    macOS: DarwinNotificationDetails(categoryIdentifier: 'download_progress'),
+    iOS: DarwinNotificationDetails(
+      categoryIdentifier: 'download_progress',
+    ),
+    macOS: DarwinNotificationDetails(
+      categoryIdentifier: 'download_progress',
+    ),
   );
 
   await flutterLocalNotificationsPlugin.show(

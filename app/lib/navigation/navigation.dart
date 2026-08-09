@@ -19,8 +19,16 @@ class Destination {
 }
 
 const List<Destination> destinations = <Destination>[
-  Destination('Torrents', Icons.downloading, Icons.downloading),
-  Destination('Settings', Icons.settings, Icons.settings),
+  Destination(
+    'Torrents',
+    Icons.downloading,
+    Icons.downloading,
+  ),
+  Destination(
+    'Settings',
+    Icons.settings,
+    Icons.settings,
+  ),
 ];
 
 class Navigation extends StatefulWidget {

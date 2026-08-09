@@ -71,9 +71,8 @@ class AutoStartService {
       if (home == null) return;
 
       final autostartDir = Directory(p.join(home, '.config', 'autostart'));
-      final desktopFile = File(
-        p.join(autostartDir.path, 'gravity-torrent.desktop'),
-      );
+      final desktopFile =
+          File(p.join(autostartDir.path, 'gravity-torrent.desktop'));
 
       if (enabled) {
         if (!autostartDir.existsSync()) {
@@ -82,8 +81,7 @@ class AutoStartService {
 
         final exePath = Platform.resolvedExecutable;
         final escapedPath = exePath.replaceAll('"', '\\"');
-        final content =
-            '''[Desktop Entry]
+        final content = '''[Desktop Entry]
 Type=Application
 Name=Gravity Torrent
 Exec="$escapedPath" --autostart

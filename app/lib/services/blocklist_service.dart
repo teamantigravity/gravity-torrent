@@ -117,10 +117,8 @@ class BlocklistService {
     if (lastUpdatedStr != null) {
       _lastUpdated = DateTime.tryParse(lastUpdatedStr);
     }
-    _rulesCount =
-        (await SharedPrefsStorage.getString(
-          _rulesCountKey,
-        ).then((s) => s != null ? int.tryParse(s) : null)) ??
+    _rulesCount = (await SharedPrefsStorage.getString(_rulesCountKey)
+            .then((s) => s != null ? int.tryParse(s) : null)) ??
         0;
     _loaded = true;
   }
@@ -134,7 +132,10 @@ class BlocklistService {
       final engine = getIt<Engine>();
       final session = await engine.fetchSession();
       await session.update(
-        SessionBase(blocklistEnabled: enabled, blocklistUrl: _url),
+        SessionBase(
+          blocklistEnabled: enabled,
+          blocklistUrl: _url,
+        ),
       );
     } catch (e) {
       if (kDebugMode) debugPrint('BlocklistService setEnabled error: $e');
@@ -171,7 +172,10 @@ class BlocklistService {
       // Apply URL to session first
       final session = await engine.fetchSession();
       await session.update(
-        SessionBase(blocklistEnabled: true, blocklistUrl: _url),
+        SessionBase(
+          blocklistEnabled: true,
+          blocklistUrl: _url,
+        ),
       );
 
       final count = await engine.updateBlocklist();
