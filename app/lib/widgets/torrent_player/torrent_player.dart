@@ -540,7 +540,12 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       if (!mounted) return false;
       
       await widget.torrent.startStreaming(target);
-      if (!mounted) return false;
+      if (!mounted) {
+        // Widget disposed after startStreaming; clean up so the streaming state
+        // doesn't linger until _disposePlayer() has a chance to run.
+        unawaited(widget.torrent.stopStreaming().catchError((_) {}));
+        return false;
+      }
 
       final nextServer = StreamingServer(
         filePath: _currentFilePath,
@@ -558,11 +563,19 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         }),
       );
       final address = await nextServer.getAddress();
-      if (!mounted) return false;
+      if (!mounted) {
+        unawaited(nextServer.stop().catchError((_) {}));
+        unawaited(widget.torrent.stopStreaming().catchError((_) {}));
+        return false;
+      }
       _streamUrl = address;
 
       await activePlayer.open(Media(address));
-      if (!mounted) return false;
+      if (!mounted) {
+        unawaited(nextServer.stop().catchError((_) {}));
+        unawaited(widget.torrent.stopStreaming().catchError((_) {}));
+        return false;
+      }
       
       setState(() {});
       return true;

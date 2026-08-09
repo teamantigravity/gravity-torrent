@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
@@ -72,13 +73,12 @@ class BackupService {
 
   static const String _backupFileExtension = '.gtbackup';
   static const String _backupVersion = '1';
-  static const String _appVersion = '1.0.0'; // Replace with actual version
 
   // ── Export ───────────────────────────────────────────────────────────────
 
   /// Creates a backup file containing all app settings and torrent state.
   ///
-  /// If [passphrase] is provided, the backup is AES-256-CBC encrypted.
+  /// If [passphrase] is provided, the backup is AES-256-GCM authenticated encryption.
   /// Returns the path to the generated backup file.
   static Future<BackupRestoreResult> export({
     String? passphrase,
@@ -119,10 +119,16 @@ class BackupService {
       }
 
       // Build backup payload
+      String appVersion = '1.0.0';
+      try {
+        final packageInfo = await PackageInfo.fromPlatform();
+        appVersion = packageInfo.version;
+      } catch (_) {}
+
       final payload = {
         'version': _backupVersion,
         'metadata': BackupMetadata(
-          appVersion: _appVersion,
+          appVersion: appVersion,
           createdAt: DateTime.now(),
           platform: _currentPlatform(),
           settingsCount: settings.length,

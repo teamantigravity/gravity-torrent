@@ -297,6 +297,12 @@ class StreamingServer {
     final startStr = match.group(1);
     final endStr = match.group(2);
 
+    if ((startStr == null || startStr.isEmpty) && (endStr == null || endStr.isEmpty)) {
+      request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+      request.response.headers.set('Content-Range', 'bytes */$fileSize');
+      return;
+    }
+
     int start = 0;
     int end = fileSize - 1;
 

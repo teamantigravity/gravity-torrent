@@ -151,6 +151,9 @@ class WifiGuardService {
             );
           }
           await _pauseAll();
+        } else if (_lastIpAddresses.isEmpty && currentIps.isNotEmpty) {
+          // Network restored after a full disconnect — resume.
+          await _resumeAll();
         } else if (!changed && _lastIpAddresses.isNotEmpty) {
           await _resumeAll();
         }
