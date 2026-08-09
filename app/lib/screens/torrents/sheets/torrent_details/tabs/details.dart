@@ -41,8 +41,9 @@ class _DetailsTabState extends State<DetailsTab> {
       setState(() => _loadingNote = true);
     }
     try {
-      final note =
-          await TorrentNotesService.instance.getNote(widget.torrent.id);
+      final note = await TorrentNotesService.instance.getNote(
+        widget.torrent.id,
+      );
       if (!mounted) return;
       setState(() {
         _note = note;
@@ -381,8 +382,9 @@ class _DetailsTabState extends State<DetailsTab> {
           ),
           trailing: const Icon(Icons.edit),
           onTap: () async {
-            final controller =
-                TextEditingController(text: ratioGoal?.toString() ?? '');
+            final controller = TextEditingController(
+              text: ratioGoal?.toString() ?? '',
+            );
             try {
               final String? newGoal = await showDialog<String>(
                 context: context,
@@ -391,8 +393,9 @@ class _DetailsTabState extends State<DetailsTab> {
                     title: Text(localizations.setSeedRatioGoal),
                     content: TextField(
                       controller: controller,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(hintText: 'e.g. 1.5'),
                     ),
                     actions: [
@@ -623,9 +626,7 @@ class _DetailsTabState extends State<DetailsTab> {
             tooltip: localizations.copy,
             onPressed: () async {
               final scaffoldMessenger = ScaffoldMessenger.of(context);
-              await Clipboard.setData(
-                ClipboardData(text: torrent.magnetLink),
-              );
+              await Clipboard.setData(ClipboardData(text: torrent.magnetLink));
               if (!mounted) return;
               scaffoldMessenger.showSnackBar(
                 SnackBar(
@@ -642,8 +643,8 @@ class _DetailsTabState extends State<DetailsTab> {
             _loadingNote
                 ? '...'
                 : _note.isEmpty
-                    ? localizations.notSet
-                    : _note,
+                ? localizations.notSet
+                : _note,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

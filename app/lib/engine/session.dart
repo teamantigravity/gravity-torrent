@@ -13,17 +13,17 @@ enum EncryptionMode {
 
   /// The Transmission RPC string value for this mode.
   String get rpcValue => switch (this) {
-        EncryptionMode.tolerated => 'tolerated',
-        EncryptionMode.preferred => 'preferred',
-        EncryptionMode.required => 'required',
-      };
+    EncryptionMode.tolerated => 'tolerated',
+    EncryptionMode.preferred => 'preferred',
+    EncryptionMode.required => 'required',
+  };
 
   /// Parse a Transmission RPC string value into an [EncryptionMode].
   static EncryptionMode fromRpcValue(String? value) => switch (value) {
-        'tolerated' => EncryptionMode.tolerated,
-        'required' => EncryptionMode.required,
-        _ => EncryptionMode.preferred,
-      };
+    'tolerated' => EncryptionMode.tolerated,
+    'required' => EncryptionMode.required,
+    _ => EncryptionMode.preferred,
+  };
 }
 
 class SessionBase {

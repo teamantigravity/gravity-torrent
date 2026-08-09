@@ -36,45 +36,45 @@ class TorrentStatusText extends StatelessWidget {
 
     return switch (torrent.status) {
       TorrentStatus.stopped => Text(
-          localizations.paused,
-          style: defaultTextStyle,
-        ),
+        localizations.paused,
+        style: defaultTextStyle,
+      ),
       TorrentStatus.queuedToCheck => Text(
-          localizations.queuedToCheck,
-          style: defaultTextStyle,
-        ),
+        localizations.queuedToCheck,
+        style: defaultTextStyle,
+      ),
       TorrentStatus.checking => Text(
-          localizations.checking,
-          style: defaultTextStyle,
-        ),
+        localizations.checking,
+        style: defaultTextStyle,
+      ),
       TorrentStatus.queuedToDownload => Text(
-          localizations.queuedToDownload,
-          style: defaultTextStyle,
-        ),
+        localizations.queuedToDownload,
+        style: defaultTextStyle,
+      ),
       TorrentStatus.queuedToSeed => Text(
-          localizations.queuedToSeed,
-          style: defaultTextStyle,
-        ),
+        localizations.queuedToSeed,
+        style: defaultTextStyle,
+      ),
       TorrentStatus.downloading => Text(
-          '${percent.floor()}%',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.lightGreenAccent
-                : Colors.green.shade700,
-            overflow: TextOverflow.ellipsis,
-          ),
+        '${percent.floor()}%',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.lightGreenAccent
+              : Colors.green.shade700,
+          overflow: TextOverflow.ellipsis,
         ),
+      ),
       TorrentStatus.seeding => Text(
-          localizations.seeding,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.primary,
-            overflow: TextOverflow.ellipsis,
-          ),
+        localizations.seeding,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.primary,
+          overflow: TextOverflow.ellipsis,
         ),
+      ),
     };
   }
 }

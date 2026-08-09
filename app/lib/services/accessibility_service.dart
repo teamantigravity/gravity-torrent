@@ -82,8 +82,9 @@ class AccessibilityService extends ChangeNotifier {
         colorScheme: cs.copyWith(
           // Boost contrast by darkening on-surface and brightening primary
           primary: _boostSaturation(cs.primary),
-          onSurface:
-              cs.brightness == Brightness.dark ? Colors.white : Colors.black,
+          onSurface: cs.brightness == Brightness.dark
+              ? Colors.white
+              : Colors.black,
         ),
         dividerTheme: DividerThemeData(
           color: cs.brightness == Brightness.dark
@@ -95,9 +96,7 @@ class AccessibilityService extends ChangeNotifier {
     }
 
     if (_boldText) {
-      result = result.copyWith(
-        textTheme: _makeBold(result.textTheme),
-      );
+      result = result.copyWith(textTheme: _makeBold(result.textTheme));
     }
 
     return result;

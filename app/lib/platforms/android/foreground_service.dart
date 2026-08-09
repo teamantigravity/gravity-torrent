@@ -25,9 +25,10 @@ const androidNotificationDetails = AndroidNotificationDetails(
 );
 
 Future<void> createForegroundService() async {
-  final androidPlugin =
-      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+  final androidPlugin = flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
 
   // Request runtime notifications permissions (Android 13+)
   final allowed = await androidPlugin?.requestNotificationsPermission();
@@ -49,14 +50,16 @@ Future<void> stopForegroundService() async {
   _foregroundServiceStarted = false;
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin
+      >()
       ?.stopForegroundService();
 }
 
 Future<void> _startOrUpdateForegroundService(String body) async {
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin
+      >()
       ?.startForegroundService(
         id: foregroundNotificationId,
         title: 'Gravity Torrent',
@@ -89,9 +92,7 @@ Future<void> updateForegroundServiceNotification({
   final buffer = StringBuffer();
   buffer.write('$count download${count == 1 ? '' : 's'} in progress');
   if (count > 0) {
-    buffer.write(
-      ' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s',
-    );
+    buffer.write(' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s');
   }
 
   final androidDetails = AndroidNotificationDetails(
@@ -116,7 +117,8 @@ Future<void> updateForegroundServiceNotification({
   try {
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.startForegroundService(
           id: foregroundNotificationId,
           title: 'Gravity Torrent',

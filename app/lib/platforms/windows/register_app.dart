@@ -42,10 +42,7 @@ Future<void> registerApp() async {
 
     final regKey = CURRENT_USER.create(appRegKey);
     try {
-      regKey.setValue(
-        appName,
-        const RegistryValue.string(appCapabilityPath),
-      );
+      regKey.setValue(appName, const RegistryValue.string(appCapabilityPath));
     } finally {
       regKey.close();
     }
@@ -65,10 +62,7 @@ Future<void> registerCapabilities() async {
 
       final fileRegKey = regKey.create('FILEAssociations');
       try {
-        fileRegKey.setValue(
-          '.torrent',
-          const RegistryValue.string(appName),
-        );
+        fileRegKey.setValue('.torrent', const RegistryValue.string(appName));
       } finally {
         fileRegKey.close();
       }
@@ -85,10 +79,7 @@ Future<void> registerCapabilities() async {
 
       final urlRegKey = regKey.create('URLAssociations');
       try {
-        urlRegKey.setValue(
-          'magnet',
-          const RegistryValue.string(appName),
-        );
+        urlRegKey.setValue('magnet', const RegistryValue.string(appName));
       } finally {
         urlRegKey.close();
       }
@@ -113,10 +104,7 @@ Future<void> registerScheme(String scheme) async {
     try {
       final cmdKey = regKey.create(protocolCmdRegKey);
       try {
-        regKey.setValue(
-          'URL Protocol',
-          const RegistryValue.string(''),
-        );
+        regKey.setValue('URL Protocol', const RegistryValue.string(''));
         cmdKey.setValue('', RegistryValue.string('"$appPath" "%1"'));
       } finally {
         cmdKey.close();

@@ -5,12 +5,12 @@ class TorrentAddResponse {
   TorrentAddResponse(this.arguments, this.result);
 
   TorrentAddResponse.fromJson(Map<String, dynamic> json)
-      : arguments = TorrentAddResponseArguments.fromJson(
-          json['arguments'] is Map
-              ? json['arguments'] as Map<String, dynamic>
-              : const {},
-        ),
-        result = json['result'] as String? ?? '';
+    : arguments = TorrentAddResponseArguments.fromJson(
+        json['arguments'] is Map
+            ? json['arguments'] as Map<String, dynamic>
+            : const {},
+      ),
+      result = json['result'] as String? ?? '';
 }
 
 class TorrentAddResponseArguments {
@@ -20,6 +20,6 @@ class TorrentAddResponseArguments {
   TorrentAddResponseArguments(this.torrentAdded, this.torrentDuplicate);
 
   TorrentAddResponseArguments.fromJson(Map<String, dynamic> json)
-      : torrentAdded = json['torrent-added'] != null ? true : false,
-        torrentDuplicate = json['torrent-duplicate'] != null ? true : false;
+    : torrentAdded = json['torrent-added'] != null ? true : false,
+      torrentDuplicate = json['torrent-duplicate'] != null ? true : false;
 }

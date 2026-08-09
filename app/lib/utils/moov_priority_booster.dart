@@ -68,7 +68,7 @@ class MoovPriorityBooster {
           // Transmission RPC limitations: the moov atom might be at the
           // very end
           // of the file, but we can't reliably prioritize *just* the end piece
-          // without prioritizing the whole file. We rely on the sequential 
+          // without prioritizing the whole file. We rely on the sequential
           // download mode and file high-priority to fetch the start and
           // end pieces.
           await waitForPiecesList(

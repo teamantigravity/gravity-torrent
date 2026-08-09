@@ -18,10 +18,10 @@ class DataUsageSnapshot {
   });
 
   Map<String, dynamic> toJson() => {
-        'day': day.toIso8601String(),
-        'downloadedBytes': downloadedBytes,
-        'uploadedBytes': uploadedBytes,
-      };
+    'day': day.toIso8601String(),
+    'downloadedBytes': downloadedBytes,
+    'uploadedBytes': uploadedBytes,
+  };
 
   factory DataUsageSnapshot.fromJson(Map<String, dynamic> json) {
     final dayRaw = json['day'];
@@ -135,13 +135,12 @@ class AnalyticsService {
   Future<void> recordTotals({
     required int downloadedBytes,
     required int uploadedBytes,
-  }) async =>
-      _withLock(
-        () => _recordTotalsImpl(
-          downloadedBytes: downloadedBytes,
-          uploadedBytes: uploadedBytes,
-        ),
-      );
+  }) async => _withLock(
+    () => _recordTotalsImpl(
+      downloadedBytes: downloadedBytes,
+      uploadedBytes: uploadedBytes,
+    ),
+  );
 
   Future<void> _recordTotalsImpl({
     required int downloadedBytes,

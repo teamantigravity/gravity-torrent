@@ -137,9 +137,7 @@ class RemoteControlService {
 
   Future<String> _localIp() async {
     try {
-      final interfaces = await NetworkInterface.list(
-        includeLinkLocal: false,
-      );
+      final interfaces = await NetworkInterface.list(includeLinkLocal: false);
 
       InternetAddress? ipv4;
       InternetAddress? ipv6;
@@ -273,10 +271,7 @@ class RemoteControlService {
         return _jsonResponse({'ok': false, 'error': 'missing magnet'});
       }
       if (!_isValidTorrentLink(magnet)) {
-        return _jsonResponse({
-          'ok': false,
-          'error': 'invalid torrent link',
-        });
+        return _jsonResponse({'ok': false, 'error': 'invalid torrent link'});
       }
       final engine = getIt<Engine>();
       final response = await engine.addTorrent(magnet, null, null);
@@ -365,9 +360,7 @@ class RemoteControlService {
   Response _jsonResponse(Map<String, dynamic> body) {
     return Response.ok(
       jsonEncode(body),
-      headers: {
-        'content-type': 'application/json',
-      },
+      headers: {'content-type': 'application/json'},
     );
   }
 }

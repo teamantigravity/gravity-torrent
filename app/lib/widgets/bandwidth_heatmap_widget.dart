@@ -31,8 +31,9 @@ class BandwidthHeatmapWidget extends StatelessWidget {
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
-            final availableWidth =
-                constraints.maxWidth.isFinite ? constraints.maxWidth : 360.0;
+            final availableWidth = constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : 360.0;
             final cellWidth = availableWidth / 25;
             return Column(
               children: [

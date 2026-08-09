@@ -510,7 +510,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   Future<bool> _openQueueItem(PlaylistItem item) async {
     if (_disposed) return false;
     if (_isOpeningQueueItem) return false;
-    
+
     _isOpeningQueueItem = true;
     try {
       final fileName = item.fileName;
@@ -538,7 +538,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         file: target,
       );
       if (!mounted) return false;
-      
+
       await widget.torrent.startStreaming(target);
       if (!mounted) {
         // Widget disposed after startStreaming; clean up so the streaming state
@@ -576,7 +576,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         unawaited(widget.torrent.stopStreaming().catchError((_) {}));
         return false;
       }
-      
+
       setState(() {});
       return true;
     } catch (e) {

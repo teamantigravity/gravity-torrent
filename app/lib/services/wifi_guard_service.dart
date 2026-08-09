@@ -97,8 +97,9 @@ class WifiGuardService {
     // Start with an empty IP snapshot. The first connectivity event will seed
     // the baseline inside the lock, avoiding a race with the listener.
     _lastIpAddresses = [];
-    _connectivitySub =
-        Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
+    _connectivitySub = Connectivity().onConnectivityChanged.listen(
+      _onConnectivityChanged,
+    );
   }
 
   void _unsubscribe() {
@@ -109,13 +110,13 @@ class WifiGuardService {
   void _onConnectivityChanged(List<ConnectivityResult> results) {
     if (_disposed) return;
     unawaited(
-      _withLock(() => _onConnectivityChangedImpl(results)).catchError(
-        (Object e) {
-          if (kDebugMode) {
-            debugPrint('WifiGuardService connectivity handler error: $e');
-          }
-        },
-      ),
+      _withLock(() => _onConnectivityChangedImpl(results)).catchError((
+        Object e,
+      ) {
+        if (kDebugMode) {
+          debugPrint('WifiGuardService connectivity handler error: $e');
+        }
+      }),
     );
   }
 
@@ -124,7 +125,8 @@ class WifiGuardService {
   ) async {
     if (!_enabled || _disposed) return;
     final hasWifi = results.contains(ConnectivityResult.wifi);
-    final hasAny = results.isNotEmpty &&
+    final hasAny =
+        results.isNotEmpty &&
         !results.every((r) => r == ConnectivityResult.none);
 
     if (_mode == WifiGuardMode.wifiOnly) {
@@ -196,7 +198,7 @@ class WifiGuardService {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       if (_disposed) return;
-      
+
       final futures = <Future<void>>[];
       for (final torrent in torrents) {
         if (torrent.status == TorrentStatus.downloading ||
@@ -220,7 +222,7 @@ class WifiGuardService {
         }
       }
       await Future.wait(futures);
-      
+
       if (kDebugMode) {
         debugPrint(
           'WifiGuardService: paused ${_pausedByGuard.length} torrents',
@@ -265,7 +267,7 @@ class WifiGuardService {
           }
         }());
       }
-      
+
       await Future.wait(futures);
 
       if (kDebugMode) {

@@ -45,8 +45,9 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     _downController ??= TextEditingController();
     _upController ??= TextEditingController();
 
-    final downText =
-        torrent.speedLimitDown > 0 ? '${torrent.speedLimitDown}' : '';
+    final downText = torrent.speedLimitDown > 0
+        ? '${torrent.speedLimitDown}'
+        : '';
     if (_downController!.text != downText) _downController!.text = downText;
 
     final upText = torrent.speedLimitUp > 0 ? '${torrent.speedLimitUp}' : '';
@@ -158,10 +159,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -183,10 +181,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -208,10 +203,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -228,10 +220,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -302,9 +291,9 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
           onChanged: _saving
               ? null
               : (v) => setState(() {
-                    _downLimitEnabled = v;
-                    if (!v) _downController?.clear();
-                  }),
+                  _downLimitEnabled = v;
+                  if (!v) _downController?.clear();
+                }),
         ),
         if (_downLimitEnabled)
           Padding(
@@ -324,9 +313,9 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
           onChanged: _saving
               ? null
               : (v) => setState(() {
-                    _upLimitEnabled = v;
-                    if (!v) _upController?.clear();
-                  }),
+                  _upLimitEnabled = v;
+                  if (!v) _upController?.clear();
+                }),
         ),
         if (_upLimitEnabled)
           Padding(

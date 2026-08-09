@@ -191,8 +191,9 @@ abstract class Torrent extends TorrentBase {
       // Want subtitles and set them to high priority
       final externalSubtitles = getExternalSubtitles(file, this);
       for (final (index, torrentFile) in files.indexed) {
-        if (externalSubtitles
-                .firstWhereOrNull((f) => f.name == torrentFile.name) !=
+        if (externalSubtitles.firstWhereOrNull(
+              (f) => f.name == torrentFile.name,
+            ) !=
             null) {
           highPriorityFileIndices.add(index);
         }
@@ -227,8 +228,9 @@ abstract class Torrent extends TorrentBase {
 
       await setSequentialDownload(false);
 
-      final streamedFiles =
-          await SharedPrefsStorage.getStringList(_streamingFilesKey);
+      final streamedFiles = await SharedPrefsStorage.getStringList(
+        _streamingFilesKey,
+      );
       if (streamedFiles != null && streamedFiles.isNotEmpty) {
         final indices = streamedFiles.map((e) => int.parse(e)).toList();
         await setFilesPriority(priorityNormal: indices);
@@ -301,11 +303,12 @@ abstract class Torrent extends TorrentBase {
         ResultType.fileNotFound => 'Not found',
         ResultType.permissionDenied => 'Permission denied',
         // It seems fileNotFound is not returned on linux
-        ResultType.error => Directory(folderPath).existsSync() == false
-            ? 'Folder not found'
-            : result.message.isNotEmpty
-                ? result.message
-                : 'Unknown error',
+        ResultType.error =>
+          Directory(folderPath).existsSync() == false
+              ? 'Folder not found'
+              : result.message.isNotEmpty
+              ? result.message
+              : 'Unknown error',
         _ => 'Unknown error',
       };
 

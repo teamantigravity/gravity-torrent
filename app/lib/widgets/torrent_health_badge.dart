@@ -42,9 +42,10 @@ class TorrentHealthBadge extends StatelessWidget {
     final String label = switch (level) {
       TorrentHealthLevel.healthy => 'Healthy (${torrent.peersConnected} peers)',
       TorrentHealthLevel.fair => 'Fair (${torrent.peersConnected} peers)',
-      TorrentHealthLevel.poor => torrent.errorString.isNotEmpty
-          ? 'Error: ${torrent.errorString}'
-          : 'Poor connectivity',
+      TorrentHealthLevel.poor =>
+        torrent.errorString.isNotEmpty
+            ? 'Error: ${torrent.errorString}'
+            : 'Poor connectivity',
       TorrentHealthLevel.none => '',
     };
 

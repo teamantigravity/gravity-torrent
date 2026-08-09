@@ -80,10 +80,7 @@ class _NumberInputDialogState extends State<NumberInputDialog> {
             Navigator.of(context).pop();
           },
         ),
-        TextButton(
-          onPressed: handleSave,
-          child: Text(localizations.save),
-        ),
+        TextButton(onPressed: handleSave, child: Text(localizations.save)),
       ],
     );
   }

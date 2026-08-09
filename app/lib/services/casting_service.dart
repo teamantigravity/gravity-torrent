@@ -117,11 +117,7 @@ class CastingService extends ChangeNotifier {
       // points, so the search is repeated a few times.
       final message = _buildMSearch();
       for (var attempt = 0; attempt < 3; attempt++) {
-        boundSocket.send(
-          message,
-          InternetAddress(_ssdpAddress),
-          _ssdpPort,
-        );
+        boundSocket.send(message, InternetAddress(_ssdpAddress), _ssdpPort);
         await Future<void>.delayed(const Duration(milliseconds: 400));
       }
       await Future<void>.delayed(discoveryTimeout);
@@ -205,7 +201,8 @@ class CastingService extends ChangeNotifier {
     final accepted = await _avTransportAction(
       device,
       'SetAVTransportURI',
-      innerXml: '<CurrentURI>${escapeXml(streamUrl)}</CurrentURI>'
+      innerXml:
+          '<CurrentURI>${escapeXml(streamUrl)}</CurrentURI>'
           '<CurrentURIMetaData>$metadata</CurrentURIMetaData>',
     );
 
@@ -273,7 +270,8 @@ class CastingService extends ChangeNotifier {
     final ok = await _avTransportAction(
       device,
       'Seek',
-      innerXml: '<Unit>REL_TIME</Unit>'
+      innerXml:
+          '<Unit>REL_TIME</Unit>'
           '<Target>${formatUpnpDuration(position)}</Target>',
     );
     return _disposed ? false : ok;
@@ -292,7 +290,8 @@ class CastingService extends ChangeNotifier {
       controlUrl: controlUrl,
       serviceType: renderingControlServiceType,
       action: 'SetVolume',
-      innerXml: '<Channel>Master</Channel>'
+      innerXml:
+          '<Channel>Master</Channel>'
           '<DesiredVolume>${percent.clamp(0, 100)}</DesiredVolume>',
     );
     return _disposed ? false : ok;

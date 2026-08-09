@@ -115,8 +115,9 @@ CastDevice? parseDeviceDescription(String xmlBody, Uri location) {
   if (controlUrl == null) return null;
 
   final deviceElement = document.findAllElements('device').firstOrNull;
-  final friendlyName =
-      deviceElement != null ? _childText(deviceElement, 'friendlyName') : null;
+  final friendlyName = deviceElement != null
+      ? _childText(deviceElement, 'friendlyName')
+      : null;
   final udn = deviceElement != null ? _childText(deviceElement, 'UDN') : null;
 
   return CastDevice(
@@ -152,7 +153,8 @@ Uri? _resolveUrl(Uri base, String reference) {
 }
 
 String? _childText(XmlElement parent, String name) {
-  final child = parent.findElements(name).firstOrNull ??
+  final child =
+      parent.findElements(name).firstOrNull ??
       parent.findAllElements(name).firstOrNull;
   final text = child?.innerText.trim();
   return (text == null || text.isEmpty) ? null : text;
@@ -192,7 +194,8 @@ String buildDidlMetadata({
   final escapedTitle = escapeXml(title);
   final escapedUrl = escapeXml(streamUrl);
 
-  final rawDidl = '<DIDL-Lite '
+  final rawDidl =
+      '<DIDL-Lite '
       'xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
       'xmlns:dc="http://purl.org/dc/elements/1.1/" '
       'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">'

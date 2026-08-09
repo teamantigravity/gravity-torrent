@@ -28,15 +28,17 @@ class ShortcutsService {
     _initialized = true;
 
     unawaited(
-      _quickActions.initialize((String shortcutType) {
-        if (shortcutType == 'add_torrent') {
-          _onAddTorrent?.call();
-        } else if (shortcutType == 'open_torrents') {
-          _onOpenTorrents?.call();
-        }
-      }).catchError((Object e) {
-        if (kDebugMode) debugPrint('ShortcutsService initialize error: $e');
-      }),
+      _quickActions
+          .initialize((String shortcutType) {
+            if (shortcutType == 'add_torrent') {
+              _onAddTorrent?.call();
+            } else if (shortcutType == 'open_torrents') {
+              _onOpenTorrents?.call();
+            }
+          })
+          .catchError((Object e) {
+            if (kDebugMode) debugPrint('ShortcutsService initialize error: $e');
+          }),
     );
   }
 
@@ -53,20 +55,22 @@ class ShortcutsService {
     }
 
     unawaited(
-      _quickActions.setShortcutItems(const <ShortcutItem>[
-        ShortcutItem(
-          type: 'add_torrent',
-          localizedTitle: 'Add torrent',
-          icon: 'ic_launcher',
-        ),
-        ShortcutItem(
-          type: 'open_torrents',
-          localizedTitle: 'My torrents',
-          icon: 'ic_launcher',
-        ),
-      ]).catchError((Object e) {
-        if (kDebugMode) debugPrint('ShortcutsService setEnabled error: $e');
-      }),
+      _quickActions
+          .setShortcutItems(const <ShortcutItem>[
+            ShortcutItem(
+              type: 'add_torrent',
+              localizedTitle: 'Add torrent',
+              icon: 'ic_launcher',
+            ),
+            ShortcutItem(
+              type: 'open_torrents',
+              localizedTitle: 'My torrents',
+              icon: 'ic_launcher',
+            ),
+          ])
+          .catchError((Object e) {
+            if (kDebugMode) debugPrint('ShortcutsService setEnabled error: $e');
+          }),
     );
   }
 

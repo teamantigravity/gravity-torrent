@@ -106,9 +106,7 @@ class _UpgradePageState extends State<UpgradePage> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).purchaseFailed),
-          ),
+          SnackBar(content: Text(AppLocalizations.of(context).purchaseFailed)),
         );
       }
     }

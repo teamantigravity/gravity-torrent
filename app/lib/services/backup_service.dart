@@ -31,18 +31,19 @@ class BackupMetadata {
   });
 
   Map<String, dynamic> toJson() => {
-        'appVersion': appVersion,
-        'createdAt': createdAt.toIso8601String(),
-        'platform': platform,
-        'settingsCount': settingsCount,
-        'torrentCount': torrentCount,
-        'encrypted': encrypted,
-      };
+    'appVersion': appVersion,
+    'createdAt': createdAt.toIso8601String(),
+    'platform': platform,
+    'settingsCount': settingsCount,
+    'torrentCount': torrentCount,
+    'encrypted': encrypted,
+  };
 
   factory BackupMetadata.fromJson(Map<String, dynamic> json) {
     return BackupMetadata(
       appVersion: json['appVersion'] as String? ?? 'unknown',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       platform: json['platform'] as String? ?? 'unknown',
       settingsCount: json['settingsCount'] as int? ?? 0,
@@ -168,7 +169,7 @@ class BackupService {
             .length;
         final warnMsg = localCount > 0
             ? ' (Warning: $localCount local torrent(s) without '
-                'magnet links were not fully backed up)'
+                  'magnet links were not fully backed up)'
             : '';
         return BackupRestoreResult(
           success: true,
@@ -194,7 +195,7 @@ class BackupService {
           .length;
       final warnMsg = localCount > 0
           ? ' (Warning: $localCount local torrent(s) without '
-              'magnet links were not fully backed up)'
+                'magnet links were not fully backed up)'
           : '';
 
       return BackupRestoreResult(
@@ -206,10 +207,7 @@ class BackupService {
         ),
       );
     } catch (e) {
-      return BackupRestoreResult(
-        success: false,
-        message: 'Backup failed: $e',
-      );
+      return BackupRestoreResult(success: false, message: 'Backup failed: $e');
     }
   }
 
@@ -228,9 +226,7 @@ class BackupService {
       );
     } else if (result.filePath != null) {
       await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(result.filePath!)],
-        ),
+        ShareParams(files: [XFile(result.filePath!)]),
       );
     }
   }
@@ -240,9 +236,7 @@ class BackupService {
   /// Pick and restore a backup file.
   static Future<BackupRestoreResult> import({String? passphrase}) async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-      );
+      final result = await FilePicker.pickFiles(type: FileType.any);
 
       if (result == null || result.files.isEmpty) {
         return const BackupRestoreResult(
@@ -269,10 +263,7 @@ class BackupService {
         passphrase: passphrase,
       );
     } catch (e) {
-      return BackupRestoreResult(
-        success: false,
-        message: 'Import failed: $e',
-      );
+      return BackupRestoreResult(success: false, message: 'Import failed: $e');
     }
   }
 
@@ -325,7 +316,8 @@ class BackupService {
       if (storedHash != computedHash) {
         return const BackupRestoreResult(
           success: false,
-          message: 'Backup file integrity check failed — '
+          message:
+              'Backup file integrity check failed — '
               'file may be corrupted',
         );
       }
@@ -357,8 +349,9 @@ class BackupService {
         );
       }
 
-      final metadata =
-          BackupMetadata.fromJson(payload['metadata'] as Map<String, dynamic>);
+      final metadata = BackupMetadata.fromJson(
+        payload['metadata'] as Map<String, dynamic>,
+      );
 
       // Check engine availability before writing settings
       if (!getIt.isRegistered<Engine>()) {
@@ -390,10 +383,7 @@ class BackupService {
               .where((item) => item != null)
               .map((item) => item.toString())
               .toList();
-          await SharedPrefs.setStringList(
-            key,
-            stringList,
-          );
+          await SharedPrefs.setStringList(key, stringList);
         }
       }
 
@@ -401,36 +391,36 @@ class BackupService {
       final torrents = (payload['torrents'] as List<dynamic>?) ?? [];
       try {
         final engine = getIt<Engine>();
-        await Future.wait(torrents.map((t) async {
-          final map = t as Map<String, dynamic>;
-          final magnetLink = map['magnetLink'] as String?;
-          if (magnetLink != null && magnetLink.isNotEmpty) {
-            try {
-              await engine.addTorrent(
-                magnetLink,
-                null,
-                map['downloadDir'] as String?,
-              );
-            } catch (e) {
-              debugPrint('BackupService: could not re-add torrent — $e');
+        await Future.wait(
+          torrents.map((t) async {
+            final map = t as Map<String, dynamic>;
+            final magnetLink = map['magnetLink'] as String?;
+            if (magnetLink != null && magnetLink.isNotEmpty) {
+              try {
+                await engine.addTorrent(
+                  magnetLink,
+                  null,
+                  map['downloadDir'] as String?,
+                );
+              } catch (e) {
+                debugPrint('BackupService: could not re-add torrent — $e');
+              }
             }
-          }
-        }));
+          }),
+        );
       } catch (e) {
         debugPrint('BackupService: torrent restoration skipped — $e');
       }
 
       return BackupRestoreResult(
         success: true,
-        message: 'Restored ${settings.length} settings and '
+        message:
+            'Restored ${settings.length} settings and '
             '${torrents.length} torrents',
         metadata: metadata,
       );
     } catch (e) {
-      return BackupRestoreResult(
-        success: false,
-        message: 'Restore failed: $e',
-      );
+      return BackupRestoreResult(success: false, message: 'Restore failed: $e');
     }
   }
 
