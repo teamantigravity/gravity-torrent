@@ -187,12 +187,12 @@ class _RssScreenState extends State<RssScreen> {
                                     () => _feeds[currentIndex] = updated,
                                   );
 
-                                  final serviceIndex = RssService.instance.feeds
-                                      .indexWhere(
-                                        (f) =>
-                                            f.url == feed.url &&
-                                            f.keyword == feed.keyword,
-                                      );
+                                  final serviceIndex =
+                                      RssService.instance.feeds.indexWhere(
+                                    (f) =>
+                                        f.url == feed.url &&
+                                        f.keyword == feed.keyword,
+                                  );
                                   if (serviceIndex != -1) {
                                     await RssService.instance.updateFeedAt(
                                       serviceIndex,

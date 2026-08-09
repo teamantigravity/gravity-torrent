@@ -265,8 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final trimmed = url.trim();
     if (trimmed.isNotEmpty) {
       final uri = Uri.tryParse(trimmed);
-      final isValid =
-          uri != null &&
+      final isValid = uri != null &&
           (uri.scheme == 'http' || uri.scheme == 'https') &&
           uri.host.isNotEmpty;
       if (!isValid) {
@@ -604,7 +603,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final peerPort = sessionModel.session?.peerPort ?? '';
         final isSpeedLimitEnabled =
             sessionModel.session?.speedLimitDownEnabled == true ||
-            sessionModel.session?.speedLimitUpEnabled == true;
+                sessionModel.session?.speedLimitUpEnabled == true;
         final encryptionMode =
             sessionModel.session?.encryption ?? EncryptionMode.preferred;
         final blocklistEnabled =
@@ -706,8 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   secondary: const Icon(Icons.wifi),
                   title: Text(localizations.wifiOnlyMode),
                   subtitle: _featureSubtitle('enableWifiOnly', flags),
-                  value:
-                      flags.enableWifiOnly &&
+                  value: flags.enableWifiOnly &&
                       WifiGuardService.instance.mode == WifiGuardMode.wifiOnly,
                   onChanged: (v) {
                     if (v) {
@@ -723,8 +721,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   secondary: const Icon(Icons.security),
                   title: Text(localizations.vpnKillSwitch),
                   subtitle: Text(localizations.vpnKillSwitchDescription),
-                  value:
-                      flags.enableWifiOnly &&
+                  value: flags.enableWifiOnly &&
                       WifiGuardService.instance.mode ==
                           WifiGuardMode.vpnKillSwitch,
                   onChanged: (v) {

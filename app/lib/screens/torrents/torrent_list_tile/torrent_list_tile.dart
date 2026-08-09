@@ -45,9 +45,8 @@ class TorrentListTile extends StatelessWidget {
       builder: (context, torrentsModel, child) {
         return ListTile(
           dense: compact,
-          visualDensity: compact
-              ? VisualDensity.compact
-              : VisualDensity.standard,
+          visualDensity:
+              compact ? VisualDensity.compact : VisualDensity.standard,
           contentPadding: !isMobileSize(context)
               ? const EdgeInsets.only(left: 16, right: 16)
               : null,
@@ -174,16 +173,17 @@ class TorrentListTile extends StatelessWidget {
                         };
                         await Clipboard.setData(ClipboardData(text: text));
                         if (!scaffoldMessenger.mounted) return;
+                        final copiedMessage = switch (action) {
+                          _TorrentCopyAction.magnetLink =>
+                            localizations.magnetLinkCopied,
+                          _TorrentCopyAction.infoHash =>
+                            localizations.hashCopied,
+                          _TorrentCopyAction.name =>
+                            localizations.copiedToClipboard,
+                        };
                         scaffoldMessenger.showSnackBar(
                           SnackBar(
-                            content: Text(switch (action) {
-                              _TorrentCopyAction.magnetLink =>
-                                localizations.magnetLinkCopied,
-                              _TorrentCopyAction.infoHash =>
-                                localizations.hashCopied,
-                              _TorrentCopyAction.name =>
-                                localizations.copiedToClipboard,
-                            }),
+                            content: Text(copiedMessage),
                             backgroundColor: Colors.lightGreen,
                           ),
                         );

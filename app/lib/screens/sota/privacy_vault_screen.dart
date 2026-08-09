@@ -192,8 +192,8 @@ class _PrivacyScoreCard extends StatelessWidget {
     final color = score >= 90
         ? Colors.green
         : score >= 70
-        ? Colors.orange
-        : Colors.red;
+            ? Colors.orange
+            : Colors.red;
 
     return Card(
       child: Padding(
@@ -213,8 +213,8 @@ class _PrivacyScoreCard extends StatelessWidget {
                   score >= 90
                       ? localizations.privacyScoreExcellent
                       : score >= 70
-                      ? localizations.privacyScoreGood
-                      : localizations.privacyScoreNeedsAttention,
+                          ? localizations.privacyScoreGood
+                          : localizations.privacyScoreNeedsAttention,
                 ),
               ],
             ),

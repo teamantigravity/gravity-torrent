@@ -45,9 +45,8 @@ void _startSharedTimer() {
       for (final id in ids) {
         try {
           final t = await engine.fetchTorrent(id);
-          final waitersForId = _waiters
-              .where((w) => w.torrentId == id)
-              .toList();
+          final waitersForId =
+              _waiters.where((w) => w.torrentId == id).toList();
           for (final w in waitersForId) {
             if (w.onCancelled != null && w.onCancelled!()) {
               if (!w.completer.isCompleted) {
@@ -60,9 +59,8 @@ void _startSharedTimer() {
             }
           }
         } catch (e) {
-          final waitersForId = _waiters
-              .where((w) => w.torrentId == id)
-              .toList();
+          final waitersForId =
+              _waiters.where((w) => w.torrentId == id).toList();
           for (final w in waitersForId) {
             if (!w.completer.isCompleted) w.completer.completeError(e);
             _waiters.remove(w);

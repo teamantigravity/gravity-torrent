@@ -55,16 +55,16 @@ class TransmissionTorrentFile {
   );
 
   TransmissionTorrentFile.fromJson(Map<String, dynamic> json)
-    : name = json['name'] as String? ?? '',
-      length = (json['length'] as num?)?.toInt() ?? 0,
-      bytesCompleted =
-          ((json['bytesCompleted'] ?? json['bytes_completed']) as num?)
-              ?.toInt() ??
-          0,
-      beginPiece =
-          ((json['begin_piece'] ?? json['beginPiece']) as num?)?.toInt() ?? 0,
-      endPiece =
-          ((json['end_piece'] ?? json['endPiece']) as num?)?.toInt() ?? 0;
+      : name = json['name'] as String? ?? '',
+        length = (json['length'] as num?)?.toInt() ?? 0,
+        bytesCompleted =
+            ((json['bytesCompleted'] ?? json['bytes_completed']) as num?)
+                    ?.toInt() ??
+                0,
+        beginPiece =
+            ((json['begin_piece'] ?? json['beginPiece']) as num?)?.toInt() ?? 0,
+        endPiece =
+            ((json['end_piece'] ?? json['endPiece']) as num?)?.toInt() ?? 0;
 }
 
 class TransmissionTorrentFileStats {
@@ -73,7 +73,7 @@ class TransmissionTorrentFileStats {
   TransmissionTorrentFileStats(this.wanted);
 
   TransmissionTorrentFileStats.fromJson(Map<String, dynamic> json)
-    : wanted = json['wanted'] as bool? ?? true;
+      : wanted = json['wanted'] as bool? ?? true;
 }
 
 class TransmissionTorrentModel {
@@ -146,103 +146,106 @@ class TransmissionTorrentModel {
   );
 
   TransmissionTorrentModel.fromJson(Map<String, dynamic> json)
-    : id = (json['id'] as num?)?.toInt() ?? 0,
-      name = json['name'] as String? ?? '',
-      percentDone = json['percentDone'] is int
-          ? (json['percentDone'] as int).toDouble()
-          : (json['percentDone'] as double? ?? 0.0),
-      status = (() {
-        final s = (json['status'] as num?)?.toInt() ?? 0;
-        if (s >= 0 && s < TorrentStatus.values.length) {
-          return TorrentStatus.values[s];
-        }
-        return TorrentStatus.stopped;
-      })(),
-      totalSize = (json['totalSize'] as num?)?.toInt() ?? 0,
-      rateDownload = (json['rateDownload'] as num?)?.toInt() ?? 0,
-      rateUpload = (json['rateUpload'] as num?)?.toInt() ?? 0,
-      downloadedEver = (json['downloadedEver'] as num?)?.toInt() ?? 0,
-      uploadedEver = (json['uploadedEver'] as num?)?.toInt() ?? 0,
-      eta = (json['eta'] as num?)?.toInt() ?? -1,
-      pieces = (() {
-        final raw = json['pieces'];
-        final count = ((json['pieceCount'] as num?)?.toInt() ?? 0).clamp(
+      : id = (json['id'] as num?)?.toInt() ?? 0,
+        name = json['name'] as String? ?? '',
+        percentDone = json['percentDone'] is int
+            ? (json['percentDone'] as int).toDouble()
+            : (json['percentDone'] as double? ?? 0.0),
+        status = (() {
+          final s = (json['status'] as num?)?.toInt() ?? 0;
+          if (s >= 0 && s < TorrentStatus.values.length) {
+            return TorrentStatus.values[s];
+          }
+          return TorrentStatus.stopped;
+        })(),
+        totalSize = (json['totalSize'] as num?)?.toInt() ?? 0,
+        rateDownload = (json['rateDownload'] as num?)?.toInt() ?? 0,
+        rateUpload = (json['rateUpload'] as num?)?.toInt() ?? 0,
+        downloadedEver = (json['downloadedEver'] as num?)?.toInt() ?? 0,
+        uploadedEver = (json['uploadedEver'] as num?)?.toInt() ?? 0,
+        eta = (json['eta'] as num?)?.toInt() ?? -1,
+        pieces = (() {
+          final raw = json['pieces'];
+          final count = ((json['pieceCount'] as num?)?.toInt() ?? 0).clamp(
+            0,
+            1000000,
+          );
+          if (raw == null || raw.toString().isEmpty || count == 0) {
+            return List<bool>.filled(count, false);
+          }
+          try {
+            return convertBitfieldToBoolList(
+              base64Decode(raw as String),
+              count,
+            );
+          } catch (e, s) {
+            if (kDebugMode) {
+              debugPrint('Failed to decode torrent bitfield: $e\n$s');
+            }
+            return List<bool>.filled(count, false);
+          }
+        })(),
+        pieceCount = ((json['pieceCount'] as num?)?.toInt() ?? 0).clamp(
           0,
           1000000,
-        );
-        if (raw == null || raw.toString().isEmpty || count == 0) {
-          return List<bool>.filled(count, false);
-        }
-        try {
-          return convertBitfieldToBoolList(base64Decode(raw as String), count);
-        } catch (e, s) {
-          if (kDebugMode) {
-            debugPrint('Failed to decode torrent bitfield: $e\n$s');
+        ),
+        pieceSize = (json['pieceSize'] as num?)?.toInt() ?? 0,
+        errorString = json['errorString'] as String? ?? '',
+        location = json['downloadDir'] as String? ?? '',
+        isPrivate = json['isPrivate'] as bool? ?? false,
+        addedDate = (json['addedDate'] as num?)?.toInt() ?? 0,
+        creator = json['creator'] as String? ?? '',
+        comment = json['comment'] as String? ?? '',
+        files = (json['files'] as List<dynamic>?)
+                ?.map<TransmissionTorrentFile>(
+                  (j) => TransmissionTorrentFile.fromJson(
+                    j as Map<String, dynamic>,
+                  ),
+                )
+                .toList() ??
+            [],
+        fileStats = (json['fileStats'] as List<dynamic>?)
+                ?.map<TransmissionTorrentFileStats>(
+                  (j) => TransmissionTorrentFileStats.fromJson(
+                    j as Map<String, dynamic>,
+                  ),
+                )
+                .toList() ??
+            [],
+        labels =
+            (json['labels'] as List<dynamic>?)?.whereType<String>().toList() ??
+                [],
+        peersConnected = (json['peersConnected'] as num?)?.toInt() ?? 0,
+        magnetLink = json['magnetLink'] as String? ?? '',
+        sequentialDownload = json['sequential_download'] as bool? ?? false,
+        // Per-torrent bandwidth limits are returned under `download_limit(ed)`
+        // / `upload_limit(ed)` (with `downloadLimit(ed)`/`uploadLimit(ed)` as
+        // the legacy alias) — NOT the `speedLimit*` names used for the
+        // session-level (global) settings.
+        speedLimitDownEnabled =
+            (json['download_limited'] ?? json['downloadLimited']) as bool? ??
+                false,
+        speedLimitUpEnabled =
+            (json['upload_limited'] ?? json['uploadLimited']) as bool? ?? false,
+        speedLimitDown =
+            ((json['download_limit'] ?? json['downloadLimit']) as num?)
+                    ?.toInt() ??
+                0,
+        speedLimitUp =
+            ((json['upload_limit'] ?? json['uploadLimit']) as num?)?.toInt() ??
+                0,
+        doneDate = (() {
+          try {
+            return DateTime.fromMillisecondsSinceEpoch(
+              ((json['doneDate'] as num?)?.toInt() ?? 0) * 1000,
+            );
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('Invalid doneDate for torrent: $e');
+            }
+            return DateTime.utc(1970);
           }
-          return List<bool>.filled(count, false);
-        }
-      })(),
-      pieceCount = ((json['pieceCount'] as num?)?.toInt() ?? 0).clamp(
-        0,
-        1000000,
-      ),
-      pieceSize = (json['pieceSize'] as num?)?.toInt() ?? 0,
-      errorString = json['errorString'] as String? ?? '',
-      location = json['downloadDir'] as String? ?? '',
-      isPrivate = json['isPrivate'] as bool? ?? false,
-      addedDate = (json['addedDate'] as num?)?.toInt() ?? 0,
-      creator = json['creator'] as String? ?? '',
-      comment = json['comment'] as String? ?? '',
-      files =
-          (json['files'] as List<dynamic>?)
-              ?.map<TransmissionTorrentFile>(
-                (j) =>
-                    TransmissionTorrentFile.fromJson(j as Map<String, dynamic>),
-              )
-              .toList() ??
-          [],
-      fileStats =
-          (json['fileStats'] as List<dynamic>?)
-              ?.map<TransmissionTorrentFileStats>(
-                (j) => TransmissionTorrentFileStats.fromJson(
-                  j as Map<String, dynamic>,
-                ),
-              )
-              .toList() ??
-          [],
-      labels =
-          (json['labels'] as List<dynamic>?)?.whereType<String>().toList() ??
-          [],
-      peersConnected = (json['peersConnected'] as num?)?.toInt() ?? 0,
-      magnetLink = json['magnetLink'] as String? ?? '',
-      sequentialDownload = json['sequential_download'] as bool? ?? false,
-      // Per-torrent bandwidth limits are returned under `download_limit(ed)`
-      // / `upload_limit(ed)` (with `downloadLimit(ed)`/`uploadLimit(ed)` as
-      // the legacy alias) — NOT the `speedLimit*` names used for the
-      // session-level (global) settings.
-      speedLimitDownEnabled =
-          (json['download_limited'] ?? json['downloadLimited']) as bool? ??
-          false,
-      speedLimitUpEnabled =
-          (json['upload_limited'] ?? json['uploadLimited']) as bool? ?? false,
-      speedLimitDown =
-          ((json['download_limit'] ?? json['downloadLimit']) as num?)
-              ?.toInt() ??
-          0,
-      speedLimitUp =
-          ((json['upload_limit'] ?? json['uploadLimit']) as num?)?.toInt() ?? 0,
-      doneDate = (() {
-        try {
-          return DateTime.fromMillisecondsSinceEpoch(
-            ((json['doneDate'] as num?)?.toInt() ?? 0) * 1000,
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint('Invalid doneDate for torrent: $e');
-          }
-          return DateTime.utc(1970);
-        }
-      })(),
-      leftUntilDone = (json['leftUntilDone'] as num?)?.toInt() ?? 0,
-      sizeWhenDone = (json['sizeWhenDone'] as num?)?.toInt() ?? 0;
+        })(),
+        leftUntilDone = (json['leftUntilDone'] as num?)?.toInt() ?? 0,
+        sizeWhenDone = (json['sizeWhenDone'] as num?)?.toInt() ?? 0;
 }

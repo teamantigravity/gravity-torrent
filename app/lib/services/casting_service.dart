@@ -201,8 +201,7 @@ class CastingService extends ChangeNotifier {
     final accepted = await _avTransportAction(
       device,
       'SetAVTransportURI',
-      innerXml:
-          '<CurrentURI>${escapeXml(streamUrl)}</CurrentURI>'
+      innerXml: '<CurrentURI>${escapeXml(streamUrl)}</CurrentURI>'
           '<CurrentURIMetaData>$metadata</CurrentURIMetaData>',
     );
 
@@ -270,8 +269,7 @@ class CastingService extends ChangeNotifier {
     final ok = await _avTransportAction(
       device,
       'Seek',
-      innerXml:
-          '<Unit>REL_TIME</Unit>'
+      innerXml: '<Unit>REL_TIME</Unit>'
           '<Target>${formatUpnpDuration(position)}</Target>',
     );
     return _disposed ? false : ok;
@@ -290,8 +288,7 @@ class CastingService extends ChangeNotifier {
       controlUrl: controlUrl,
       serviceType: renderingControlServiceType,
       action: 'SetVolume',
-      innerXml:
-          '<Channel>Master</Channel>'
+      innerXml: '<Channel>Master</Channel>'
           '<DesiredVolume>${percent.clamp(0, 100)}</DesiredVolume>',
     );
     return _disposed ? false : ok;

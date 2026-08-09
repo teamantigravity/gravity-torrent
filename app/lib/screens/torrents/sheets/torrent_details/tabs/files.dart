@@ -130,8 +130,8 @@ class _FilesTabState extends State<FilesTab> {
     final globalWantedState = areAllFilesWanted
         ? true
         : areAllFilesSkipped
-        ? false
-        : null;
+            ? false
+            : null;
 
     return Column(
       children: [
@@ -197,8 +197,8 @@ class _FilesTabState extends State<FilesTab> {
                     percent == null
                         ? const Text('—')
                         : percent < 100
-                        ? Text('$percent %')
-                        : const Icon(Icons.download_done, size: 16),
+                            ? Text('$percent %')
+                            : const Icon(Icons.download_done, size: 16),
                     Text(
                       ' • ${prettyBytes(file.length.toDouble(), locale: localizations.localeName)}',
                     ),
@@ -259,9 +259,9 @@ class _FilesTabState extends State<FilesTab> {
                       onChanged: file.bytesCompleted == file.length
                           ? null
                           : (_) => _handleWantedChange(
-                              originalIndex,
-                              !file.wanted,
-                            ),
+                                originalIndex,
+                                !file.wanted,
+                              ),
                     ),
                   ],
                 ),

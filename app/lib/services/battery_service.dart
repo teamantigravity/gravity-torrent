@@ -38,8 +38,7 @@ class BatteryService {
     if (_disposed || _loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     if (_disposed) return;
-    _threshold =
-        (await SharedPrefsStorage.getString(
+    _threshold = (await SharedPrefsStorage.getString(
           _thresholdKey,
         ).then((s) => s != null ? int.tryParse(s) : null)) ??
         20;

@@ -27,7 +27,8 @@ void main() {
     expect(json.containsKey('speed-limit-down'), isFalse);
   });
 
-  test('torrent-set encodes sequential download under the underscore key '
+  test(
+      'torrent-set encodes sequential download under the underscore key '
       'only', () {
     final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(ids: [7], sequentialDownload: true),
@@ -38,7 +39,8 @@ void main() {
     expect(json.containsKey('sequentialDownload'), isFalse);
   });
 
-  test('torrent-get requests sequential download and per-torrent speed '
+  test(
+      'torrent-get requests sequential download and per-torrent speed '
       'limit fields under their RPC-native names', () {
     final request = TorrentGetRequest(
       arguments: TorrentGetRequestArguments(
@@ -52,9 +54,8 @@ void main() {
       ),
     );
 
-    final fields =
-        (request.toJson()['arguments'] as Map<String, dynamic>)['fields']
-            as List<dynamic>;
+    final fields = (request.toJson()['arguments']
+        as Map<String, dynamic>)['fields'] as List<dynamic>;
     expect(fields, [
       'sequential_download',
       'download_limited',
@@ -64,7 +65,8 @@ void main() {
     ]);
   });
 
-  test('torrent-get response correctly parses sequential download and '
+  test(
+      'torrent-get response correctly parses sequential download and '
       'per-torrent speed limits', () {
     final model = TransmissionTorrentModel.fromJson({
       'id': 1,

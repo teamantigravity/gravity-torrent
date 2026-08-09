@@ -643,8 +643,8 @@ class _DetailsTabState extends State<DetailsTab> {
             _loadingNote
                 ? '...'
                 : _note.isEmpty
-                ? localizations.notSet
-                : _note,
+                    ? localizations.notSet
+                    : _note,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

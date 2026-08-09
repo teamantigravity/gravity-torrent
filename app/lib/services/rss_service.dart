@@ -20,16 +20,16 @@ class RssFeed {
   const RssFeed({required this.url, this.keyword = '', this.enabled = true});
 
   Map<String, dynamic> toJson() => {
-    'url': url,
-    'keyword': keyword,
-    'enabled': enabled,
-  };
+        'url': url,
+        'keyword': keyword,
+        'enabled': enabled,
+      };
 
   factory RssFeed.fromJson(Map<String, dynamic> json) => RssFeed(
-    url: (json['url'] as String?) ?? '',
-    keyword: (json['keyword'] as String?) ?? '',
-    enabled: (json['enabled'] as bool?) ?? true,
-  );
+        url: (json['url'] as String?) ?? '',
+        keyword: (json['keyword'] as String?) ?? '',
+        enabled: (json['enabled'] as bool?) ?? true,
+      );
 }
 
 /// RSS auto-download service.

@@ -104,9 +104,8 @@ class _BackupRestoreDialogState extends State<BackupRestoreDialog> {
                 title: Text(l.encryptBackup),
                 subtitle: Text(l.encryptBackupSubtitle),
                 value: _useEncryption,
-                onChanged: _working
-                    ? null
-                    : (v) => setState(() => _useEncryption = v),
+                onChanged:
+                    _working ? null : (v) => setState(() => _useEncryption = v),
                 contentPadding: EdgeInsets.zero,
               ),
 

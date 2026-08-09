@@ -31,19 +31,18 @@ class BackupMetadata {
   });
 
   Map<String, dynamic> toJson() => {
-    'appVersion': appVersion,
-    'createdAt': createdAt.toIso8601String(),
-    'platform': platform,
-    'settingsCount': settingsCount,
-    'torrentCount': torrentCount,
-    'encrypted': encrypted,
-  };
+        'appVersion': appVersion,
+        'createdAt': createdAt.toIso8601String(),
+        'platform': platform,
+        'settingsCount': settingsCount,
+        'torrentCount': torrentCount,
+        'encrypted': encrypted,
+      };
 
   factory BackupMetadata.fromJson(Map<String, dynamic> json) {
     return BackupMetadata(
       appVersion: json['appVersion'] as String? ?? 'unknown',
-      createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       platform: json['platform'] as String? ?? 'unknown',
       settingsCount: json['settingsCount'] as int? ?? 0,
@@ -169,7 +168,7 @@ class BackupService {
             .length;
         final warnMsg = localCount > 0
             ? ' (Warning: $localCount local torrent(s) without '
-                  'magnet links were not fully backed up)'
+                'magnet links were not fully backed up)'
             : '';
         return BackupRestoreResult(
           success: true,
@@ -195,7 +194,7 @@ class BackupService {
           .length;
       final warnMsg = localCount > 0
           ? ' (Warning: $localCount local torrent(s) without '
-                'magnet links were not fully backed up)'
+              'magnet links were not fully backed up)'
           : '';
 
       return BackupRestoreResult(
@@ -316,8 +315,7 @@ class BackupService {
       if (storedHash != computedHash) {
         return const BackupRestoreResult(
           success: false,
-          message:
-              'Backup file integrity check failed — '
+          message: 'Backup file integrity check failed — '
               'file may be corrupted',
         );
       }
@@ -414,8 +412,7 @@ class BackupService {
 
       return BackupRestoreResult(
         success: true,
-        message:
-            'Restored ${settings.length} settings and '
+        message: 'Restored ${settings.length} settings and '
             '${torrents.length} torrents',
         metadata: metadata,
       );

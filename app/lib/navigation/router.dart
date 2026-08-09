@@ -82,9 +82,8 @@ final router = GoRouter(
       name: 'player',
       builder: (context, state) {
         final extra = state.extra;
-        final map = extra is Map<String, dynamic>
-            ? extra
-            : const <String, dynamic>{};
+        final map =
+            extra is Map<String, dynamic> ? extra : const <String, dynamic>{};
         final url = map['url']?.toString() ?? '';
         final title = map['title']?.toString() ?? '';
 

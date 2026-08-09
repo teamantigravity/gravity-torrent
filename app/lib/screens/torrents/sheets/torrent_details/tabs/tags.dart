@@ -13,7 +13,7 @@ class TagsTab extends StatelessWidget {
   Future<void> _handleAddLabel(BuildContext context, String label) async {
     final isDuplicate =
         torrent.labels?.any((l) => l.toLowerCase() == label.toLowerCase()) ??
-        false;
+            false;
     if (isDuplicate) return;
 
     final TorrentBase torrentUpdate = TorrentBase(

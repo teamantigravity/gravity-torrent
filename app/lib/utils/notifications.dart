@@ -39,30 +39,30 @@ Future<void> initializeNotifications() async {
 
   final List<DarwinNotificationCategory> darwinNotificationCategories =
       <DarwinNotificationCategory>[
-        DarwinNotificationCategory(
-          'download_progress',
-          actions: <DarwinNotificationAction>[
-            DarwinNotificationAction.plain('pause_all', 'Pause all'),
-            DarwinNotificationAction.plain('resume_all', 'Resume all'),
-          ],
-        ),
-      ];
+    DarwinNotificationCategory(
+      'download_progress',
+      actions: <DarwinNotificationAction>[
+        DarwinNotificationAction.plain('pause_all', 'Pause all'),
+        DarwinNotificationAction.plain('resume_all', 'Resume all'),
+      ],
+    ),
+  ];
 
   final DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: false,
-        requestSoundPermission: false,
-        notificationCategories: darwinNotificationCategories,
-      );
+    requestAlertPermission: true,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+    notificationCategories: darwinNotificationCategories,
+  );
 
   final LinuxInitializationSettings initializationSettingsLinux =
       LinuxInitializationSettings(
-        defaultActionName: 'Open notification',
-        defaultIcon: isFlatpak()
-            ? ThemeLinuxIcon('com.teamantigravity.gravitytorrent')
-            : AssetsLinuxIcon('assets/tray_icon.png'),
-      );
+    defaultActionName: 'Open notification',
+    defaultIcon: isFlatpak()
+        ? ThemeLinuxIcon('com.teamantigravity.gravitytorrent')
+        : AssetsLinuxIcon('assets/tray_icon.png'),
+  );
 
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,

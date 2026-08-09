@@ -7,12 +7,12 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 CastDevice _device() => CastDevice(
-  id: 'uuid:test',
-  name: 'Test TV',
-  address: '192.168.1.50',
-  controlUrl: Uri.parse('http://192.168.1.50:8200/ctl/transport'),
-  renderingControlUrl: Uri.parse('http://192.168.1.50:8200/ctl/rendering'),
-);
+      id: 'uuid:test',
+      name: 'Test TV',
+      address: '192.168.1.50',
+      controlUrl: Uri.parse('http://192.168.1.50:8200/ctl/transport'),
+      renderingControlUrl: Uri.parse('http://192.168.1.50:8200/ctl/rendering'),
+    );
 
 void main() {
   final service = CastingService.instance;

@@ -98,8 +98,8 @@ class WifiGuardService {
     // the baseline inside the lock, avoiding a race with the listener.
     _lastIpAddresses = [];
     _connectivitySub = Connectivity().onConnectivityChanged.listen(
-      _onConnectivityChanged,
-    );
+          _onConnectivityChanged,
+        );
   }
 
   void _unsubscribe() {
@@ -125,8 +125,7 @@ class WifiGuardService {
   ) async {
     if (!_enabled || _disposed) return;
     final hasWifi = results.contains(ConnectivityResult.wifi);
-    final hasAny =
-        results.isNotEmpty &&
+    final hasAny = results.isNotEmpty &&
         !results.every((r) => r == ConnectivityResult.none);
 
     if (_mode == WifiGuardMode.wifiOnly) {

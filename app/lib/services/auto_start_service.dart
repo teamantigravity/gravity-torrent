@@ -82,8 +82,7 @@ class AutoStartService {
 
         final exePath = Platform.resolvedExecutable;
         final escapedPath = exePath.replaceAll('"', '\\"');
-        final content =
-            '''[Desktop Entry]
+        final content = '''[Desktop Entry]
 Type=Application
 Name=Gravity Torrent
 Exec="$escapedPath" --autostart

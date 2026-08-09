@@ -27,9 +27,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _nextWithAccessibility(bool reducedMotion) {
     if (_currentPage < _totalPages - 1) {
       _controller.nextPage(
-        duration: reducedMotion
-            ? Duration.zero
-            : const Duration(milliseconds: 350),
+        duration:
+            reducedMotion ? Duration.zero : const Duration(milliseconds: 350),
         curve: reducedMotion ? Curves.linear : Curves.easeInOut,
       );
     } else {
@@ -147,12 +146,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   Expanded(
                                     child: Text(
                                       l.onboardingLegalDisclaimer,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onErrorContainer,
-                                          ),
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            theme.colorScheme.onErrorContainer,
+                                      ),
                                     ),
                                   ),
                                 ],

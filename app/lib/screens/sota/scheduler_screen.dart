@@ -155,19 +155,21 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                             _loaded
                                 ? _formatTime(_startHour, _startMinute)
                                 : '--:--',
-                            style: Theme.of(context).textTheme.titleMedium
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
                                 ?.copyWith(color: colorScheme.primary),
                           ),
                           onTap: _enabled
                               ? () => _pickTime(
-                                  localizations.selectStartTime,
-                                  _startHour,
-                                  _startMinute,
-                                  (t) => setState(() {
-                                    _startHour = t.hour;
-                                    _startMinute = t.minute;
-                                  }),
-                                )
+                                    localizations.selectStartTime,
+                                    _startHour,
+                                    _startMinute,
+                                    (t) => setState(() {
+                                      _startHour = t.hour;
+                                      _startMinute = t.minute;
+                                    }),
+                                  )
                               : null,
                         ),
                         const Divider(indent: 16, endIndent: 16, height: 1),
@@ -182,19 +184,21 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                             _loaded
                                 ? _formatTime(_endHour, _endMinute)
                                 : '--:--',
-                            style: Theme.of(context).textTheme.titleMedium
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
                                 ?.copyWith(color: colorScheme.error),
                           ),
                           onTap: _enabled
                               ? () => _pickTime(
-                                  localizations.selectEndTime,
-                                  _endHour,
-                                  _endMinute,
-                                  (t) => setState(() {
-                                    _endHour = t.hour;
-                                    _endMinute = t.minute;
-                                  }),
-                                )
+                                    localizations.selectEndTime,
+                                    _endHour,
+                                    _endMinute,
+                                    (t) => setState(() {
+                                      _endHour = t.hour;
+                                      _endMinute = t.minute;
+                                    }),
+                                  )
                               : null,
                         ),
                       ],

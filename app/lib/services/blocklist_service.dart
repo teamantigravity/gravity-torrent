@@ -117,8 +117,7 @@ class BlocklistService {
     if (lastUpdatedStr != null) {
       _lastUpdated = DateTime.tryParse(lastUpdatedStr);
     }
-    _rulesCount =
-        (await SharedPrefsStorage.getString(
+    _rulesCount = (await SharedPrefsStorage.getString(
           _rulesCountKey,
         ).then((s) => s != null ? int.tryParse(s) : null)) ??
         0;

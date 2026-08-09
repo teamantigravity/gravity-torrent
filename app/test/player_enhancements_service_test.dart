@@ -16,14 +16,14 @@ void main() {
     tearDown(() => service.dispose());
 
     test('moving an item down lands it at the intended position', () {
-      // ReorderableListView reports newIndex as the insertion point computed
-      // before removal, so moving "a" after "b" arrives as (0, 2).
-      service.reorderQueue(0, 2);
+      // ReorderableListView.onReorderItem reports the final insertion index
+      // after the dragged row has been removed.
+      service.reorderQueue(0, 1);
       expect(service.queue.map((i) => i.title), ['b', 'a', 'c']);
     });
 
     test('moving an item to the end lands it last', () {
-      service.reorderQueue(0, 3);
+      service.reorderQueue(0, 2);
       expect(service.queue.map((i) => i.title), ['b', 'c', 'a']);
     });
 
@@ -34,7 +34,7 @@ void main() {
 
     test('keeps the current item selected after a reorder', () {
       service.setQueue([_item('a'), _item('b'), _item('c')], startIndex: 0);
-      service.reorderQueue(0, 3);
+      service.reorderQueue(0, 2);
       expect(service.currentItem?.title, 'a');
       expect(service.currentIndex, 2);
     });

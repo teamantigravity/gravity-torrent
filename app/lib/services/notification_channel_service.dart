@@ -50,10 +50,8 @@ class NotificationChannelService {
   }
 
   static Future<void> _createAndroidChannels() async {
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin == null) return;
 
     const channels = [

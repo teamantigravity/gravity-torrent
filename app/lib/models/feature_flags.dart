@@ -107,8 +107,7 @@ class FeatureFlagsModel extends ChangeNotifier {
   Future<void> _load() async {
     try {
       for (final feature in Feature.values) {
-        _values[feature] =
-            await SharedPrefsStorage.getBool(feature.name) ??
+        _values[feature] = await SharedPrefsStorage.getBool(feature.name) ??
             _featureDefaults[feature] ??
             false;
       }
@@ -140,9 +139,9 @@ class FeatureFlagsModel extends ChangeNotifier {
 
   /// Effective boolean helper used by setters so service calls honour the
   /// remote kill-switch even when the user toggles the local preference.
-  bool _effective(Feature feature, bool localValue) => RemoteConfigService
-      .instance
-      .isFeatureEnabled(feature.name, defaultValue: localValue);
+  bool _effective(Feature feature, bool localValue) =>
+      RemoteConfigService.instance
+          .isFeatureEnabled(feature.name, defaultValue: localValue);
 
   Future<void> setUseDynamicColor(bool value) async {
     await _persist(Feature.useDynamicColor, value);
@@ -166,9 +165,10 @@ class FeatureFlagsModel extends ChangeNotifier {
       (_) => RemoteControlService.instance
           .setEnabled(_effective(Feature.enableRemoteControl, value))
           .catchError((e) {
-            if (kDebugMode)
-              debugPrint('RemoteControlService toggle failed: $e');
-          }),
+        if (kDebugMode) {
+          debugPrint('RemoteControlService toggle failed: $e');
+        }
+      }),
     );
   }
 
@@ -208,8 +208,8 @@ class FeatureFlagsModel extends ChangeNotifier {
       (_) => SchedulerService.instance
           .setEnabled(_effective(Feature.enableScheduler, value))
           .catchError((e) {
-            if (kDebugMode) debugPrint('SchedulerService toggle failed: $e');
-          }),
+        if (kDebugMode) debugPrint('SchedulerService toggle failed: $e');
+      }),
     );
   }
 
@@ -220,8 +220,8 @@ class FeatureFlagsModel extends ChangeNotifier {
       (_) => QuotaService.instance
           .setEnabled(_effective(Feature.enableQuota, value))
           .catchError((e) {
-            if (kDebugMode) debugPrint('QuotaService toggle failed: $e');
-          }),
+        if (kDebugMode) debugPrint('QuotaService toggle failed: $e');
+      }),
     );
   }
 
@@ -232,8 +232,8 @@ class FeatureFlagsModel extends ChangeNotifier {
       (_) => RssService.instance
           .setEnabled(_effective(Feature.enableRssAutoDownload, value))
           .catchError((e) {
-            if (kDebugMode) debugPrint('RssService toggle failed: $e');
-          }),
+        if (kDebugMode) debugPrint('RssService toggle failed: $e');
+      }),
     );
   }
 
@@ -244,8 +244,8 @@ class FeatureFlagsModel extends ChangeNotifier {
       (_) => WifiGuardService.instance
           .setEnabled(_effective(Feature.enableWifiOnly, value))
           .catchError((e) {
-            if (kDebugMode) debugPrint('WifiGuardService toggle failed: $e');
-          }),
+        if (kDebugMode) debugPrint('WifiGuardService toggle failed: $e');
+      }),
     );
   }
 
@@ -261,8 +261,8 @@ class FeatureFlagsModel extends ChangeNotifier {
       (_) => BatteryService.instance
           .setEnabled(_effective(Feature.enableBatterySaver, value))
           .catchError((e) {
-            if (kDebugMode) debugPrint('BatteryService toggle failed: $e');
-          }),
+        if (kDebugMode) debugPrint('BatteryService toggle failed: $e');
+      }),
     );
   }
 }

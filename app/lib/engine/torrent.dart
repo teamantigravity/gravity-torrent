@@ -303,12 +303,11 @@ abstract class Torrent extends TorrentBase {
         ResultType.fileNotFound => 'Not found',
         ResultType.permissionDenied => 'Permission denied',
         // It seems fileNotFound is not returned on linux
-        ResultType.error =>
-          Directory(folderPath).existsSync() == false
-              ? 'Folder not found'
-              : result.message.isNotEmpty
-              ? result.message
-              : 'Unknown error',
+        ResultType.error => Directory(folderPath).existsSync() == false
+            ? 'Folder not found'
+            : result.message.isNotEmpty
+                ? result.message
+                : 'Unknown error',
         _ => 'Unknown error',
       };
 

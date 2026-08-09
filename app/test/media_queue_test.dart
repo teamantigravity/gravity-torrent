@@ -3,13 +3,13 @@ import 'package:gravity_torrent/engine/file.dart' as torrent_file;
 import 'package:gravity_torrent/utils/media_queue.dart';
 
 torrent_file.File _file(String name) => torrent_file.File(
-  name: name,
-  length: 1000,
-  bytesCompleted: 0,
-  wanted: true,
-  beginPiece: 0,
-  endPiece: 1,
-);
+      name: name,
+      length: 1000,
+      bytesCompleted: 0,
+      wanted: true,
+      beginPiece: 0,
+      endPiece: 1,
+    );
 
 void main() {
   group('isPlayableMedia', () {

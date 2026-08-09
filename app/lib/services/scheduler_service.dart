@@ -29,24 +29,24 @@ class ScheduleWindow {
   bool get allDays => dayBitmask == 127;
 
   Map<String, dynamic> toJson() => {
-    'startHour': start.hour,
-    'startMinute': start.minute,
-    'endHour': end.hour,
-    'endMinute': end.minute,
-    'dayBitmask': dayBitmask,
-  };
+        'startHour': start.hour,
+        'startMinute': start.minute,
+        'endHour': end.hour,
+        'endMinute': end.minute,
+        'dayBitmask': dayBitmask,
+      };
 
   factory ScheduleWindow.fromJson(Map<String, dynamic> json) => ScheduleWindow(
-    start: ScheduleTime(
-      hour: (json['startHour'] as num?)?.toInt() ?? 0,
-      minute: (json['startMinute'] as num?)?.toInt() ?? 0,
-    ),
-    end: ScheduleTime(
-      hour: (json['endHour'] as num?)?.toInt() ?? 0,
-      minute: (json['endMinute'] as num?)?.toInt() ?? 0,
-    ),
-    dayBitmask: (json['dayBitmask'] as num?)?.toInt() ?? 127,
-  );
+        start: ScheduleTime(
+          hour: (json['startHour'] as num?)?.toInt() ?? 0,
+          minute: (json['startMinute'] as num?)?.toInt() ?? 0,
+        ),
+        end: ScheduleTime(
+          hour: (json['endHour'] as num?)?.toInt() ?? 0,
+          minute: (json['endMinute'] as num?)?.toInt() ?? 0,
+        ),
+        dayBitmask: (json['dayBitmask'] as num?)?.toInt() ?? 127,
+      );
 
   /// Returns true if [now] falls within this window.
   bool isActiveAt(DateTime now) {

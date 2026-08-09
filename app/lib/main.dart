@@ -433,8 +433,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
   void _updateLockState() {
     final flags = Provider.of<FeatureFlagsModel>(context, listen: false);
-    final isLockEnabled =
-        flags.enableAppLock &&
+    final isLockEnabled = flags.enableAppLock &&
         AppLockService.instance.enabled &&
         AppLockService.instance.hasPin;
 
@@ -521,7 +520,7 @@ class _GravityTorrentAppState extends State<GravityTorrentApp>
 
 class _AppLocaleLayer extends StatelessWidget {
   final Widget Function(BuildContext context, AppModel app, Locale locale)
-  builder;
+      builder;
 
   const _AppLocaleLayer({required this.builder});
 
@@ -543,16 +542,14 @@ class _FeatureFlagsLayer extends StatelessWidget {
     BuildContext context,
     FeatureFlagsModel flags,
     bool shouldLock,
-  )
-  builder;
+  ) builder;
 
   const _FeatureFlagsLayer({required this.unlocked, required this.builder});
 
   @override
   Widget build(BuildContext context) {
     final flags = context.watch<FeatureFlagsModel>();
-    final isLockEnabled =
-        flags.enableAppLock &&
+    final isLockEnabled = flags.enableAppLock &&
         AppLockService.instance.enabled &&
         AppLockService.instance.hasPin;
     final shouldLock = isLockEnabled && !unlocked;

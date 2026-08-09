@@ -155,9 +155,8 @@ class _CreateTorrentDialogState extends State<CreateTorrentDialog> {
                       ? l.outputFolder
                       : p.basename(_outputDirectory!),
                 ),
-                subtitle: _outputDirectory != null
-                    ? Text(_outputDirectory!)
-                    : null,
+                subtitle:
+                    _outputDirectory != null ? Text(_outputDirectory!) : null,
                 trailing: IconButton(
                   tooltip: l.selectOutputDirectory,
                   icon: const Icon(Icons.folder_open),

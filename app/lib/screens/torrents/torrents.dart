@@ -485,16 +485,16 @@ class _TorrentScreen extends State<TorrentsScreen> {
             tooltip: l.pauseAllTorrents,
             onPressed:
                 model.torrents.any((t) => t.status != TorrentStatus.stopped)
-                ? () async => model.pauseAllTorrents()
-                : null,
+                    ? () async => model.pauseAllTorrents()
+                    : null,
           ),
           IconButton(
             icon: const Icon(Icons.play_arrow),
             tooltip: l.resumeAllTorrents,
             onPressed:
                 model.torrents.any((t) => t.status == TorrentStatus.stopped)
-                ? () async => model.resumeAllTorrents()
-                : null,
+                    ? () async => model.resumeAllTorrents()
+                    : null,
           ),
           IconButton(
             icon: Icon(
@@ -545,16 +545,15 @@ class _TorrentScreen extends State<TorrentsScreen> {
             tooltip: l.cancel,
           ),
           Checkbox(
-            value:
-                model.displayedTorrents.isNotEmpty &&
+            value: model.displayedTorrents.isNotEmpty &&
                 model.displayedTorrents.every(
                   (t) => _selectedTorrentIds.contains(t.id),
                 ),
             onChanged: model.displayedTorrents.isEmpty
                 ? null
                 : (_) => _toggleSelectAllVisible(
-                    model.displayedTorrents.map((t) => t.id).toList(),
-                  ),
+                      model.displayedTorrents.map((t) => t.id).toList(),
+                    ),
           ),
           const SizedBox(width: 8),
           Text(
@@ -808,9 +807,8 @@ class _TorrentScreen extends State<TorrentsScreen> {
         child: Consumer<TorrentsModel>(
           builder: (context, torrentsModel, child) {
             if (_isSelectionMode) {
-              final visibleIds = torrentsModel.displayedTorrents
-                  .map((t) => t.id)
-                  .toSet();
+              final visibleIds =
+                  torrentsModel.displayedTorrents.map((t) => t.id).toSet();
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
                 final idsToRemove = _selectedTorrentIds
