@@ -14,8 +14,10 @@ void main() {
     });
 
     test('partial bitfield', () {
-      final Uint8List bitfield =
-          Uint8List.fromList([192, 0]); // 11000000 00000000
+      final Uint8List bitfield = Uint8List.fromList([
+        192,
+        0,
+      ]); // 11000000 00000000
       const int pieceCount = 16;
       final List<bool> expected = [
         true,

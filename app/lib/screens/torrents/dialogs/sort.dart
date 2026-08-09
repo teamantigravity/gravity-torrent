@@ -86,10 +86,7 @@ class _SortDialogState extends State<SortDialog> {
               children: [
                 Text(localizations.reverseOrder),
                 const SizedBox(width: 8),
-                Switch(
-                  value: reverseSort,
-                  onChanged: _handleReverseSortChange,
-                ),
+                Switch(value: reverseSort, onChanged: _handleReverseSortChange),
               ],
             ),
           ],

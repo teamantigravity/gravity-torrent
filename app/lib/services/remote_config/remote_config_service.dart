@@ -105,8 +105,9 @@ class RemoteConfigService {
         _showAds = json['show_ads'] as bool;
       }
       if (json.containsKey('sota_features') && json['sota_features'] is Map) {
-        final features =
-            Map<String, dynamic>.from(json['sota_features'] as Map);
+        final features = Map<String, dynamic>.from(
+          json['sota_features'] as Map,
+        );
         _featureFlags.clear();
         for (final entry in features.entries) {
           if (entry.value is bool) {
@@ -122,14 +123,16 @@ class RemoteConfigService {
       if (kDebugMode) {
         debugPrint('[RemoteConfig] fetch timed out (keeping defaults)');
       }
-      _lastFetch =
-          DateTime.now().subtract(const Duration(hours: 5, minutes: 55));
+      _lastFetch = DateTime.now().subtract(
+        const Duration(hours: 5, minutes: 55),
+      );
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[RemoteConfig] fetch failed (keeping defaults): $e');
       }
-      _lastFetch =
-          DateTime.now().subtract(const Duration(hours: 5, minutes: 55));
+      _lastFetch = DateTime.now().subtract(
+        const Duration(hours: 5, minutes: 55),
+      );
     }
   }
 }

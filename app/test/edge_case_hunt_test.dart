@@ -19,12 +19,14 @@ void main() {
       expect(detectSubtitleLanguage('Movie.Title.DVDRip.srt'), isNull);
     });
 
-    test('subtitle language still recognises real tags after quality markers',
-        () {
-      expect(detectSubtitleLanguage('Movie.2020.1080p.eng.srt'), 'en');
-      expect(detectSubtitleLanguage('Movie.2020.BluRay.fra.srt'), 'fr');
-      expect(detectSubtitleLanguage('Movie.Title.DVDRip.en.srt'), 'en');
-    });
+    test(
+      'subtitle language still recognises real tags after quality markers',
+      () {
+        expect(detectSubtitleLanguage('Movie.2020.1080p.eng.srt'), 'en');
+        expect(detectSubtitleLanguage('Movie.2020.BluRay.fra.srt'), 'fr');
+        expect(detectSubtitleLanguage('Movie.Title.DVDRip.en.srt'), 'en');
+      },
+    );
 
     test('isPrivateIp treats IPv4-mapped loopback as private', () {
       final service = RemoteControlService.instance;
@@ -36,28 +38,30 @@ void main() {
       );
     });
 
-    test('isValidBlocklistUrl rejects localhost variants and private ranges',
-        () {
-      expect(
-        BlocklistService.isValidBlocklistUrl('http://127.0.0.1/list.txt'),
-        isFalse,
-      );
-      expect(
-        BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
-        isFalse,
-        reason: 'localhost with trailing dot is still localhost',
-      );
-      expect(
-        BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
-        isFalse,
-      );
-      expect(
-        BlocklistService.isValidBlocklistUrl(
-          'http://[::ffff:127.0.0.1]/list.txt',
-        ),
-        isFalse,
-      );
-    });
+    test(
+      'isValidBlocklistUrl rejects localhost variants and private ranges',
+      () {
+        expect(
+          BlocklistService.isValidBlocklistUrl('http://127.0.0.1/list.txt'),
+          isFalse,
+        );
+        expect(
+          BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
+          isFalse,
+          reason: 'localhost with trailing dot is still localhost',
+        );
+        expect(
+          BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
+          isFalse,
+        );
+        expect(
+          BlocklistService.isValidBlocklistUrl(
+            'http://[::ffff:127.0.0.1]/list.txt',
+          ),
+          isFalse,
+        );
+      },
+    );
 
     test('RSS isTorrentLink accepts .torrent URLs with query or fragment', () {
       expect(

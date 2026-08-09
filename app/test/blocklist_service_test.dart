@@ -32,9 +32,7 @@ void main() {
 
     test('rejects private 10.x.x.x', () {
       expect(
-        BlocklistService.isValidBlocklistUrl(
-          'http://10.0.0.1/blocklist.txt',
-        ),
+        BlocklistService.isValidBlocklistUrl('http://10.0.0.1/blocklist.txt'),
         isFalse,
       );
     });
@@ -50,9 +48,7 @@ void main() {
 
     test('rejects private 172.16/12 range', () {
       expect(
-        BlocklistService.isValidBlocklistUrl(
-          'http://172.16.0.1/blocklist.txt',
-        ),
+        BlocklistService.isValidBlocklistUrl('http://172.16.0.1/blocklist.txt'),
         isFalse,
       );
       expect(
@@ -91,18 +87,14 @@ void main() {
 
     test('rejects IPv6 unique-local', () {
       expect(
-        BlocklistService.isValidBlocklistUrl(
-          'http://[fc00::1]/blocklist.txt',
-        ),
+        BlocklistService.isValidBlocklistUrl('http://[fc00::1]/blocklist.txt'),
         isFalse,
       );
     });
 
     test('rejects IPv6 link-local', () {
       expect(
-        BlocklistService.isValidBlocklistUrl(
-          'http://[fe80::1]/blocklist.txt',
-        ),
+        BlocklistService.isValidBlocklistUrl('http://[fe80::1]/blocklist.txt'),
         isFalse,
       );
     });

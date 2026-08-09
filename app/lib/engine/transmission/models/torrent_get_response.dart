@@ -8,12 +8,12 @@ class TorrentGetResponse {
   TorrentGetResponse(this.arguments, this.result);
 
   TorrentGetResponse.fromJson(Map<String, dynamic> json)
-      : arguments = TorrentGetResponseArguments.fromJson(
-          json['arguments'] is Map
-              ? json['arguments'] as Map<String, dynamic>
-              : const {},
-        ),
-        result = json['result'] as String? ?? '';
+    : arguments = TorrentGetResponseArguments.fromJson(
+        json['arguments'] is Map
+            ? json['arguments'] as Map<String, dynamic>
+            : const {},
+      ),
+      result = json['result'] as String? ?? '';
 }
 
 class TorrentGetResponseArguments {
@@ -22,8 +22,8 @@ class TorrentGetResponseArguments {
   TorrentGetResponseArguments(this.torrents);
 
   TorrentGetResponseArguments.fromJson(Map<String, dynamic> json)
-      : torrents = json['torrents'] is List<dynamic>
-            ? (json['torrents'] as List<dynamic>)
+    : torrents = json['torrents'] is List<dynamic>
+          ? (json['torrents'] as List<dynamic>)
                 .whereType<Map<String, dynamic>>()
                 .map((j) {
                   try {
@@ -39,5 +39,5 @@ class TorrentGetResponseArguments {
                 })
                 .whereType<TransmissionTorrentModel>()
                 .toList()
-            : [];
+          : [];
 }

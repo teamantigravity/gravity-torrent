@@ -243,10 +243,9 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 8),
             Text(
               'Not included: torrent files, downloaded content, or PIN codes.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: colorScheme.outline),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
             ),
           ],
         ),

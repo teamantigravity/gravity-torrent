@@ -29,9 +29,7 @@ class ConnectivityService {
         _isOffline = true;
         _activeSnackBar = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context).connectionLost,
-            ),
+            content: Text(AppLocalizations.of(context).connectionLost),
             duration: const Duration(days: 1),
             backgroundColor: Colors.red,
           ),

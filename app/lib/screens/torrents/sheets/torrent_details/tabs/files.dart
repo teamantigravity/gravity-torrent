@@ -81,10 +81,7 @@ class _FilesTabState extends State<FilesTab> {
     }
   }
 
-  Future<void> _handleWantedChange(
-    int fileIndex,
-    bool wanted,
-  ) async {
+  Future<void> _handleWantedChange(int fileIndex, bool wanted) async {
     await widget.torrent.toggleFileWanted(fileIndex, wanted);
     if (mounted) {
       // Refresh torrents
@@ -133,8 +130,8 @@ class _FilesTabState extends State<FilesTab> {
     final globalWantedState = areAllFilesWanted
         ? true
         : areAllFilesSkipped
-            ? false
-            : null;
+        ? false
+        : null;
 
     return Column(
       children: [
@@ -200,8 +197,8 @@ class _FilesTabState extends State<FilesTab> {
                     percent == null
                         ? const Text('—')
                         : percent < 100
-                            ? Text('$percent %')
-                            : const Icon(Icons.download_done, size: 16),
+                        ? Text('$percent %')
+                        : const Icon(Icons.download_done, size: 16),
                     Text(
                       ' • ${prettyBytes(file.length.toDouble(), locale: localizations.localeName)}',
                     ),
@@ -222,8 +219,10 @@ class _FilesTabState extends State<FilesTab> {
                     if (completed)
                       PopupMenuButton<String>(
                         onSelected: (value) async {
-                          final filePath =
-                              path.join(widget.location, file.name);
+                          final filePath = path.join(
+                            widget.location,
+                            file.name,
+                          );
                           if (value == 'open') {
                             await _openFile(file.name);
                           } else if (value == 'share') {
@@ -244,8 +243,9 @@ class _FilesTabState extends State<FilesTab> {
                               value: 'share',
                               child: Text(localizations.share),
                             ),
-                            if (lookupMimeType(file.name)
-                                    ?.startsWith('video/') ==
+                            if (lookupMimeType(
+                                  file.name,
+                                )?.startsWith('video/') ==
                                 true)
                               PopupMenuItem(
                                 value: 'play_in_app',
@@ -259,9 +259,9 @@ class _FilesTabState extends State<FilesTab> {
                       onChanged: file.bytesCompleted == file.length
                           ? null
                           : (_) => _handleWantedChange(
-                                originalIndex,
-                                !file.wanted,
-                              ),
+                              originalIndex,
+                              !file.wanted,
+                            ),
                     ),
                   ],
                 ),

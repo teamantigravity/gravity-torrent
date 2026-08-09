@@ -103,10 +103,7 @@ void main() {
         RssService.instance.isTorrentLink('https://example.com/file.zip'),
         isFalse,
       );
-      expect(
-        RssService.instance.isTorrentLink(''),
-        isFalse,
-      );
+      expect(RssService.instance.isTorrentLink(''), isFalse);
     });
 
     test('isTorrentLink is case-insensitive for extension', () {
@@ -128,9 +125,7 @@ void main() {
         isTrue,
       );
       expect(
-        RssService.instance.isTorrentLink(
-          'https://example.com/file%2Etorrent',
-        ),
+        RssService.instance.isTorrentLink('https://example.com/file%2Etorrent'),
         isTrue,
       );
     });

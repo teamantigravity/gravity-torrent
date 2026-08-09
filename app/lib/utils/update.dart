@@ -24,8 +24,9 @@ Future<String?> checkForUpdate(String version) async {
   try {
     if (await isDistributedFromAppStore()) return null;
 
-    final response =
-        await http.get(Uri.parse(_githubReleasesUrl)).timeout(_httpTimeout);
+    final response = await http
+        .get(Uri.parse(_githubReleasesUrl))
+        .timeout(_httpTimeout);
 
     if (response.statusCode != 200) {
       if (kDebugMode) {
