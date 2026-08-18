@@ -390,51 +390,36 @@ class BackupService {
       final torrents = (payload['torrents'] as List<dynamic>?) ?? [];
       try {
         final engine = getIt<Engine>();
-<<<<<<< HEAD
-        for (final t in torrents) {
-          final map = t as Map<String, dynamic>;
-          final magnetLink = map['magnetLink'] as String?;
-          if (magnetLink != null && magnetLink.isNotEmpty) {
-            try {
-              if (!await IpAddressScope.isPubliclyRoutableLink(magnetLink)) {
-                debugPrint(
-                  'BackupService: skipped torrent with private/internal link: $magnetLink',
-                );
-                continue;
-              }
-              final downloadDir = map['downloadDir'] as String?;
-              if (downloadDir != null && downloadDir.isNotEmpty) {
-                final dir = Directory(downloadDir);
-                if (!dir.existsSync()) {
-                  debugPrint(
-                    'BackupService: skipped torrent with non-existent downloadDir: $downloadDir',
-                  );
-                  continue;
-                }
-              }
-              await engine.addTorrent(
-                magnetLink,
-                null,
-                downloadDir,
-              );
-            } catch (e) {
-              debugPrint('BackupService: could not re-add torrent — $e');
-=======
         await Future.wait(
           torrents.map((t) async {
             final map = t as Map<String, dynamic>;
             final magnetLink = map['magnetLink'] as String?;
             if (magnetLink != null && magnetLink.isNotEmpty) {
               try {
+                if (!await IpAddressScope.isPubliclyRoutableLink(magnetLink)) {
+                  debugPrint(
+                    'BackupService: skipped torrent with private/internal link: $magnetLink',
+                  );
+                  return;
+                }
+                final downloadDir = map['downloadDir'] as String?;
+                if (downloadDir != null && downloadDir.isNotEmpty) {
+                  final dir = Directory(downloadDir);
+                  if (!dir.existsSync()) {
+                    debugPrint(
+                      'BackupService: skipped torrent with non-existent downloadDir: $downloadDir',
+                    );
+                    return;
+                  }
+                }
                 await engine.addTorrent(
                   magnetLink,
                   null,
-                  map['downloadDir'] as String?,
+                  downloadDir,
                 );
               } catch (e) {
                 debugPrint('BackupService: could not re-add torrent — $e');
               }
->>>>>>> origin/fix-bugs-and-race-conditions
             }
           }),
         );
@@ -506,7 +491,6 @@ class BackupService {
     return utf8.decode(decrypted);
   }
 
-<<<<<<< HEAD
   static List<int> _pbkdf2HmacSha256({
     required List<int> password,
     required List<int> salt,
@@ -564,8 +548,6 @@ class BackupService {
         lower.contains('threshold');
   }
 
-=======
->>>>>>> origin/fix-bugs-and-race-conditions
   static String _currentPlatform() {
     if (kIsWeb) return 'web';
     if (!kIsWeb && Platform.isAndroid) return 'android';
