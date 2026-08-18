@@ -8,10 +8,7 @@ import 'dart:math';
 String generateSecureRandomToken({int length = 32}) {
   final effectiveLength = length > 0 ? length : 32;
   final random = Random.secure();
-  final bytes = List<int>.generate(
-    effectiveLength,
-    (_) => random.nextInt(256),
-  );
+  final bytes = List<int>.generate(effectiveLength, (_) => random.nextInt(256));
   return base64Url.encode(bytes).replaceAll('=', '');
 }
 

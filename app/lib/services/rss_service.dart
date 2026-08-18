@@ -104,9 +104,7 @@ class RssService {
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
         final list = jsonDecode(rawSeen) as List<dynamic>;
-        _seenLinks = LinkedHashSet<String>.from(
-          list.map((e) => e.toString()),
-        );
+        _seenLinks = LinkedHashSet<String>.from(list.map((e) => e.toString()));
       } catch (e, s) {
         if (kDebugMode) {
           debugPrint('Failed to load seen links: $e\n$s');

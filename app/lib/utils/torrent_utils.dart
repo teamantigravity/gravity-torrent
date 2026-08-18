@@ -12,70 +12,104 @@ class CancellationException implements Exception {}
 /// [torrent] - The torrent containing the pieces
 /// [neededPieces] - List of piece indices to wait for
 /// [onCancelled] - Optional callback to check if operation should be cancelled
+class _TorrentPieceWaiter {
+  final int torrentId;
+  final List<int> neededPieces;
+  final Completer<void> completer;
+  final bool Function()? onCancelled;
+
+  _TorrentPieceWaiter(
+    this.torrentId,
+    this.neededPieces,
+    this.completer,
+    this.onCancelled,
+  );
+}
+
+final List<_TorrentPieceWaiter> _waiters = [];
+Timer? _sharedTimer;
+bool _isFetchingShared = false;
+
+void _startSharedTimer() {
+  if (_sharedTimer != null) return;
+  _sharedTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    if (_waiters.isEmpty) {
+      timer.cancel();
+      _sharedTimer = null;
+      return;
+    }
+    if (_isFetchingShared) return;
+    _isFetchingShared = true;
+    try {
+      final ids = _waiters.map((w) => w.torrentId).toSet();
+      for (final id in ids) {
+        try {
+          final t = await engine.fetchTorrent(id);
+          final waitersForId =
+              _waiters.where((w) => w.torrentId == id).toList();
+          for (final w in waitersForId) {
+            if (w.onCancelled != null && w.onCancelled!()) {
+              if (!w.completer.isCompleted) {
+                w.completer.completeError(CancellationException());
+              }
+              _waiters.remove(w);
+            } else if (t.hasLoadedPieces(w.neededPieces)) {
+              if (!w.completer.isCompleted) w.completer.complete();
+              _waiters.remove(w);
+            }
+          }
+        } catch (e) {
+          final waitersForId =
+              _waiters.where((w) => w.torrentId == id).toList();
+          for (final w in waitersForId) {
+            if (!w.completer.isCompleted) w.completer.completeError(e);
+            _waiters.remove(w);
+          }
+        }
+      }
+    } finally {
+      _isFetchingShared = false;
+    }
+  });
+}
+
+/// Waits for a specified list of pieces to be downloaded.
+///
+/// [torrent] - The torrent containing the pieces
+/// [neededPieces] - List of piece indices to wait for
+/// [onCancelled] - Optional callback to check if operation should be cancelled
 Future<void> waitForPiecesList({
   required Torrent torrent,
   required List<int> neededPieces,
   bool Function()? onCancelled,
 }) async {
-  final waitForPiecesCompleter = Completer<void>();
+  final completer = Completer<void>();
 
-  Future<void> testPiecesComplete(Timer? timer) async {
-    try {
-      if (onCancelled != null && onCancelled()) {
-        timer?.cancel();
-        if (!waitForPiecesCompleter.isCompleted) {
-          waitForPiecesCompleter.completeError(CancellationException());
-        }
-        return;
-      }
-
-      // Refresh torrent data
-      final Torrent t = await engine.fetchTorrent(torrent.id);
-
-      // Re-check cancellation after the async fetch completes.
-      if (onCancelled != null && onCancelled()) {
-        timer?.cancel();
-        if (!waitForPiecesCompleter.isCompleted) {
-          waitForPiecesCompleter.completeError(CancellationException());
-        }
-        return;
-      }
-
-      final hasLoaded = t.hasLoadedPieces(neededPieces);
-
-      if (hasLoaded) {
-        if (timer != null) {
-          timer.cancel();
-        }
-
-        if (!waitForPiecesCompleter.isCompleted) {
-          waitForPiecesCompleter.complete();
-        }
-      }
-    } catch (e) {
-      timer?.cancel();
-      if (!waitForPiecesCompleter.isCompleted) {
-        waitForPiecesCompleter.completeError(e);
-      }
+  try {
+    if (onCancelled != null && onCancelled()) {
+      completer.completeError(CancellationException());
+      return completer.future;
     }
+    final t = await engine.fetchTorrent(torrent.id);
+    if (onCancelled != null && onCancelled()) {
+      completer.completeError(CancellationException());
+      return completer.future;
+    }
+    if (t.hasLoadedPieces(neededPieces)) {
+      completer.complete();
+      return completer.future;
+    }
+  } catch (e) {
+    completer.completeError(e);
+    return completer.future;
   }
 
-  await testPiecesComplete(null);
+  _waiters.add(
+    _TorrentPieceWaiter(torrent.id, neededPieces, completer, onCancelled),
+  );
+  _startSharedTimer();
 
-  if (!waitForPiecesCompleter.isCompleted) {
-    bool isFetching = false;
-    Timer.periodic(const Duration(seconds: 1), (timer) async {
-      if (isFetching) return;
-      isFetching = true;
-      try {
-        await testPiecesComplete(timer);
-      } finally {
-        isFetching = false;
-      }
-    });
-  }
-
-  return waitForPiecesCompleter.future;
+  return completer.future;
 }
 
 /// Waits for a specified number of pieces to be downloaded for a given file.

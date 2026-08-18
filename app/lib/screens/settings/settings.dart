@@ -691,10 +691,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   secondary: const Icon(Icons.rss_feed),
                   title: Text(localizations.rssAutoDownload),
-                  subtitle: _featureSubtitle(
-                    'enableRssAutoDownload',
-                    flags,
-                  ),
+                  subtitle: _featureSubtitle('enableRssAutoDownload', flags),
                   value: flags.enableRssAutoDownload,
                   onChanged: (v) => flags.setEnableRssAutoDownload(v),
                 ),
@@ -730,8 +727,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) {
                     if (v) {
                       flags.setEnableWifiOnly(true);
-                      WifiGuardService.instance
-                          .setMode(WifiGuardMode.vpnKillSwitch);
+                      WifiGuardService.instance.setMode(
+                        WifiGuardMode.vpnKillSwitch,
+                      );
                     } else {
                       flags.setEnableWifiOnly(false);
                     }
@@ -803,8 +801,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return SwitchListTile(
                       secondary: const Icon(Icons.folder_zip),
                       title: Text(localizations.autoExtractArchives),
-                      subtitle:
-                          Text(localizations.autoExtractArchivesDescription),
+                      subtitle: Text(
+                        localizations.autoExtractArchivesDescription,
+                      ),
                       value: autoExtractService.autoExtractEnabled,
                       onChanged: autoExtractService.setAutoExtractEnabled,
                     );
@@ -828,10 +827,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   secondary: const Icon(Icons.notifications_active),
                   title: Text(localizations.enhancedNotifications),
-                  subtitle: _featureSubtitle(
-                    'useEnhancedNotifications',
-                    flags,
-                  ),
+                  subtitle: _featureSubtitle('useEnhancedNotifications', flags),
                   value: flags.useEnhancedNotifications,
                   onChanged: (v) => flags.setUseEnhancedNotifications(v),
                 ),
@@ -906,8 +902,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         secondary: const Icon(Icons.nightlight_round),
                         title: Text(localizations.amoledTrueBlack),
-                        subtitle:
-                            Text(localizations.amoledTrueBlackDescription),
+                        subtitle: Text(
+                          localizations.amoledTrueBlackDescription,
+                        ),
                         value: app.amoledBlack,
                         onChanged: (v) => app.setAmoledBlack(v),
                       ),
@@ -918,8 +915,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           SwitchListTile(
                             secondary: const Icon(Icons.view_agenda),
                             title: Text(localizations.compactList),
-                            subtitle:
-                                Text(localizations.compactListDescription),
+                            subtitle: Text(
+                              localizations.compactListDescription,
+                            ),
                             value: app.compactList,
                             onChanged: (v) => app.setCompactList(v),
                           ),
@@ -999,8 +997,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         leading: const Icon(Icons.clear_all),
-                        title:
-                            Text(localizations.clearRecentDownloadDirectories),
+                        title: Text(
+                          localizations.clearRecentDownloadDirectories,
+                        ),
                         onTap: () async {
                           await RecentDownloadDirectoriesService.instance
                               .clear();
@@ -1024,8 +1023,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content:
-                                    Text(localizations.recentSearchesCleared),
+                                content: Text(
+                                  localizations.recentSearchesCleared,
+                                ),
                                 backgroundColor: Colors.lightGreen,
                               ),
                             );
@@ -1251,8 +1251,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         secondary: const Icon(Icons.timer_off_outlined),
                         title: Text(localizations.idleSeedingLimitEnable),
-                        subtitle:
-                            Text(localizations.idleSeedingLimitDescription),
+                        subtitle: Text(
+                          localizations.idleSeedingLimitDescription,
+                        ),
                         value: idleSeedingEnabled,
                         onChanged: _handleIdleSeedingToggle,
                       ),
@@ -1295,8 +1296,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             value: app.checkForUpdate,
                             onChanged: _handleCheckForUpdateToggle,
                           ),
-                          subtitle:
-                              Text(localizations.checkForUpdatesDescription),
+                          subtitle: Text(
+                            localizations.checkForUpdatesDescription,
+                          ),
                         ),
                       ListTile(
                         leading: const Icon(Icons.bolt),
@@ -1342,8 +1344,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         builder: (context, isAdFree, _) {
                           if (isAdFree) return const SizedBox.shrink();
                           return ListTile(
-                            leading:
-                                const Icon(Icons.workspace_premium_outlined),
+                            leading: const Icon(
+                              Icons.workspace_premium_outlined,
+                            ),
                             title: Text(localizations.removeAds),
                             subtitle: Text(localizations.premiumSubtitle),
                             onTap: () => context.push('/upgrade'),
@@ -1415,10 +1418,7 @@ class _SettingsSection extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(
-                icon,
-                color: colorScheme.primary,
-              ),
+              leading: Icon(icon, color: colorScheme.primary),
               title: Text(
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(

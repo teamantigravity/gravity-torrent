@@ -94,10 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: AlignmentDirectional.topEnd,
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-                  child: TextButton(
-                    onPressed: _skip,
-                    child: Text(l.skip),
-                  ),
+                  child: TextButton(onPressed: _skip, child: Text(l.skip)),
                 ),
               ),
             // Pages

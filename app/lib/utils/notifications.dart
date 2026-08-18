@@ -157,18 +157,12 @@ showDownloadProgressNotification({
   final buffer = StringBuffer();
   buffer.write('$count download${count == 1 ? '' : 's'} in progress');
   if (count > 0) {
-    buffer.write(
-      ' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s',
-    );
+    buffer.write(' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s');
   }
 
   const NotificationDetails notificationDetails = NotificationDetails(
-    iOS: DarwinNotificationDetails(
-      categoryIdentifier: 'download_progress',
-    ),
-    macOS: DarwinNotificationDetails(
-      categoryIdentifier: 'download_progress',
-    ),
+    iOS: DarwinNotificationDetails(categoryIdentifier: 'download_progress'),
+    macOS: DarwinNotificationDetails(categoryIdentifier: 'download_progress'),
   );
 
   await flutterLocalNotificationsPlugin.show(

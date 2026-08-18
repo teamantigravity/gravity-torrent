@@ -4,7 +4,7 @@ import 'package:gravity_torrent/engine/transmission/models/torrent_set_location.
 
 enum TorrentAddedResponse { added, duplicated }
 
-class TorrentAddError extends Error {
+class TorrentAddError implements Exception {
   TorrentAddError([this.message]);
   final String? message;
 
@@ -12,7 +12,7 @@ class TorrentAddError extends Error {
   String toString() => message ?? 'TorrentAddError';
 }
 
-class TransmissionRpcError extends Error {
+class TransmissionRpcError implements Exception {
   TransmissionRpcError([this.message]);
   final String? message;
 

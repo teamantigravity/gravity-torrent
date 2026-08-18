@@ -158,10 +158,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -183,10 +180,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -208,10 +202,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {
@@ -228,10 +219,7 @@ class _TorrentControlsTabState extends State<TorrentControlsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.error),
-            backgroundColor: Colors.orange,
-          ),
+          SnackBar(content: Text(l10n.error), backgroundColor: Colors.orange),
         );
       }
     } finally {

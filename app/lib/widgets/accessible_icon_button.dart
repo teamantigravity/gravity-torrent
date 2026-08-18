@@ -21,16 +21,12 @@ class AccessibleIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      child: IconButton(
-        icon: Icon(icon, semanticLabel: semanticLabel),
-        iconSize: iconSize,
-        color: color,
-        tooltip: tooltip ?? semanticLabel,
-        onPressed: onPressed,
-      ),
+    return IconButton(
+      icon: Icon(icon, semanticLabel: semanticLabel),
+      iconSize: iconSize,
+      color: color,
+      tooltip: tooltip ?? semanticLabel,
+      onPressed: onPressed,
     );
   }
 }

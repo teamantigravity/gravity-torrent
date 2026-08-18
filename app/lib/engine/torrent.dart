@@ -113,6 +113,8 @@ abstract class Torrent extends TorrentBase {
     required this.doneDate,
   });
 
+  bool _isStreamingBusy = false;
+
   // Start the torrent
   Future<void> start();
 
@@ -132,6 +134,7 @@ abstract class Torrent extends TorrentBase {
   @mustCallSuper
   Future<void> remove(bool withData) async {
     await SharedPrefsStorage.remove(_streamingActiveKey);
+    await SharedPrefsStorage.remove(_streamingFilesKey);
   }
 
   // Update torrent data
@@ -175,58 +178,90 @@ abstract class Torrent extends TorrentBase {
   Future<void> setPriorityPieces(List<int> pieceIndices, int priority);
 
   String get _streamingActiveKey => 'streaming_active_$id';
+  String get _streamingFilesKey => 'streaming_files_$id';
 
   Future<void> startStreaming(File file) async {
-    if (kDebugMode) debugPrint('starting streaming ${file.name}');
-    final fileIndex = files.indexWhere((f) => f.name == file.name);
-    if (fileIndex == -1) {
-      throw StateError(
-        'Streaming file ${file.name} not found in torrent $name',
-      );
+    while (_isStreamingBusy) {
+      await Future.delayed(const Duration(milliseconds: 50));
     }
-
-    // Be sure torrent is active
-    await start();
-
-    await SharedPrefsStorage.setBool(_streamingActiveKey, true);
-
-    // File indices for streaming file and detected associated subtitles
-    final List<int> highPriorityFileIndices = [fileIndex];
-
-    // Want subtitles and set them to high priority
-    final externalSubtitles = getExternalSubtitles(file, this);
-    for (final (index, torrentFile) in files.indexed) {
-      if (externalSubtitles
-              .firstWhereOrNull((f) => f.name == torrentFile.name) !=
-          null) {
-        highPriorityFileIndices.add(index);
+    _isStreamingBusy = true;
+    try {
+      if (kDebugMode) debugPrint('starting streaming ${file.name}');
+      final fileIndex = files.indexWhere((f) => f.name == file.name);
+      if (fileIndex == -1) {
+        throw StateError(
+          'Streaming file ${file.name} not found in torrent $name',
+        );
       }
+
+      // Be sure torrent is active
+      await start();
+
+      await SharedPrefsStorage.setBool(_streamingActiveKey, true);
+
+      // File indices for streaming file and detected associated subtitles
+      final List<int> highPriorityFileIndices = [fileIndex];
+
+      // Want subtitles and set them to high priority
+      final externalSubtitles = getExternalSubtitles(file, this);
+      for (final (index, torrentFile) in files.indexed) {
+        if (externalSubtitles.firstWhereOrNull(
+              (f) => f.name == torrentFile.name,
+            ) !=
+            null) {
+          highPriorityFileIndices.add(index);
+        }
+      }
+
+      await SharedPrefsStorage.setStringList(
+        _streamingFilesKey,
+        highPriorityFileIndices.map((e) => e.toString()).toList(),
+      );
+
+      await setFilesWanted(highPriorityFileIndices, true);
+
+      // Set high priority for streaming file and subtitles
+      await setFilesPriority(priorityHigh: highPriorityFileIndices);
+
+      await setSequentialDownload(true);
+    } finally {
+      _isStreamingBusy = false;
     }
-
-    await setFilesWanted(highPriorityFileIndices, true);
-
-    // Set high priority for streaming file and subtitles
-    await setFilesPriority(priorityHigh: highPriorityFileIndices);
-
-    await setSequentialDownload(true);
   }
 
   Future<void> stopStreaming() async {
-    if (kDebugMode) debugPrint('stopping streaming');
-    final wasActive =
-        await SharedPrefsStorage.getBool(_streamingActiveKey) ?? false;
-    if (!wasActive) return;
-
-    await setSequentialDownload(false);
-
-    // Reset all files to normal priority so piece scheduling is not biased
-    // toward the previously-streamed file after streaming ends.
-    if (files.isNotEmpty) {
-      final allFileIndices = List.generate(files.length, (index) => index);
-      await setFilesPriority(priorityNormal: allFileIndices);
+    while (_isStreamingBusy) {
+      await Future.delayed(const Duration(milliseconds: 50));
     }
+    _isStreamingBusy = true;
+    try {
+      if (kDebugMode) debugPrint('stopping streaming');
+      final wasActive =
+          await SharedPrefsStorage.getBool(_streamingActiveKey) ?? false;
+      if (!wasActive) return;
 
-    await SharedPrefsStorage.setBool(_streamingActiveKey, false);
+      await setSequentialDownload(false);
+
+      final streamedFiles = await SharedPrefsStorage.getStringList(
+        _streamingFilesKey,
+      );
+      if (streamedFiles != null && streamedFiles.isNotEmpty) {
+        final indices = streamedFiles.map((e) => int.parse(e)).toList();
+        await setFilesPriority(priorityNormal: indices);
+        await SharedPrefsStorage.remove(_streamingFilesKey);
+      } else {
+        // Reset all files to normal priority so piece scheduling is not biased
+        // toward the previously-streamed file after streaming ends.
+        if (files.isNotEmpty) {
+          final allFileIndices = List.generate(files.length, (index) => index);
+          await setFilesPriority(priorityNormal: allFileIndices);
+        }
+      }
+
+      await SharedPrefsStorage.setBool(_streamingActiveKey, false);
+    } finally {
+      _isStreamingBusy = false;
+    }
   }
 
   bool hasLoadedPieces(List<int> piecesToTest) {
@@ -261,7 +296,7 @@ abstract class Torrent extends TorrentBase {
       }
     }
 
-    final isWindowsPath = Platform.isWindows || location.contains('\\');
+    final isWindowsPath = Platform.isWindows;
     final pContext = isWindowsPath ? windows : posix;
 
     if (commonFolder != null && commonFolder.isNotEmpty) {

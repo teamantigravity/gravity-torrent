@@ -28,8 +28,9 @@ class _SubtitlesSelectorDialogState extends State<SubtitlesSelectorDialog> {
         child: RadioGroup<String>(
           groupValue: widget.currentValue,
           onChanged: (id) {
-            final sub = widget.subtitles.firstWhere((s) => s.id == id);
-            widget.onSubtitleSelected(sub);
+            if (id == null) return;
+            final s = widget.subtitles.firstWhere((s) => s.id == id);
+            widget.onSubtitleSelected(s);
             Navigator.of(context).pop();
           },
           child: Column(

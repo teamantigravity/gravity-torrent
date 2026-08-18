@@ -95,9 +95,7 @@ class AccessibilityService extends ChangeNotifier {
     }
 
     if (_boldText) {
-      result = result.copyWith(
-        textTheme: _makeBold(result.textTheme),
-      );
+      result = result.copyWith(textTheme: _makeBold(result.textTheme));
     }
 
     return result;

@@ -47,9 +47,9 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
     final pin = _pinController.text.trim();
     if (pin.length < 4) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations.pinTooShort)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(localizations.pinTooShort)));
       }
       return;
     }
@@ -116,9 +116,7 @@ class _PrivacyVaultScreenState extends State<PrivacyVaultScreen> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  localizations.privacyVaultDescription,
-                ),
+                Text(localizations.privacyVaultDescription),
                 const SizedBox(height: 24),
                 SwitchListTile(
                   secondary: const Icon(Icons.lock_outline),

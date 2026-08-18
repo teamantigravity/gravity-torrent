@@ -274,6 +274,10 @@ class AppModel extends ChangeNotifier {
   Future<void> quitGracefully() async {
     try {
       await stopServices();
+    } catch (e) {
+      if (kDebugMode) debugPrint('quitGracefully stopServices error: $e');
+    }
+    try {
       await engine.shutdown();
     } catch (e) {
       if (kDebugMode) debugPrint('quitGracefully shutdown error: $e');

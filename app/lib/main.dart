@@ -191,9 +191,7 @@ Future<void> _initDesktopWindow() async {
     await YaruWindowTitleBar.ensureInitialized();
     await windowManager.ensureInitialized();
 
-    const windowOptions = WindowOptions(
-      minimumSize: Size(360, 360),
-    );
+    const windowOptions = WindowOptions(minimumSize: Size(360, 360));
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
@@ -546,10 +544,7 @@ class _FeatureFlagsLayer extends StatelessWidget {
     bool shouldLock,
   ) builder;
 
-  const _FeatureFlagsLayer({
-    required this.unlocked,
-    required this.builder,
-  });
+  const _FeatureFlagsLayer({required this.unlocked, required this.builder});
 
   @override
   Widget build(BuildContext context) {

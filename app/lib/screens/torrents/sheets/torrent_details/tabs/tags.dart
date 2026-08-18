@@ -11,10 +11,9 @@ class TagsTab extends StatelessWidget {
   const TagsTab({super.key, required this.torrent});
 
   Future<void> _handleAddLabel(BuildContext context, String label) async {
-    final isDuplicate = torrent.labels?.any(
-          (l) => l.toLowerCase() == label.toLowerCase(),
-        ) ??
-        false;
+    final isDuplicate =
+        torrent.labels?.any((l) => l.toLowerCase() == label.toLowerCase()) ??
+            false;
     if (isDuplicate) return;
 
     final TorrentBase torrentUpdate = TorrentBase(

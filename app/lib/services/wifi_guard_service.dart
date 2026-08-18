@@ -97,8 +97,9 @@ class WifiGuardService {
     // Start with an empty IP snapshot. The first connectivity event will seed
     // the baseline inside the lock, avoiding a race with the listener.
     _lastIpAddresses = [];
-    _connectivitySub =
-        Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
+    _connectivitySub = Connectivity().onConnectivityChanged.listen(
+          _onConnectivityChanged,
+        );
   }
 
   void _unsubscribe() {
@@ -109,13 +110,13 @@ class WifiGuardService {
   void _onConnectivityChanged(List<ConnectivityResult> results) {
     if (_disposed) return;
     unawaited(
-      _withLock(() => _onConnectivityChangedImpl(results)).catchError(
-        (Object e) {
-          if (kDebugMode) {
-            debugPrint('WifiGuardService connectivity handler error: $e');
-          }
-        },
-      ),
+      _withLock(() => _onConnectivityChangedImpl(results)).catchError((
+        Object e,
+      ) {
+        if (kDebugMode) {
+          debugPrint('WifiGuardService connectivity handler error: $e');
+        }
+      }),
     );
   }
 
@@ -151,6 +152,11 @@ class WifiGuardService {
             );
           }
           await _pauseAll();
+        } else if (_lastIpAddresses.isEmpty && currentIps.isNotEmpty) {
+          // Network restored after a full disconnect — resume.
+          await _resumeAll();
+        } else if (!changed && _lastIpAddresses.isNotEmpty) {
+          await _resumeAll();
         }
         _lastIpAddresses = currentIps;
       }
@@ -191,6 +197,8 @@ class WifiGuardService {
       final engine = getIt<Engine>();
       final torrents = await engine.fetchTorrents();
       if (_disposed) return;
+
+      final futures = <Future<void>>[];
       for (final torrent in torrents) {
         if (torrent.status == TorrentStatus.downloading ||
             torrent.status == TorrentStatus.seeding ||
@@ -198,16 +206,22 @@ class WifiGuardService {
             torrent.status == TorrentStatus.queuedToSeed ||
             torrent.status == TorrentStatus.queuedToCheck ||
             torrent.status == TorrentStatus.checking) {
-          try {
-            await engine.pauseTorrent(torrent.id);
-            _pausedByGuard.add(torrent.id);
-          } catch (e) {
-            if (kDebugMode) {
-              debugPrint('WifiGuardService: failed to pause ${torrent.id}: $e');
+          futures.add(() async {
+            try {
+              await engine.pauseTorrent(torrent.id);
+              _pausedByGuard.add(torrent.id);
+            } catch (e) {
+              if (kDebugMode) {
+                debugPrint(
+                  'WifiGuardService: failed to pause ${torrent.id}: $e',
+                );
+              }
             }
-          }
+          }());
         }
       }
+      await Future.wait(futures);
+
       if (kDebugMode) {
         debugPrint(
           'WifiGuardService: paused ${_pausedByGuard.length} torrents',
@@ -233,6 +247,7 @@ class WifiGuardService {
       final torrents = await engine.fetchTorrents();
       if (_disposed) return;
       final existingIds = {for (final t in torrents) t.id};
+      final futures = <Future<void>>[];
 
       for (final id in idsToResume) {
         if (!existingIds.contains(id)) {
@@ -240,15 +255,19 @@ class WifiGuardService {
           continue;
         }
 
-        try {
-          await engine.resumeTorrent(id);
-          _pausedByGuard.remove(id);
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint('WifiGuardService: failed to resume $id: $e');
+        futures.add(() async {
+          try {
+            await engine.resumeTorrent(id);
+            _pausedByGuard.remove(id);
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('WifiGuardService: failed to resume $id: $e');
+            }
           }
-        }
+        }());
       }
+
+      await Future.wait(futures);
 
       if (kDebugMode) {
         final resumedCount = idsToResume.length - _pausedByGuard.length;

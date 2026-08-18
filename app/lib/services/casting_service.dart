@@ -132,11 +132,7 @@ class CastingService extends ChangeNotifier {
       // points, so the search is repeated a few times.
       final message = _buildMSearch();
       for (var attempt = 0; attempt < 3; attempt++) {
-        boundSocket.send(
-          message,
-          InternetAddress(_ssdpAddress),
-          _ssdpPort,
-        );
+        boundSocket.send(message, InternetAddress(_ssdpAddress), _ssdpPort);
         await Future<void>.delayed(const Duration(milliseconds: 400));
       }
       await Future<void>.delayed(discoveryTimeout);

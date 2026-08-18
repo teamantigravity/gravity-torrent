@@ -41,8 +41,9 @@ class _AudioTrackSelectorDialogState extends State<AudioTrackSelectorDialog> {
         child: RadioGroup<String>(
           groupValue: widget.currentValue,
           onChanged: (id) {
-            final track = widget.tracks.firstWhere((t) => t.id == id);
-            widget.onTrackSelected(track);
+            if (id == null) return;
+            final t = widget.tracks.firstWhere((t) => t.id == id);
+            widget.onTrackSelected(t);
             Navigator.of(context).pop();
           },
           child: Column(

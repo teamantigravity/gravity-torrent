@@ -81,10 +81,7 @@ class _FilesTabState extends State<FilesTab> {
     }
   }
 
-  Future<void> _handleWantedChange(
-    int fileIndex,
-    bool wanted,
-  ) async {
+  Future<void> _handleWantedChange(int fileIndex, bool wanted) async {
     await widget.torrent.toggleFileWanted(fileIndex, wanted);
     if (mounted) {
       // Refresh torrents
@@ -222,8 +219,10 @@ class _FilesTabState extends State<FilesTab> {
                     if (completed)
                       PopupMenuButton<String>(
                         onSelected: (value) async {
-                          final filePath =
-                              path.join(widget.location, file.name);
+                          final filePath = path.join(
+                            widget.location,
+                            file.name,
+                          );
                           if (value == 'open') {
                             await _openFile(file.name);
                           } else if (value == 'share') {
@@ -244,8 +243,9 @@ class _FilesTabState extends State<FilesTab> {
                               value: 'share',
                               child: Text(localizations.share),
                             ),
-                            if (lookupMimeType(file.name)
-                                    ?.startsWith('video/') ==
+                            if (lookupMimeType(
+                                  file.name,
+                                )?.startsWith('video/') ==
                                 true)
                               PopupMenuItem(
                                 value: 'play_in_app',

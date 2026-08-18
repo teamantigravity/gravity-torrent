@@ -67,9 +67,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     await AnalyticsService.instance.clearHistory();
     if (mounted) setState(() {});
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.historyCleared)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.historyCleared)));
     }
   }
 
@@ -144,9 +144,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final spots = history
         .asMap()
         .entries
-        .map(
-          (e) => FlSpot(e.key.toDouble(), e.value.downloadedBytes / divisor),
-        )
+        .map((e) => FlSpot(e.key.toDouble(), e.value.downloadedBytes / divisor))
         .toList();
     final uploadSpots = history
         .asMap()
@@ -274,14 +272,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   ) {
     final localizations = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final totalDown = history.fold<int>(
-      0,
-      (sum, s) => sum + s.downloadedBytes,
-    );
-    final totalUp = history.fold<int>(
-      0,
-      (sum, s) => sum + s.uploadedBytes,
-    );
+    final totalDown = history.fold<int>(0, (sum, s) => sum + s.downloadedBytes);
+    final totalUp = history.fold<int>(0, (sum, s) => sum + s.uploadedBytes);
 
     return Row(
       children: [

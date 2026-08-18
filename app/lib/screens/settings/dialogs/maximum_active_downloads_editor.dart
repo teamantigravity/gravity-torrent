@@ -80,10 +80,7 @@ class _MaximumActiveDownloadEditorState
           },
           child: Text(localizations.cancel),
         ),
-        TextButton(
-          onPressed: handleSave,
-          child: Text(localizations.save),
-        ),
+        TextButton(onPressed: handleSave, child: Text(localizations.save)),
       ],
     );
   }

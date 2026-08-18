@@ -71,8 +71,9 @@ class AutoStartService {
       if (home == null) return;
 
       final autostartDir = Directory(p.join(home, '.config', 'autostart'));
-      final desktopFile =
-          File(p.join(autostartDir.path, 'gravity-torrent.desktop'));
+      final desktopFile = File(
+        p.join(autostartDir.path, 'gravity-torrent.desktop'),
+      );
 
       if (enabled) {
         if (!autostartDir.existsSync()) {

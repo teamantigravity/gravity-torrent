@@ -80,7 +80,11 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: master # channel stable does not support arm64 for now
+          # flutter-action cannot resolve stable release manifests for linux-arm64.
+          # Pin the current stable tag via the master channel so the repo is cloned
+          # and checked out to the exact version we build against.
+          channel: master
+          flutter-version: 3.44.8
           cache: true
       - name: Install dependencies
         run: |

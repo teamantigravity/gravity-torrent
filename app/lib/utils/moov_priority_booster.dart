@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/engine/file.dart' as torrent_file;
 import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/utils/torrent_utils.dart';
 
 /// Intelligent priority booster for video streaming.
 ///
@@ -48,6 +50,9 @@ class MoovPriorityBooster {
         await torrent.setFilesPriority(priorityHigh: [fileIndex]);
       }
 
+      final originalLimitDownEnabled = torrent.speedLimitDownEnabled;
+      final originalLimitDown = torrent.speedLimitDown;
+
       await engine.setTorrentSpeedLimit(
         torrent.id,
         downloadLimit: 0, // unlimited while buffering header
@@ -55,6 +60,33 @@ class MoovPriorityBooster {
 
       // 4. Update sequential download start piece to ensure correct order
       await torrent.setSequentialDownloadFromPiece(startPiece);
+
+      // 5. Restore the speed limit once the moov atom and header pieces
+      // are ready
+      unawaited(() async {
+        try {
+          // Transmission RPC limitations: the moov atom might be at the
+          // very end
+          // of the file, but we can't reliably prioritize *just* the end piece
+          // without prioritizing the whole file. We rely on the sequential
+          // download mode and file high-priority to fetch the start and
+          // end pieces.
+          await waitForPiecesList(
+            torrent: torrent,
+            neededPieces: [startPiece, endPiece],
+          );
+        } catch (_) {
+        } finally {
+          try {
+            if (originalLimitDownEnabled) {
+              await engine.setTorrentSpeedLimit(
+                torrent.id,
+                downloadLimit: originalLimitDown,
+              );
+            }
+          } catch (_) {}
+        }
+      }());
     } catch (e) {
       if (kDebugMode) {
         debugPrint('MoovPriorityBooster error: $e');

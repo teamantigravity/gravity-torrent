@@ -32,10 +32,7 @@ final router = GoRouter(
     return null;
   },
   routes: [
-    GoRoute(
-      path: '/onboarding',
-      builder: (_, __) => const OnboardingScreen(),
-    ),
+    GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => AppShellRoute(child: child),
@@ -72,26 +69,14 @@ final router = GoRouter(
       path: '/scheduler',
       builder: (context, state) => const SchedulerScreen(),
     ),
-    GoRoute(
-      path: '/quota',
-      builder: (context, state) => const QuotaScreen(),
-    ),
-    GoRoute(
-      path: '/rss',
-      builder: (context, state) => const RssScreen(),
-    ),
+    GoRoute(path: '/quota', builder: (context, state) => const QuotaScreen()),
+    GoRoute(path: '/rss', builder: (context, state) => const RssScreen()),
     GoRoute(
       path: '/privacy-vault',
       builder: (context, state) => const PrivacyVaultScreen(),
     ),
-    GoRoute(
-      path: '/upgrade',
-      builder: (context, state) => const UpgradePage(),
-    ),
-    GoRoute(
-      path: '/backup',
-      builder: (context, state) => const BackupScreen(),
-    ),
+    GoRoute(path: '/upgrade', builder: (context, state) => const UpgradePage()),
+    GoRoute(path: '/backup', builder: (context, state) => const BackupScreen()),
     GoRoute(
       path: '/player',
       name: 'player',
@@ -104,9 +89,7 @@ final router = GoRouter(
 
         if (url.isEmpty) {
           return Scaffold(
-            body: Center(
-              child: Text(AppLocalizations.of(context).noMediaUrl),
-            ),
+            body: Center(child: Text(AppLocalizations.of(context).noMediaUrl)),
           );
         }
 

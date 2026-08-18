@@ -42,16 +42,9 @@ void main() {
 
   group('naturalCompare', () {
     test('orders numbers by value rather than lexicographically', () {
-      final names = [
-        'Show E10.mkv',
-        'Show E2.mkv',
-        'Show E1.mkv',
-      ]..sort(naturalCompare);
-      expect(names, [
-        'Show E1.mkv',
-        'Show E2.mkv',
-        'Show E10.mkv',
-      ]);
+      final names = ['Show E10.mkv', 'Show E2.mkv', 'Show E1.mkv']
+        ..sort(naturalCompare);
+      expect(names, ['Show E1.mkv', 'Show E2.mkv', 'Show E10.mkv']);
     });
 
     test('ignores leading zeros when comparing values', () {
@@ -79,11 +72,8 @@ void main() {
     });
 
     test('sorts seasons before episodes', () {
-      final names = [
-        'S02E01.mkv',
-        'S01E10.mkv',
-        'S01E02.mkv',
-      ]..sort(naturalCompare);
+      final names = ['S02E01.mkv', 'S01E10.mkv', 'S01E02.mkv']
+        ..sort(naturalCompare);
       expect(names, ['S01E02.mkv', 'S01E10.mkv', 'S02E01.mkv']);
     });
 
@@ -104,25 +94,18 @@ void main() {
         _file('Show/Show.S01E01.mkv'),
       ];
 
-      expect(
-        orderedPlayableFiles(files).map((f) => f.name),
-        [
-          'Show/Show.S01E01.mkv',
-          'Show/Show.S01E02.mkv',
-          'Show/Show.S01E10.mkv',
-        ],
-      );
+      expect(orderedPlayableFiles(files).map((f) => f.name), [
+        'Show/Show.S01E01.mkv',
+        'Show/Show.S01E02.mkv',
+        'Show/Show.S01E10.mkv',
+      ]);
     });
 
     test('falls back to samples when they are the only playable files', () {
-      final files = [
-        _file('Show/notes.txt'),
-        _file('Show/sample.mkv'),
-      ];
-      expect(
-        orderedPlayableFiles(files).map((f) => f.name),
-        ['Show/sample.mkv'],
-      );
+      final files = [_file('Show/notes.txt'), _file('Show/sample.mkv')];
+      expect(orderedPlayableFiles(files).map((f) => f.name), [
+        'Show/sample.mkv',
+      ]);
     });
 
     test('returns an empty list when nothing is playable', () {

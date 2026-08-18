@@ -178,9 +178,7 @@ class _BackupRestoreDialogState extends State<BackupRestoreDialog> {
                             : Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(_result!.message),
-                      ),
+                      Expanded(child: Text(_result!.message)),
                     ],
                   ),
                 ),

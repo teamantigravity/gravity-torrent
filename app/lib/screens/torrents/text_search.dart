@@ -189,8 +189,9 @@ class _ExpandableSearchFormFieldState extends State<ExpandableSearchFormField> {
                               ? IconButton(
                                   icon: const Icon(Icons.clear),
                                   onPressed: controller.clear,
-                                  tooltip: MaterialLocalizations.of(context)
-                                      .deleteButtonTooltip,
+                                  tooltip: MaterialLocalizations.of(
+                                    context,
+                                  ).deleteButtonTooltip,
                                 )
                               : null,
                           border: InputBorder.none,

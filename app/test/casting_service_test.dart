@@ -18,8 +18,9 @@ void main() {
   final service = CastingService.instance;
 
   tearDown(() async {
-    service
-        .setClientForTesting(MockClient((_) async => http.Response('', 500)));
+    service.setClientForTesting(
+      MockClient((_) async => http.Response('', 500)),
+    );
     await service.stopCasting();
   });
 
@@ -84,27 +85,29 @@ void main() {
       expect(bodies.first, contains('&lt;DIDL-Lite'));
     });
 
-    test('fails fast on a loopback URL without contacting the renderer',
-        () async {
-      var calls = 0;
-      service.setClientForTesting(
-        MockClient((_) async {
-          calls++;
-          return http.Response('', 200);
-        }),
-      );
+    test(
+      'fails fast on a loopback URL without contacting the renderer',
+      () async {
+        var calls = 0;
+        service.setClientForTesting(
+          MockClient((_) async {
+            calls++;
+            return http.Response('', 200);
+          }),
+        );
 
-      final ok = await service.castStream(
-        device: _device(),
-        streamUrl: 'http://127.0.0.1:8080/secret',
-        title: 'Episode 1.mkv',
-      );
+        final ok = await service.castStream(
+          device: _device(),
+          streamUrl: 'http://127.0.0.1:8080/secret',
+          title: 'Episode 1.mkv',
+        );
 
-      expect(ok, isFalse);
-      expect(calls, 0);
-      expect(service.isCasting, isFalse);
-      expect(service.lastError, isNotNull);
-    });
+        expect(ok, isFalse);
+        expect(calls, 0);
+        expect(service.isCasting, isFalse);
+        expect(service.lastError, isNotNull);
+      },
+    );
 
     test('does not report casting when the renderer rejects the URI', () async {
       service.setClientForTesting(
@@ -217,19 +220,21 @@ void main() {
       expect(await service.setVolume(50), isFalse);
     });
 
-    test('stopCasting clears state even when the renderer is unreachable',
-        () async {
-      await startCast();
-      expect(service.isCasting, isTrue);
+    test(
+      'stopCasting clears state even when the renderer is unreachable',
+      () async {
+        await startCast();
+        expect(service.isCasting, isTrue);
 
-      service.setClientForTesting(
-        MockClient((_) async => throw const HttpException('offline')),
-      );
+        service.setClientForTesting(
+          MockClient((_) async => throw const HttpException('offline')),
+        );
 
-      expect(await service.stopCasting(), isFalse);
-      expect(service.isCasting, isFalse);
-      expect(service.selectedDevice, isNull);
-    });
+        expect(await service.stopCasting(), isFalse);
+        expect(service.isCasting, isFalse);
+        expect(service.selectedDevice, isNull);
+      },
+    );
   });
 }
 

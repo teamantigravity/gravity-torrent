@@ -286,15 +286,11 @@ class PlayerEnhancementsService extends ChangeNotifier {
 
   void reorderQueue(int oldIndex, int newIndex) {
     if (_disposed || oldIndex < 0 || oldIndex >= _queue.length) return;
-    // ReorderableListView reports the *insertion* index, which is computed
-    // before the dragged row is removed. Dragging downwards therefore has to be
-    // shifted back by one or the item lands one slot too far.
-    var targetIndex = newIndex;
-    if (targetIndex > oldIndex) targetIndex -= 1;
-
+    // ReorderableListView.onReorderItem reports the final insertion index
+    // after the dragged row has been removed.
     final current = currentItem;
     final item = _queue.removeAt(oldIndex);
-    _queue.insert(targetIndex.clamp(0, _queue.length), item);
+    _queue.insert(newIndex.clamp(0, _queue.length), item);
 
     _currentIndex = current != null ? _queue.indexOf(current) : -1;
     if (_currentIndex < 0 || _currentIndex >= _queue.length) {

@@ -90,26 +90,33 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   /// Latest stream URL handed to the player, reused when casting.
   String? _streamUrl;
 
+  /// Guard to prevent re-entrant calls to `_openQueueItem`.
+  bool _isOpeningQueueItem = false;
+
   void _closeVideoLoadingDialog() {
-    if (_videoLoadingDialogContext != null &&
-        _videoLoadingDialogContext!.mounted) {
-      final ctx = _videoLoadingDialogContext!;
-      _videoLoadingDialogContext = null;
-      if (Navigator.canPop(ctx)) {
-        Navigator.of(ctx).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_videoLoadingDialogContext != null &&
+          _videoLoadingDialogContext!.mounted) {
+        final ctx = _videoLoadingDialogContext!;
+        _videoLoadingDialogContext = null;
+        if (Navigator.canPop(ctx)) {
+          Navigator.of(ctx).pop();
+        }
       }
-    }
+    });
   }
 
   void _closeSubtitlesLoadingDialog() {
-    if (_subsLoadingDialogContext != null &&
-        _subsLoadingDialogContext!.mounted) {
-      final ctx = _subsLoadingDialogContext!;
-      _subsLoadingDialogContext = null;
-      if (Navigator.canPop(ctx)) {
-        Navigator.of(ctx).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_subsLoadingDialogContext != null &&
+          _subsLoadingDialogContext!.mounted) {
+        final ctx = _subsLoadingDialogContext!;
+        _subsLoadingDialogContext = null;
+        if (Navigator.canPop(ctx)) {
+          Navigator.of(ctx).pop();
+        }
       }
-    }
+    });
   }
 
   @override
@@ -235,8 +242,8 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Exit silently on other errors, just closing dialog.
-        return;
+        if (kDebugMode) debugPrint('waitForPieces failed: $e');
+        // Do not return here; allow the player to attempt opening.
       }
 
       if (!mounted) return;
@@ -278,8 +285,8 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         if (e is CancellationException) {
           return; // Exit silently
         }
-        // Exit silently on other errors, just closing dialog.
-        return;
+        if (kDebugMode) debugPrint('downloadSubtitles failed: $e');
+        // Do not return here; gracefully degrade and continue.
       }
 
       if (!mounted) return;
@@ -502,22 +509,26 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   /// disposed, which tells [PlayerEnhancementsService] to leave its state alone.
   Future<bool> _openQueueItem(PlaylistItem item) async {
     if (_disposed) return false;
+    if (_isOpeningQueueItem) return false;
 
-    final fileName = item.fileName;
-    final activePlayer = player;
-    if (fileName == null || activePlayer == null) return false;
-
-    final target = widget.torrent.files.firstWhere(
-      (f) => f.name == fileName,
-      orElse: () => _currentFile,
-    );
-    if (target.name == _currentFile.name && _streamUrl != null) return true;
-
+    _isOpeningQueueItem = true;
     try {
+      final fileName = item.fileName;
+      final activePlayer = player;
+      if (fileName == null || activePlayer == null) return false;
+
+      final target = widget.torrent.files.firstWhere(
+        (f) => f.name == fileName,
+        orElse: () => _currentFile,
+      );
+      if (target.name == _currentFile.name && _streamUrl != null) return true;
+
       // Tear the previous stream down before starting the next one so the two
       // do not compete for sequential-download priority.
       await server?.stop();
+      if (!mounted) return false;
       await widget.torrent.stopStreaming();
+      if (!mounted) return false;
 
       _currentFile = target;
       _currentFilePath = p.join(widget.torrent.location, target.name);
@@ -526,7 +537,15 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         torrent: widget.torrent,
         file: target,
       );
+      if (!mounted) return false;
+
       await widget.torrent.startStreaming(target);
+      if (!mounted) {
+        // Widget disposed after startStreaming; clean up so the streaming state
+        // doesn't linger until _disposePlayer() has a chance to run.
+        unawaited(widget.torrent.stopStreaming().catchError((_) {}));
+        return false;
+      }
 
       final nextServer = StreamingServer(
         filePath: _currentFilePath,
@@ -544,15 +563,27 @@ class TorrentPlayerState extends State<TorrentPlayer> {
         }),
       );
       final address = await nextServer.getAddress();
-      if (_disposed) return false;
+      if (!mounted) {
+        unawaited(nextServer.stop().catchError((_) {}));
+        unawaited(widget.torrent.stopStreaming().catchError((_) {}));
+        return false;
+      }
       _streamUrl = address;
 
       await activePlayer.open(Media(address));
-      if (mounted) setState(() {});
+      if (!mounted) {
+        unawaited(nextServer.stop().catchError((_) {}));
+        unawaited(widget.torrent.stopStreaming().catchError((_) {}));
+        return false;
+      }
+
+      setState(() {});
       return true;
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to open queue item: $e');
       return false;
+    } finally {
+      _isOpeningQueueItem = false;
     }
   }
 
@@ -740,7 +771,10 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     }
 
     // Avoid playing the same title twice at once, on the TV and locally.
-    if (success) await player?.pause();
+    if (success) {
+      if (!mounted) return;
+      await player?.pause();
+    }
     if (!mounted) return;
 
     scaffold.showSnackBar(

@@ -9,8 +9,9 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/ip_address.dart';
-import 'package:path/path.dart' as p;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 
 class BackupMetadata {
@@ -73,19 +74,20 @@ class BackupService {
 
   static const String _backupFileExtension = '.gtbackup';
   static const String _backupVersion = '1';
-  static const String _appVersion = '1.0.0'; // Replace with actual version
 
   // ── Export ───────────────────────────────────────────────────────────────
 
   /// Creates a backup file containing all app settings and torrent state.
   ///
-  /// If [passphrase] is provided, the backup is AES-256-CBC encrypted.
+  /// If [passphrase] is provided, the backup is AES-256-GCM authenticated
+  /// encryption.
   /// Returns the path to the generated backup file.
   static Future<BackupRestoreResult> export({
     String? passphrase,
     String? outputDirectory,
   }) async {
     try {
+      await SharedPrefs.init();
       // Collect all settings from SharedPreferences
       final allKeys = SharedPrefs.getKeys();
       final settings = <String, dynamic>{};
@@ -119,10 +121,16 @@ class BackupService {
       }
 
       // Build backup payload
+      String appVersion = '1.0.0';
+      try {
+        final packageInfo = await PackageInfo.fromPlatform();
+        appVersion = packageInfo.version;
+      } catch (_) {}
+
       final payload = {
         'version': _backupVersion,
         'metadata': BackupMetadata(
-          appVersion: _appVersion,
+          appVersion: appVersion,
           createdAt: DateTime.now(),
           platform: _currentPlatform(),
           settingsCount: settings.length,
@@ -160,7 +168,8 @@ class BackupService {
             .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
             .length;
         final warnMsg = localCount > 0
-            ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+            ? ' (Warning: $localCount local torrent(s) without '
+                'magnet links were not fully backed up)'
             : '';
         return BackupRestoreResult(
           success: true,
@@ -185,7 +194,8 @@ class BackupService {
           .where((t) => (t['magnetLink'] as String?)?.isEmpty ?? true)
           .length;
       final warnMsg = localCount > 0
-          ? ' (Warning: $localCount local torrent(s) without magnet links were not fully backed up)'
+          ? ' (Warning: $localCount local torrent(s) without '
+              'magnet links were not fully backed up)'
           : '';
 
       return BackupRestoreResult(
@@ -197,10 +207,7 @@ class BackupService {
         ),
       );
     } catch (e) {
-      return BackupRestoreResult(
-        success: false,
-        message: 'Backup failed: $e',
-      );
+      return BackupRestoreResult(success: false, message: 'Backup failed: $e');
     }
   }
 
@@ -219,9 +226,7 @@ class BackupService {
       );
     } else if (result.filePath != null) {
       await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(result.filePath!)],
-        ),
+        ShareParams(files: [XFile(result.filePath!)]),
       );
     }
   }
@@ -231,9 +236,7 @@ class BackupService {
   /// Pick and restore a backup file.
   static Future<BackupRestoreResult> import({String? passphrase}) async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-      );
+      final result = await FilePicker.pickFiles(type: FileType.any);
 
       if (result == null || result.files.isEmpty) {
         return const BackupRestoreResult(
@@ -260,10 +263,7 @@ class BackupService {
         passphrase: passphrase,
       );
     } catch (e) {
-      return BackupRestoreResult(
-        success: false,
-        message: 'Import failed: $e',
-      );
+      return BackupRestoreResult(success: false, message: 'Import failed: $e');
     }
   }
 
@@ -316,7 +316,8 @@ class BackupService {
       if (storedHash != computedHash) {
         return const BackupRestoreResult(
           success: false,
-          message: 'Backup file integrity check failed — file may be corrupted',
+          message: 'Backup file integrity check failed — '
+              'file may be corrupted',
         );
       }
 
@@ -347,8 +348,18 @@ class BackupService {
         );
       }
 
-      final metadata =
-          BackupMetadata.fromJson(payload['metadata'] as Map<String, dynamic>);
+      final metadata = BackupMetadata.fromJson(
+        payload['metadata'] as Map<String, dynamic>,
+      );
+
+      // Check engine availability before writing settings
+      if (!getIt.isRegistered<Engine>()) {
+        debugPrint('BackupService: engine not registered, cannot restore');
+        return const BackupRestoreResult(
+          success: false,
+          message: 'Engine not ready, cannot restore backup',
+        );
+      }
 
       // Restore settings
       final settings = payload['settings'] as Map<String, dynamic>? ?? {};
@@ -359,7 +370,7 @@ class BackupService {
           await SharedPrefs.setBool(key, value);
         } else if (value is num) {
           final existing = SharedPrefs.get(key);
-          if (value is double || existing is double || _isFloatKey(key)) {
+          if (value is double || existing is double) {
             await SharedPrefs.setDouble(key, value.toDouble());
           } else {
             await SharedPrefs.setInt(key, value.toInt());
@@ -371,24 +382,15 @@ class BackupService {
               .where((item) => item != null)
               .map((item) => item.toString())
               .toList();
-          await SharedPrefs.setStringList(
-            key,
-            stringList,
-          );
+          await SharedPrefs.setStringList(key, stringList);
         }
       }
 
       // Restore torrent magnet links
       final torrents = (payload['torrents'] as List<dynamic>?) ?? [];
       try {
-        if (!getIt.isRegistered<Engine>()) {
-          debugPrint('BackupService: engine not registered, skipping torrents');
-          return const BackupRestoreResult(
-            success: false,
-            message: 'Engine not ready, cannot restore torrents',
-          );
-        }
         final engine = getIt<Engine>();
+<<<<<<< HEAD
         for (final t in torrents) {
           final map = t as Map<String, dynamic>;
           final magnetLink = map['magnetLink'] as String?;
@@ -417,24 +419,37 @@ class BackupService {
               );
             } catch (e) {
               debugPrint('BackupService: could not re-add torrent — $e');
+=======
+        await Future.wait(
+          torrents.map((t) async {
+            final map = t as Map<String, dynamic>;
+            final magnetLink = map['magnetLink'] as String?;
+            if (magnetLink != null && magnetLink.isNotEmpty) {
+              try {
+                await engine.addTorrent(
+                  magnetLink,
+                  null,
+                  map['downloadDir'] as String?,
+                );
+              } catch (e) {
+                debugPrint('BackupService: could not re-add torrent — $e');
+              }
+>>>>>>> origin/fix-bugs-and-race-conditions
             }
-          }
-        }
+          }),
+        );
       } catch (e) {
         debugPrint('BackupService: torrent restoration skipped — $e');
       }
 
       return BackupRestoreResult(
         success: true,
-        message:
-            'Restored ${settings.length} settings and ${torrents.length} torrents',
+        message: 'Restored ${settings.length} settings and '
+            '${torrents.length} torrents',
         metadata: metadata,
       );
     } catch (e) {
-      return BackupRestoreResult(
-        success: false,
-        message: 'Restore failed: $e',
-      );
+      return BackupRestoreResult(success: false, message: 'Restore failed: $e');
     }
   }
 
@@ -491,6 +506,7 @@ class BackupService {
     return utf8.decode(decrypted);
   }
 
+<<<<<<< HEAD
   static List<int> _pbkdf2HmacSha256({
     required List<int> password,
     required List<int> salt,
@@ -548,6 +564,8 @@ class BackupService {
         lower.contains('threshold');
   }
 
+=======
+>>>>>>> origin/fix-bugs-and-race-conditions
   static String _currentPlatform() {
     if (kIsWeb) return 'web';
     if (!kIsWeb && Platform.isAndroid) return 'android';

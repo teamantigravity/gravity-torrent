@@ -89,9 +89,7 @@ Future<void> updateForegroundServiceNotification({
   final buffer = StringBuffer();
   buffer.write('$count download${count == 1 ? '' : 's'} in progress');
   if (count > 0) {
-    buffer.write(
-      ' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s',
-    );
+    buffer.write(' · ${prettyBytes((rateDownBytes ?? 0).toDouble())}/s');
   }
 
   final androidDetails = AndroidNotificationDetails(

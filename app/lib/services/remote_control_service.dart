@@ -322,9 +322,7 @@ class RemoteControlService {
 
   Future<String> _localIp() async {
     try {
-      final interfaces = await NetworkInterface.list(
-        includeLinkLocal: false,
-      );
+      final interfaces = await NetworkInterface.list(includeLinkLocal: false);
 
       InternetAddress? ipv4;
       InternetAddress? ipv6;
@@ -570,9 +568,7 @@ class RemoteControlService {
   Response _jsonResponse(Map<String, dynamic> body) {
     return Response.ok(
       jsonEncode(body),
-      headers: {
-        'content-type': 'application/json',
-      },
+      headers: {'content-type': 'application/json'},
     );
   }
 }

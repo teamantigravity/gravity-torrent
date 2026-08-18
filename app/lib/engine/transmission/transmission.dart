@@ -299,7 +299,6 @@ class TransmissionTorrent extends Torrent {
 
   @override
   Future<void> remove(bool withData) async {
-    await super.remove(withData);
     final request = TorrentRemoveRequest(
       arguments: TorrentRemoveRequestArguments(
         ids: [id],
@@ -309,6 +308,7 @@ class TransmissionTorrent extends Torrent {
     _expectSuccess(
       await flutter_libtransmission.requestAsync(jsonEncode(request)),
     );
+    await super.remove(withData);
     _requestEngineCheckpoint();
   }
 
@@ -817,7 +817,7 @@ class TransmissionEngine extends Engine {
   }
 
   @override
-  init() async {
+  Future<void> init() async {
     _closed = false;
     final configDir = await getConfigDir();
     flutter_libtransmission.initSession(configDir.path);
@@ -853,6 +853,7 @@ class TransmissionEngine extends Engine {
               if (kDebugMode) {
                 debugPrint('Failed to stop streaming for $id at init: $e');
               }
+              await SharedPrefsStorage.remove(key);
             }
           } else {
             await SharedPrefsStorage.remove(key);
@@ -905,6 +906,10 @@ class TransmissionEngine extends Engine {
     }
     _closed = true;
     try {
+      final pendingSave = _activeSave;
+      if (pendingSave != null) {
+        await pendingSave.catchError((_) {});
+      }
       await Isolate.run(() => flutter_libtransmission.closeSession());
     } catch (e, st) {
       if (kDebugMode) {
@@ -1099,14 +1104,23 @@ class TransmissionEngine extends Engine {
   @override
   Future<void> resetSettings() async {
     final pending = _activeSave;
-    _activeSave = null;
-    if (pending != null) await pending;
-    await Isolate.run(() => flutter_libtransmission.resetSettings());
-    if (Platform.isAndroid) {
-      await android.initDefaultDownloadDir(this);
-    }
-    if (Platform.isIOS) {
-      await ios.initDefaultDownloadDir(this);
+    final completer = Completer<void>();
+    _activeSave = completer.future;
+
+    try {
+      if (pending != null) await pending.catchError((_) {});
+      await Isolate.run(() => flutter_libtransmission.resetSettings());
+      if (Platform.isAndroid) {
+        await android.initDefaultDownloadDir(this);
+      }
+      if (Platform.isIOS) {
+        await ios.initDefaultDownloadDir(this);
+      }
+    } finally {
+      completer.complete();
+      if (_activeSave == completer.future) {
+        _activeSave = null;
+      }
     }
     requestCheckpoint();
   }
@@ -1198,15 +1212,15 @@ class TransmissionEngine extends Engine {
     int? uploadLimit,
   }) async {
     if (_closed) throw StateError('Engine is closed');
-    final downloadEnabled = downloadLimit != null && downloadLimit > 0;
-    final uploadEnabled = uploadLimit != null && uploadLimit > 0;
     final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
         ids: [id],
-        speedLimitDownEnabled: downloadEnabled,
-        speedLimitUpEnabled: uploadEnabled,
-        speedLimitDown: downloadEnabled ? downloadLimit : null,
-        speedLimitUp: uploadEnabled ? uploadLimit : null,
+        speedLimitDownEnabled: downloadLimit != null ? downloadLimit > 0 : null,
+        speedLimitUpEnabled: uploadLimit != null ? uploadLimit > 0 : null,
+        speedLimitDown:
+            (downloadLimit != null && downloadLimit > 0) ? downloadLimit : null,
+        speedLimitUp:
+            (uploadLimit != null && uploadLimit > 0) ? uploadLimit : null,
       ),
     );
     _expectSuccess(

@@ -25,14 +25,8 @@ void main() {
     test('formatHostForUrl wraps IPv6 in brackets and strips scope ID', () {
       final service = RemoteControlService.instance;
       expect(service.formatHostForUrl('192.168.1.10'), '192.168.1.10');
-      expect(
-        service.formatHostForUrl('fe80::1'),
-        '[fe80::1]',
-      );
-      expect(
-        service.formatHostForUrl('fe80::1%eth0'),
-        '[fe80::1]',
-      );
+      expect(service.formatHostForUrl('fe80::1'), '[fe80::1]');
+      expect(service.formatHostForUrl('fe80::1%eth0'), '[fe80::1]');
     });
 
     test('isPrivateIp recognizes IPv4 private ranges', () {
