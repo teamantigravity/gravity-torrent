@@ -100,7 +100,7 @@ void main() {
     test('rejects IPv6 loopback', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'http://[::1]/blocklist.txt'),
+            'http://[::1]/blocklist.txt',),
         isFalse,
       );
     });

@@ -403,7 +403,7 @@ class CastingService extends ChangeNotifier {
   Future<void> _loadSettings() async {
     try {
       final raw = await SharedPrefsStorage.getString(
-          'gravity_torrent_casting_settings');
+          'gravity_torrent_casting_settings',);
       if (raw != null && raw.isNotEmpty) {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
         _autoDiscoveryEnabled = decoded['autoDiscovery'] as bool? ?? true;
@@ -431,7 +431,7 @@ class CastingService extends ChangeNotifier {
   Future<void> _loadFavorites() async {
     try {
       final raw = await SharedPrefsStorage.getString(
-          'gravity_torrent_casting_favorites');
+          'gravity_torrent_casting_favorites',);
       if (raw != null && raw.isNotEmpty) {
         final list = jsonDecode(raw) as List<dynamic>;
         _favoriteDeviceIds.addAll(list.map((e) => e.toString()));

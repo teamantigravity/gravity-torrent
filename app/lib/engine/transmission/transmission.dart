@@ -1322,7 +1322,7 @@ class TransmissionEngine extends Engine {
 
   @override
   Future<void> setTorrentPriorityPieces(
-      int id, List<int> pieceIndices, int priority) async {
+      int id, List<int> pieceIndices, int priority,) async {
     if (_closed) throw StateError('Engine is closed');
     final request = TorrentSetRequest(
       arguments: TorrentSetRequestArguments(
