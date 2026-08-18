@@ -146,7 +146,8 @@ class RssEpisodeParser {
         if (season != null && start != null && end != null) {
           for (var ep = start; ep <= end; ep++) {
             episodes.add(
-                'S${season.toString().padLeft(2, '0')}E${ep.toString().padLeft(2, '0')}',);
+              'S${season.toString().padLeft(2, '0')}E${ep.toString().padLeft(2, '0')}',
+            );
           }
         }
       }

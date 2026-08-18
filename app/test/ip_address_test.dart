@@ -26,7 +26,9 @@ void main() {
       expect(IpAddressScope.isPrivate(InternetAddress('10.0.0.1')), isTrue);
       expect(IpAddressScope.isPrivate(InternetAddress('172.16.0.1')), isTrue);
       expect(
-          IpAddressScope.isPrivate(InternetAddress('172.31.255.255')), isTrue,);
+        IpAddressScope.isPrivate(InternetAddress('172.31.255.255')),
+        isTrue,
+      );
       expect(IpAddressScope.isPrivate(InternetAddress('192.168.1.1')), isTrue);
       expect(IpAddressScope.isPrivate(InternetAddress('127.0.0.1')), isTrue);
       expect(IpAddressScope.isPrivate(InternetAddress('169.254.1.1')), isTrue);

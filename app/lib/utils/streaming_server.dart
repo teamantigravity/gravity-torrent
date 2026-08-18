@@ -142,7 +142,8 @@ class StreamingServer {
     } catch (e) {
       if (kDebugMode) {
         debugPrint(
-            'streaming_server: failed to disable sequential download: $e',);
+          'streaming_server: failed to disable sequential download: $e',
+        );
       }
     }
   }
@@ -526,7 +527,8 @@ class StreamingServer {
 
     if (kDebugMode) {
       debugPrint(
-          'streaming_server: enabling preview mode with priority pieces: $priorityPieces',);
+        'streaming_server: enabling preview mode with priority pieces: $priorityPieces',
+      );
     }
 
     try {
