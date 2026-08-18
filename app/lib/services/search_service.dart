@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 class SearchResult {
@@ -138,12 +139,11 @@ class SearchService {
   }
 
   Future<String?> _getString(String key) async {
-    // TODO: Implement using SharedPreferences
-    return null;
+    return SharedPrefsStorage.getString(key);
   }
 
   Future<void> _setString(String key, String value) async {
-    // TODO: Implement using SharedPreferences
+    await SharedPrefsStorage.setString(key, value);
   }
 
   List<SearchEngine> _getDefaultEngines() {
