@@ -19,7 +19,8 @@ void main() {
     test('rejects non-http schemes', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'ftp://example.com/list.txt'),
+          'ftp://example.com/list.txt',
+        ),
         isFalse,
       );
     });
@@ -34,7 +35,8 @@ void main() {
     test('rejects private 10.x.x.x', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'http://10.0.0.1/blocklist.txt'),
+          'http://10.0.0.1/blocklist.txt',
+        ),
         isFalse,
       );
     });
@@ -51,7 +53,8 @@ void main() {
     test('rejects private 172.16/12 range', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'http://172.16.0.1/blocklist.txt'),
+          'http://172.16.0.1/blocklist.txt',
+        ),
         isFalse,
       );
       expect(
@@ -84,7 +87,8 @@ void main() {
     test('rejects IPv6 loopback', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'http://[::1]/blocklist.txt'),
+          'http://[::1]/blocklist.txt',
+        ),
         isFalse,
       );
     });
@@ -92,7 +96,8 @@ void main() {
     test('rejects IPv6 unique-local', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'http://[fc00::1]/blocklist.txt'),
+          'http://[fc00::1]/blocklist.txt',
+        ),
         isFalse,
       );
     });
@@ -100,7 +105,8 @@ void main() {
     test('rejects IPv6 link-local', () async {
       expect(
         await BlocklistService.isValidBlocklistUrl(
-            'http://[fe80::1]/blocklist.txt'),
+          'http://[fe80::1]/blocklist.txt',
+        ),
         isFalse,
       );
     });
