@@ -28,6 +28,10 @@ class StreamingServer {
   /// is reachable only from this device.
   final bool allowNetworkAccess;
 
+  /// When true, enables preview mode by prioritizing download of first and last
+  /// pieces for quick video preview.
+  final bool enablePreview;
+
   /// Unguessable path prefix acting as a capability token.
   ///
   /// Binding to `0.0.0.0` would otherwise let *any* host on the network read
@@ -43,6 +47,7 @@ class StreamingServer {
     required this.torrent,
     required this.torrentFile,
     this.allowNetworkAccess = false,
+    this.enablePreview = false,
     String? pathToken,
   }) : pathToken = pathToken ?? generateSecureRandomToken(length: 16);
 
@@ -85,6 +90,11 @@ class StreamingServer {
         );
       }
 
+      // Enable preview mode if requested
+      if (enablePreview) {
+        await _enablePreviewMode();
+      }
+
       await for (final HttpRequest request in server) {
         final completer = CancelableCompleter<void>();
         late CancelableOperation<void> operation;
@@ -125,6 +135,15 @@ class StreamingServer {
     _activeRequests.clear();
     await _server?.close(force: true);
     _server = null;
+
+    // Disable sequential download when stopping
+    try {
+      await torrent.setSequentialDownloadFromPiece(-1);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('streaming_server: failed to disable sequential download: $e');
+      }
+    }
   }
 
   void cancelRequest() {
@@ -291,6 +310,13 @@ class StreamingServer {
       request.response.statusCode = HttpStatus.internalServerError;
       return;
     }
+
+    // Reject multi-range requests (contain commas) and malformed headers
+    if (rangeHeader.contains(',')) {
+      request.response.statusCode = HttpStatus.badRequest;
+      return;
+    }
+
     final rangeRegex = RegExp(r'bytes=(\d*)-(\d*)');
     final match = rangeRegex.firstMatch(rangeHeader);
 
@@ -301,6 +327,13 @@ class StreamingServer {
 
     final startStr = match.group(1);
     final endStr = match.group(2);
+
+    // Reject bytes=- (both empty)
+    if ((startStr == null || startStr.isEmpty) &&
+        (endStr == null || endStr.isEmpty)) {
+      request.response.statusCode = HttpStatus.badRequest;
+      return;
+    }
 
     int start = 0;
     int end = fileSize - 1;
@@ -466,5 +499,40 @@ class StreamingServer {
     }
     // Note: the response is closed once by _handleRequest's finally block to
     // avoid a double-close StateError.
+  }
+
+  /// Enables preview mode by prioritizing download of first and last pieces.
+  ///
+  /// This allows quick video preview by downloading the beginning (for headers)
+  /// and end (for metadata) of the file first.
+  Future<void> _enablePreviewMode() async {
+    if (torrent.pieceCount <= 0) return;
+
+    // Prioritize first few pieces (for video headers)
+    final firstPieces = List.generate(
+      3.clamp(0, torrent.pieceCount),
+      (i) => torrentFile.beginPiece + i,
+    );
+
+    // Prioritize last few pieces (for video metadata/index)
+    final lastPieces = List.generate(
+      3.clamp(0, torrent.pieceCount),
+      (i) => torrentFile.endPiece - i,
+    ).reversed.toList();
+
+    final priorityPieces = {...firstPieces, ...lastPieces}.toList();
+    priorityPieces.sort();
+
+    if (kDebugMode) {
+      debugPrint('streaming_server: enabling preview mode with priority pieces: $priorityPieces');
+    }
+
+    try {
+      await torrent.setPriorityPieces(priorityPieces, 7); // High priority
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('streaming_server: failed to set priority pieces: $e');
+      }
+    }
   }
 }

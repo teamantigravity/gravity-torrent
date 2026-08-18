@@ -37,6 +37,12 @@ enum TorrentField {
   doneDate,
   leftUntilDone,
   sizeWhenDone,
+  seedRatioMode,
+  seedRatioLimit,
+  seedIdleMode,
+  seedIdleLimit,
+  honorsSessionLimits,
+  queuePosition,
 }
 
 class TransmissionTorrentFile {
@@ -109,6 +115,12 @@ class TransmissionTorrentModel {
   final DateTime doneDate;
   final int leftUntilDone;
   final int sizeWhenDone;
+  final int seedRatioMode;
+  final double seedRatioLimit;
+  final int seedIdleMode;
+  final int seedIdleLimit;
+  final bool honorsSessionLimits;
+  final int queuePosition;
 
   const TransmissionTorrentModel(
     this.id,
@@ -143,6 +155,12 @@ class TransmissionTorrentModel {
     this.doneDate,
     this.leftUntilDone,
     this.sizeWhenDone,
+    this.seedRatioMode,
+    this.seedRatioLimit,
+    this.seedIdleMode,
+    this.seedIdleLimit,
+    this.honorsSessionLimits,
+    this.queuePosition,
   );
 
   TransmissionTorrentModel.fromJson(Map<String, dynamic> json)
@@ -247,5 +265,11 @@ class TransmissionTorrentModel {
           }
         })(),
         leftUntilDone = (json['leftUntilDone'] as num?)?.toInt() ?? 0,
-        sizeWhenDone = (json['sizeWhenDone'] as num?)?.toInt() ?? 0;
+        sizeWhenDone = (json['sizeWhenDone'] as num?)?.toInt() ?? 0,
+        seedRatioMode = (json['seedRatioMode'] as num?)?.toInt() ?? 0,
+        seedRatioLimit = (json['seedRatioLimit'] as num?)?.toDouble() ?? 0.0,
+        seedIdleMode = (json['seedIdleMode'] as num?)?.toInt() ?? 0,
+        seedIdleLimit = (json['seedIdleLimit'] as num?)?.toInt() ?? 0,
+        honorsSessionLimits = json['honorsSessionLimits'] as bool? ?? true,
+        queuePosition = (json['queuePosition'] as num?)?.toInt() ?? -1;
 }

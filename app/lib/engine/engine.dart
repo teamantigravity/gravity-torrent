@@ -81,6 +81,27 @@ abstract class Engine {
   // Set torrent sequential download mode
   Future<void> setTorrentSequentialDownload(int id, bool sequential);
 
+  // Set torrent seed ratio mode (0=global, 1=single, 2=unlimited)
+  Future<void> setTorrentSeedRatioMode(int id, int mode);
+
+  // Set torrent seed ratio limit
+  Future<void> setTorrentSeedRatioLimit(int id, double limit);
+
+  // Set torrent idle seeding mode (0=global, 1=single, 2=unlimited)
+  Future<void> setTorrentSeedIdleMode(int id, int mode);
+
+  // Set torrent idle seeding limit (minutes)
+  Future<void> setTorrentSeedIdleLimit(int id, int limit);
+
+  // Set whether torrent honors session upload limits
+  Future<void> setTorrentHonorsSessionLimits(int id, bool honors);
+
+  // Set torrent queue position
+  Future<void> setTorrentQueuePosition(int id, int position);
+
+  // Set priority for specific pieces (for preview mode)
+  Future<void> setTorrentPriorityPieces(int id, List<int> pieceIndices, int priority);
+
   // Update peer blocklist from session URL
   Future<int> updateBlocklist();
 }

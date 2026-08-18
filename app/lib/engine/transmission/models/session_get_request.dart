@@ -2,6 +2,8 @@ enum SessionField {
   downloadDir,
   downloadQueueEnabled,
   downloadQueueSize,
+  uploadQueueEnabled,
+  uploadQueueSize,
   peerPort,
   speedLimitDownEnabled,
   speedLimitUpEnabled,
@@ -26,6 +28,8 @@ enum SessionField {
   altSpeedTimeDay,
   idleSeedingLimitEnabled,
   idleSeedingLimit,
+  ignoreLimitsOnLAN,
+  includeOverheadInLimits,
 }
 
 class SessionGetRequest {
@@ -52,6 +56,8 @@ class SessionGetRequestArguments {
           SessionField.downloadDir => 'download-dir',
           SessionField.downloadQueueEnabled => 'download-queue-enabled',
           SessionField.downloadQueueSize => 'download-queue-size',
+          SessionField.uploadQueueEnabled => 'upload-queue-enabled',
+          SessionField.uploadQueueSize => 'upload-queue-size',
           SessionField.peerPort => 'peer-port',
           SessionField.speedLimitDownEnabled => 'speed-limit-down-enabled',
           SessionField.speedLimitUpEnabled => 'speed-limit-up-enabled',
@@ -76,6 +82,8 @@ class SessionGetRequestArguments {
           SessionField.altSpeedTimeDay => 'alt-speed-time-day',
           SessionField.idleSeedingLimitEnabled => 'idle-seeding-limit-enabled',
           SessionField.idleSeedingLimit => 'idle-seeding-limit',
+          SessionField.ignoreLimitsOnLAN => 'session-speed-limit-lan',
+          SessionField.includeOverheadInLimits => 'session-speed-limit-overhead',
         };
       }).toList(),
     };

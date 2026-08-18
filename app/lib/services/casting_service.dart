@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-
 import 'package:gravity_torrent/services/dlna/dlna_protocol.dart';
+import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:gravity_torrent/utils/ip_address.dart';
+import 'package:http/http.dart' as http;
 
 export 'package:gravity_torrent/services/dlna/dlna_protocol.dart'
     show CastDevice;
@@ -17,7 +18,13 @@ export 'package:gravity_torrent/services/dlna/dlna_protocol.dart'
 /// straight from the app's own streaming server, so no stream data is ever
 /// routed through a third party.
 class CastingService extends ChangeNotifier {
-  CastingService._();
+  CastingService._() {
+    _loadSettings();
+    _loadFavorites();
+    if (_autoDiscoveryEnabled) {
+      _startAutoDiscovery();
+    }
+  }
   static final CastingService instance = CastingService._();
 
   bool _disposed = false;
@@ -42,6 +49,11 @@ class CastingService extends ChangeNotifier {
   bool _isDiscovering = false;
   String? _lastError;
 
+  // Device favorites
+  final Set<String> _favoriteDeviceIds = {};
+  bool _autoDiscoveryEnabled = true;
+  Timer? _autoDiscoveryTimer;
+
   http.Client _client = http.Client();
 
   List<CastDevice> get devices => List.unmodifiable(_devices);
@@ -49,6 +61,10 @@ class CastingService extends ChangeNotifier {
   bool get isCasting => _isCasting;
   bool get isPaused => _isPaused;
   bool get isDiscovering => _isDiscovering;
+  bool get autoDiscoveryEnabled => _autoDiscoveryEnabled;
+  List<CastDevice> get favoriteDevices => _devices
+      .where((d) => _favoriteDeviceIds.contains(d.id))
+      .toList();
 
   /// Human-readable reason the last cast attempt failed, or `null` on success.
   String? get lastError => _lastError;
@@ -163,11 +179,40 @@ class CastingService extends ChangeNotifier {
   }
 
   Future<CastDevice?> _describeDevice(Uri location) async {
+    if (location.host.isEmpty ||
+        !await IpAddressScope.isPrivateHost(location.host)) {
+      if (kDebugMode) {
+        debugPrint('CastingService: rejected non-local location $location');
+      }
+      return null;
+    }
     try {
       final response = await _client.get(location).timeout(requestTimeout);
       if (response.statusCode != HttpStatus.ok) return null;
       final body = utf8.decode(response.bodyBytes, allowMalformed: true);
-      return parseDeviceDescription(body, location);
+      final device = parseDeviceDescription(body, location);
+      if (device == null) return null;
+      if (!await IpAddressScope.isPrivateHost(device.controlUrl.host)) {
+        if (kDebugMode) {
+          debugPrint(
+            'CastingService: rejected non-local control URL '
+            '${device.controlUrl}',
+          );
+        }
+        return null;
+      }
+      final renderingUrl = device.renderingControlUrl;
+      if (renderingUrl != null &&
+          !await IpAddressScope.isPrivateHost(renderingUrl.host)) {
+        if (kDebugMode) {
+          debugPrint(
+            'CastingService: rejected non-local rendering control URL '
+            '$renderingUrl',
+          );
+        }
+        return null;
+      }
+      return device;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('CastingService: failed to describe $location: $e');
@@ -197,6 +242,19 @@ class CastingService extends ChangeNotifier {
       _lastError =
           'The stream is only reachable on this device. Enable LAN streaming '
           'so the renderer can reach it.';
+      _safeNotify();
+      return false;
+    }
+
+    if (!await IpAddressScope.isPrivateHost(device.controlUrl.host)) {
+      _lastError = 'The renderer control URL is not on the local network.';
+      _safeNotify();
+      return false;
+    }
+    final renderingUrl = device.renderingControlUrl;
+    if (renderingUrl != null &&
+        !await IpAddressScope.isPrivateHost(renderingUrl.host)) {
+      _lastError = 'The renderer control URL is not on the local network.';
       _safeNotify();
       return false;
     }
@@ -317,6 +375,108 @@ class CastingService extends ChangeNotifier {
     return stopped;
   }
 
+  /// Toggles a device as a favorite.
+  Future<void> toggleFavorite(CastDevice device) async {
+    if (_favoriteDeviceIds.contains(device.id)) {
+      _favoriteDeviceIds.remove(device.id);
+    } else {
+      _favoriteDeviceIds.add(device.id);
+    }
+    await _saveFavorites();
+    _safeNotify();
+  }
+
+  /// Checks if a device is marked as a favorite.
+  bool isFavorite(CastDevice device) => _favoriteDeviceIds.contains(device.id);
+
+  /// Enables or disables automatic device discovery.
+  Future<void> setAutoDiscovery(bool enabled) async {
+    _autoDiscoveryEnabled = enabled;
+    await _saveSettings();
+    if (enabled) {
+      _startAutoDiscovery();
+    } else {
+      _stopAutoDiscovery();
+    }
+    _safeNotify();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final raw = await SharedPrefsStorage.getString('gravity_torrent_casting_settings');
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        _autoDiscoveryEnabled = decoded['autoDiscovery'] as bool? ?? true;
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load casting settings: $e\n$s');
+      }
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    try {
+      await SharedPrefsStorage.setString(
+        'gravity_torrent_casting_settings',
+        jsonEncode({'autoDiscovery': _autoDiscoveryEnabled}),
+      );
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to save casting settings: $e\n$s');
+      }
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final raw = await SharedPrefsStorage.getString('gravity_torrent_casting_favorites');
+      if (raw != null && raw.isNotEmpty) {
+        final list = jsonDecode(raw) as List<dynamic>;
+        _favoriteDeviceIds.addAll(list.map((e) => e.toString()));
+      }
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to load casting favorites: $e\n$s');
+      }
+    }
+  }
+
+  Future<void> _saveFavorites() async {
+    try {
+      await SharedPrefsStorage.setString(
+        'gravity_torrent_casting_favorites',
+        jsonEncode(_favoriteDeviceIds.toList()),
+      );
+    } catch (e, s) {
+      if (kDebugMode) {
+        debugPrint('Failed to save casting favorites: $e\n$s');
+      }
+    }
+  }
+
+  void _startAutoDiscovery() {
+    _stopAutoDiscovery();
+    if (!_autoDiscoveryEnabled || kIsWeb) return;
+    _autoDiscoveryTimer = Timer.periodic(
+      const Duration(minutes: 2),
+      (_) => unawaited(discoverDevices()),
+    );
+  }
+
+  void _stopAutoDiscovery() {
+    _autoDiscoveryTimer?.cancel();
+    _autoDiscoveryTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _stopAutoDiscovery();
+    _client.close();
+    super.dispose();
+  }
+
   Future<bool> _avTransportAction(
     CastDevice device,
     String action, {
@@ -381,13 +541,5 @@ class CastingService extends ChangeNotifier {
       if (kDebugMode) debugPrint('CastingService: $action error: $e');
       return false;
     }
-  }
-
-  @override
-  void dispose() {
-    _disposed = true;
-    _client.close();
-    _client = http.Client();
-    super.dispose();
   }
 }

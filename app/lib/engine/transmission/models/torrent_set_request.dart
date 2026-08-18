@@ -24,6 +24,12 @@ class TorrentSetRequestArguments {
   final bool? speedLimitUpEnabled;
   final int? speedLimitDown;
   final int? speedLimitUp;
+  final int? seedRatioMode;
+  final double? seedRatioLimit;
+  final int? seedIdleMode;
+  final int? seedIdleLimit;
+  final bool? honorsSessionLimits;
+  final int? queuePosition;
 
   TorrentSetRequestArguments({
     required this.ids,
@@ -39,6 +45,12 @@ class TorrentSetRequestArguments {
     this.speedLimitUpEnabled,
     this.speedLimitDown,
     this.speedLimitUp,
+    this.seedRatioMode,
+    this.seedRatioLimit,
+    this.seedIdleMode,
+    this.seedIdleLimit,
+    this.honorsSessionLimits,
+    this.queuePosition,
   });
 
   Map<String, dynamic> toJson() {
@@ -97,6 +109,30 @@ class TorrentSetRequestArguments {
 
     if (speedLimitUp != null) {
       json['upload_limit'] = speedLimitUp;
+    }
+
+    if (seedRatioMode != null) {
+      json['seedRatioMode'] = seedRatioMode;
+    }
+
+    if (seedRatioLimit != null) {
+      json['seedRatioLimit'] = seedRatioLimit;
+    }
+
+    if (seedIdleMode != null) {
+      json['seedIdleMode'] = seedIdleMode;
+    }
+
+    if (seedIdleLimit != null) {
+      json['seedIdleLimit'] = seedIdleLimit;
+    }
+
+    if (honorsSessionLimits != null) {
+      json['honorsSessionLimits'] = honorsSessionLimits;
+    }
+
+    if (queuePosition != null) {
+      json['queuePosition'] = queuePosition;
     }
 
     return json;

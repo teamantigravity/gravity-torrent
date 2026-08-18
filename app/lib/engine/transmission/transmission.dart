@@ -77,6 +77,12 @@ const torrentGetFields = [
   TorrentField.doneDate,
   TorrentField.leftUntilDone,
   TorrentField.sizeWhenDone,
+  TorrentField.seedRatioMode,
+  TorrentField.seedRatioLimit,
+  TorrentField.seedIdleMode,
+  TorrentField.seedIdleLimit,
+  TorrentField.honorsSessionLimits,
+  TorrentField.queuePosition,
 ];
 
 TransmissionTorrent createTransmissionTorrentFromJson(
@@ -133,6 +139,12 @@ TransmissionTorrent createTransmissionTorrentFromJson(
     speedLimitDown: torrent.speedLimitDown,
     speedLimitUp: torrent.speedLimitUp,
     doneDate: torrent.doneDate,
+    seedRatioMode: torrent.seedRatioMode,
+    seedRatioLimit: torrent.seedRatioLimit,
+    seedIdleMode: torrent.seedIdleMode,
+    seedIdleLimit: torrent.seedIdleLimit,
+    honorsSessionLimits: torrent.honorsSessionLimits,
+    queuePosition: torrent.queuePosition,
   );
 }
 
@@ -169,11 +181,24 @@ final TorrentGetRequest torrentGetRequest = TorrentGetRequest(
       TorrentField.speedLimitDown,
       TorrentField.speedLimitUp,
       TorrentField.doneDate,
+      TorrentField.seedRatioMode,
+      TorrentField.seedRatioLimit,
+      TorrentField.seedIdleMode,
+      TorrentField.seedIdleLimit,
+      TorrentField.honorsSessionLimits,
+      TorrentField.queuePosition,
     ],
   ),
 );
 
 class TransmissionTorrent extends Torrent {
+  final int seedRatioMode;
+  final double seedRatioLimit;
+  final int seedIdleMode;
+  final int seedIdleLimit;
+  final bool honorsSessionLimits;
+  final int queuePosition;
+
   TransmissionTorrent({
     required super.id,
     required super.name,
@@ -204,6 +229,12 @@ class TransmissionTorrent extends Torrent {
     required super.speedLimitDown,
     required super.speedLimitUp,
     required super.doneDate,
+    this.seedRatioMode = 0,
+    this.seedRatioLimit = 0.0,
+    this.seedIdleMode = 0,
+    this.seedIdleLimit = 0,
+    this.honorsSessionLimits = true,
+    this.queuePosition = -1,
   });
 
   @override
@@ -417,6 +448,104 @@ class TransmissionTorrent extends Torrent {
     );
     _requestEngineCheckpoint();
   }
+
+  @override
+  Future<void> setSeedRatioMode(int mode) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedRatioMode: mode,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setSeedRatioLimit(double limit) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedRatioLimit: limit,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setSeedIdleMode(int mode) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedIdleMode: mode,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setSeedIdleLimit(int limit) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedIdleLimit: limit,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setHonorsSessionLimits(bool honors) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        honorsSessionLimits: honors,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setQueuePosition(int position) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        queuePosition: position,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
+
+  @override
+  Future<void> setPriorityPieces(List<int> pieceIndices, int priority) async {
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        priorityHigh: pieceIndices,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    _requestEngineCheckpoint();
+  }
 }
 
 class TransmissionSession extends Session {
@@ -424,6 +553,8 @@ class TransmissionSession extends Session {
     super.downloadDir,
     super.downloadQueueEnabled,
     super.downloadQueueSize,
+    super.uploadQueueEnabled,
+    super.uploadQueueSize,
     super.peerPort,
     super.speedLimitDownEnabled,
     super.speedLimitUpEnabled,
@@ -448,6 +579,8 @@ class TransmissionSession extends Session {
     super.altSpeedTimeDay,
     super.idleSeedingLimitEnabled,
     super.idleSeedingLimit,
+    super.ignoreLimitsOnLAN,
+    super.includeOverheadInLimits,
   });
 
   @override
@@ -456,6 +589,8 @@ class TransmissionSession extends Session {
       arguments: SessionSetRequestArguments(
         downloadDir: session.downloadDir,
         downloadQueueSize: session.downloadQueueSize,
+        uploadQueueEnabled: session.uploadQueueEnabled,
+        uploadQueueSize: session.uploadQueueSize,
         peerPort: session.peerPort,
         speedLimitDownEnabled: session.speedLimitDownEnabled,
         speedLimitUpEnabled: session.speedLimitUpEnabled,
@@ -479,6 +614,8 @@ class TransmissionSession extends Session {
         altSpeedTimeDay: session.altSpeedTimeDay,
         idleSeedingLimitEnabled: session.idleSeedingLimitEnabled,
         idleSeedingLimit: session.idleSeedingLimit,
+        ignoreLimitsOnLAN: session.ignoreLimitsOnLAN,
+        includeOverheadInLimits: session.includeOverheadInLimits,
       ),
     );
 
@@ -496,6 +633,12 @@ class TransmissionSession extends Session {
     }
     if (session.downloadQueueSize != null) {
       downloadQueueSize = session.downloadQueueSize;
+    }
+    if (session.uploadQueueEnabled != null) {
+      uploadQueueEnabled = session.uploadQueueEnabled;
+    }
+    if (session.uploadQueueSize != null) {
+      uploadQueueSize = session.uploadQueueSize;
     }
     if (session.peerPort != null) {
       peerPort = session.peerPort;
@@ -568,6 +711,12 @@ class TransmissionSession extends Session {
     }
     if (session.idleSeedingLimit != null) {
       idleSeedingLimit = session.idleSeedingLimit;
+    }
+    if (session.ignoreLimitsOnLAN != null) {
+      ignoreLimitsOnLAN = session.ignoreLimitsOnLAN;
+    }
+    if (session.includeOverheadInLimits != null) {
+      includeOverheadInLimits = session.includeOverheadInLimits;
     }
   }
 }
@@ -888,6 +1037,10 @@ class TransmissionEngine extends Engine {
           SessionField.altSpeedTimeDay,
           SessionField.idleSeedingLimitEnabled,
           SessionField.idleSeedingLimit,
+          SessionField.uploadQueueEnabled,
+          SessionField.uploadQueueSize,
+          SessionField.ignoreLimitsOnLAN,
+          SessionField.includeOverheadInLimits,
         ],
       ),
     );
@@ -912,6 +1065,8 @@ class TransmissionEngine extends Engine {
       downloadDir: decodedRes.arguments.downloadDir,
       downloadQueueEnabled: decodedRes.arguments.downloadQueueEnabled,
       downloadQueueSize: decodedRes.arguments.downloadQueueSize,
+      uploadQueueEnabled: decodedRes.arguments.uploadQueueEnabled,
+      uploadQueueSize: decodedRes.arguments.uploadQueueSize,
       peerPort: decodedRes.arguments.peerPort,
       speedLimitDownEnabled: decodedRes.arguments.speedLimitDownEnabled,
       speedLimitUpEnabled: decodedRes.arguments.speedLimitUpEnabled,
@@ -936,6 +1091,8 @@ class TransmissionEngine extends Engine {
       altSpeedTimeDay: decodedRes.arguments.altSpeedTimeDay,
       idleSeedingLimitEnabled: decodedRes.arguments.idleSeedingLimitEnabled,
       idleSeedingLimit: decodedRes.arguments.idleSeedingLimit,
+      ignoreLimitsOnLAN: decodedRes.arguments.sessionSpeedLimitLan,
+      includeOverheadInLimits: decodedRes.arguments.sessionSpeedLimitOverhead,
     );
   }
 
@@ -1065,6 +1222,111 @@ class TransmissionEngine extends Engine {
       arguments: TorrentSetRequestArguments(
         ids: [id],
         sequentialDownload: sequential,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentSeedRatioMode(int id, int mode) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedRatioMode: mode,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentSeedRatioLimit(int id, double limit) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedRatioLimit: limit,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentSeedIdleMode(int id, int mode) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedIdleMode: mode,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentSeedIdleLimit(int id, int limit) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        seedIdleLimit: limit,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentHonorsSessionLimits(int id, bool honors) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        honorsSessionLimits: honors,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentQueuePosition(int id, int position) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        queuePosition: position,
+      ),
+    );
+    _expectSuccess(
+      await flutter_libtransmission.requestAsync(jsonEncode(request)),
+    );
+    requestCheckpoint();
+  }
+
+  @override
+  Future<void> setTorrentPriorityPieces(int id, List<int> pieceIndices, int priority) async {
+    if (_closed) throw StateError('Engine is closed');
+    final request = TorrentSetRequest(
+      arguments: TorrentSetRequestArguments(
+        ids: [id],
+        priorityHigh: pieceIndices,
       ),
     );
     _expectSuccess(

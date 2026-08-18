@@ -178,8 +178,61 @@ class PinService {
   }
 
   String _hashPin(String pin, String salt) {
-    final bytes = utf8.encode('$salt:$pin');
-    return sha256.convert(bytes).toString();
+    final saltBytes = utf8.encode(salt);
+    final pinBytes = utf8.encode(pin);
+    final derivedKey = _pbkdf2HmacSha256(
+      password: pinBytes,
+      salt: saltBytes,
+      iterations: 100000,
+      keyLength: 32,
+    );
+    return base64Url.encode(derivedKey);
+  }
+
+  List<int> _pbkdf2HmacSha256({
+    required List<int> password,
+    required List<int> salt,
+    required int iterations,
+    required int keyLength,
+  }) {
+    const blockSize = 32; // SHA-256 output size
+    final blocks = (keyLength + blockSize - 1) ~/ blockSize;
+    final derivedKey = <int>[];
+
+    for (var i = 1; i <= blocks; i++) {
+      final block = _pbkdf2Block(password, salt, i, iterations);
+      derivedKey.addAll(block);
+    }
+
+    return derivedKey.sublist(0, keyLength);
+  }
+
+  List<int> _pbkdf2Block(
+    List<int> password,
+    List<int> salt,
+    int blockIndex,
+    int iterations,
+  ) {
+    final hmac = Hmac(sha256, password);
+    final blockIndexBytes = [
+      (blockIndex >> 24) & 0xff,
+      (blockIndex >> 16) & 0xff,
+      (blockIndex >> 8) & 0xff,
+      blockIndex & 0xff,
+    ];
+    final saltWithIndex = [...salt, ...blockIndexBytes];
+
+    var u = hmac.convert(saltWithIndex).bytes;
+    final result = List<int>.from(u);
+
+    for (var i = 1; i < iterations; i++) {
+      u = hmac.convert(u).bytes;
+      for (var j = 0; j < result.length; j++) {
+        result[j] ^= u[j];
+      }
+    }
+
+    return result;
   }
 
   String _generateSalt() {

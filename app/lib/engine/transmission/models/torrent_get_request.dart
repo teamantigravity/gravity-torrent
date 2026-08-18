@@ -39,6 +39,12 @@ class TorrentGetRequestArguments {
           TorrentField.speedLimitUpEnabled => 'upload_limited',
           TorrentField.speedLimitDown => 'download_limit',
           TorrentField.speedLimitUp => 'upload_limit',
+          TorrentField.seedRatioMode => 'seedRatioMode',
+          TorrentField.seedRatioLimit => 'seedRatioLimit',
+          TorrentField.seedIdleMode => 'seedIdleMode',
+          TorrentField.seedIdleLimit => 'seedIdleLimit',
+          TorrentField.honorsSessionLimits => 'honorsSessionLimits',
+          TorrentField.queuePosition => 'queuePosition',
           _ => field.name,
         };
       }).toList(),

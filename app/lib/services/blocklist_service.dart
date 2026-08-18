@@ -6,6 +6,7 @@ import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/session.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:gravity_torrent/utils/ip_address.dart';
 
 /// Service that manages P2P peer blocklist downloads and automatic updates.
 class BlocklistService {
@@ -36,83 +37,29 @@ class BlocklistService {
 
   /// Validates that [url] is a safe HTTP/HTTPS URL. Empty string is allowed
   /// and represents "no blocklist URL / disabled".
-  static bool isValidBlocklistUrl(String url) {
+  static Future<bool> isValidBlocklistUrl(
+    String url, {
+    Future<List<InternetAddress>> Function(String)? lookup,
+  }) async {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return true;
     final uri = Uri.tryParse(trimmed);
     if (uri == null) return false;
     if (uri.scheme != 'http' && uri.scheme != 'https') return false;
     if (uri.host.isEmpty) return false;
+    if (uri.userInfo.isNotEmpty) return false;
     // Block private/local network URLs to mitigate SSRF.
-    return _isPublicHost(uri.host);
-  }
-
-  /// Returns true when [host] is a public, resolvable name or a public IP
-  /// address. Blocks localhost, private IPv4 ranges, and IPv6 unique-local /
-  /// link-local addresses.
-  static bool _isPublicHost(String host) {
-    final address = InternetAddress.tryParse(host);
-    if (address != null) {
-      return _isPublicAddress(address);
-    }
-
-    final lower = host.toLowerCase();
-    if (lower == 'localhost' || lower == 'localhost.' || !host.contains('.')) {
-      return false;
-    }
-
-    // Reject hostnames that are just an IPv4 literal with a port or other noise
-    // already handled by the IP path above.
-    return true;
-  }
-
-  /// Returns true for public (non-loopback, non-private) IP addresses.
-  static bool _isPublicAddress(InternetAddress address) {
-    if (address.isLoopback) return false;
-
-    if (address.type == InternetAddressType.IPv4) {
-      final bytes = address.rawAddress;
-      if (bytes.length != 4) return false;
-
-      // 0.0.0.0/8
-      if (bytes[0] == 0) return false;
-      // 10.0.0.0/8
-      if (bytes[0] == 10) return false;
-      // 172.16.0.0/12
-      if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) return false;
-      // 192.168.0.0/16
-      if (bytes[0] == 192 && bytes[1] == 168) return false;
-      // 169.254.0.0/16 link-local
-      if (bytes[0] == 169 && bytes[1] == 254) return false;
-
-      return true;
-    }
-
-    if (address.type == InternetAddressType.IPv6) {
-      final bytes = address.rawAddress;
-      if (bytes.isEmpty) return false;
-      // ::ffff:127.0.0.1 (IPv4-mapped loopback)
-      if (bytes.length == 16 &&
-          bytes[10] == 0xff &&
-          bytes[11] == 0xff &&
-          bytes[12] == 127) {
-        return false;
-      }
-      // fe80::/10
-      if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80) return false;
-      // fc00::/7
-      if ((bytes[0] & 0xfe) == 0xfc) return false;
-      return true;
-    }
-
-    return false;
+    return IpAddressScope.isPubliclyRoutableHost(
+      uri.host,
+      lookup: lookup,
+    );
   }
 
   Future<void> load() async {
     if (_loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     final storedUrl = await SharedPrefsStorage.getString(_urlKey) ?? defaultUrl;
-    _url = isValidBlocklistUrl(storedUrl) ? storedUrl : defaultUrl;
+    _url = (await isValidBlocklistUrl(storedUrl)) ? storedUrl : defaultUrl;
     final lastUpdatedStr = await SharedPrefsStorage.getString(_lastUpdatedKey);
     if (lastUpdatedStr != null) {
       _lastUpdated = DateTime.tryParse(lastUpdatedStr);
@@ -145,7 +92,7 @@ class BlocklistService {
   Future<void> setUrl(String url) async {
     await load();
     final trimmed = url.trim();
-    if (!isValidBlocklistUrl(trimmed)) {
+    if (!await isValidBlocklistUrl(trimmed)) {
       throw ArgumentError('Invalid or unsafe blocklist URL: $trimmed');
     }
     _url = trimmed;

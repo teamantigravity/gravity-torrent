@@ -160,6 +160,20 @@ abstract class Torrent extends TorrentBase {
     List<int>? priorityNormal,
   });
 
+  Future<void> setSeedRatioMode(int mode);
+
+  Future<void> setSeedRatioLimit(double limit);
+
+  Future<void> setSeedIdleMode(int mode);
+
+  Future<void> setSeedIdleLimit(int limit);
+
+  Future<void> setHonorsSessionLimits(bool honors);
+
+  Future<void> setQueuePosition(int position);
+
+  Future<void> setPriorityPieces(List<int> pieceIndices, int priority);
+
   String get _streamingActiveKey => 'streaming_active_$id';
 
   Future<void> startStreaming(File file) async {

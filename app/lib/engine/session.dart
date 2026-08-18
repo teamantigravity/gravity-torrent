@@ -30,6 +30,8 @@ class SessionBase {
   String? downloadDir;
   bool? downloadQueueEnabled;
   int? downloadQueueSize;
+  bool? uploadQueueEnabled;
+  int? uploadQueueSize;
   int? peerPort;
   bool? speedLimitDownEnabled;
   bool? speedLimitUpEnabled;
@@ -61,10 +63,16 @@ class SessionBase {
   bool? idleSeedingLimitEnabled;
   int? idleSeedingLimit;
 
+  // Bandwidth options
+  bool? ignoreLimitsOnLAN;
+  bool? includeOverheadInLimits;
+
   SessionBase({
     this.downloadDir,
     this.downloadQueueEnabled,
     this.downloadQueueSize,
+    this.uploadQueueEnabled,
+    this.uploadQueueSize,
     this.peerPort,
     this.speedLimitDownEnabled,
     this.speedLimitUpEnabled,
@@ -89,6 +97,8 @@ class SessionBase {
     this.altSpeedTimeDay,
     this.idleSeedingLimitEnabled,
     this.idleSeedingLimit,
+    this.ignoreLimitsOnLAN = false,
+    this.includeOverheadInLimits = false,
   });
 }
 
@@ -98,6 +108,8 @@ abstract class Session extends SessionBase {
     super.downloadDir,
     super.downloadQueueEnabled,
     super.downloadQueueSize,
+    super.uploadQueueEnabled,
+    super.uploadQueueSize,
     super.peerPort,
     super.speedLimitDownEnabled,
     super.speedLimitUpEnabled,
@@ -122,6 +134,8 @@ abstract class Session extends SessionBase {
     super.altSpeedTimeDay,
     super.idleSeedingLimitEnabled,
     super.idleSeedingLimit,
+    super.ignoreLimitsOnLAN,
+    super.includeOverheadInLimits,
   });
 
   // Update a session

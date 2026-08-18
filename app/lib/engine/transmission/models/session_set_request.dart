@@ -14,6 +14,8 @@ class SessionSetRequestArguments {
   final String? downloadDir;
   final bool? downloadQueueEnabled;
   final int? downloadQueueSize;
+  final bool? uploadQueueEnabled;
+  final int? uploadQueueSize;
   final int? peerPort;
   final bool? speedLimitDownEnabled;
   final bool? speedLimitUpEnabled;
@@ -44,10 +46,16 @@ class SessionSetRequestArguments {
   final bool? idleSeedingLimitEnabled;
   final int? idleSeedingLimit;
 
+  // Bandwidth options
+  final bool? ignoreLimitsOnLAN;
+  final bool? includeOverheadInLimits;
+
   SessionSetRequestArguments({
     this.downloadDir,
     this.downloadQueueEnabled,
     this.downloadQueueSize,
+    this.uploadQueueEnabled,
+    this.uploadQueueSize,
     this.peerPort,
     this.speedLimitDownEnabled,
     this.speedLimitUpEnabled,
@@ -71,6 +79,8 @@ class SessionSetRequestArguments {
     this.altSpeedTimeDay,
     this.idleSeedingLimitEnabled,
     this.idleSeedingLimit,
+    this.ignoreLimitsOnLAN,
+    this.includeOverheadInLimits,
   });
 
   Map<String, dynamic> toJson() {
@@ -153,6 +163,18 @@ class SessionSetRequestArguments {
     }
     if (idleSeedingLimit != null) {
       json['idle-seeding-limit'] = idleSeedingLimit;
+    }
+    if (uploadQueueEnabled != null) {
+      json['upload-queue-enabled'] = uploadQueueEnabled;
+    }
+    if (uploadQueueSize != null) {
+      json['upload-queue-size'] = uploadQueueSize;
+    }
+    if (ignoreLimitsOnLAN != null) {
+      json['session-speed-limit-lan'] = ignoreLimitsOnLAN;
+    }
+    if (includeOverheadInLimits != null) {
+      json['session-speed-limit-overhead'] = includeOverheadInLimits;
     }
 
     return json;

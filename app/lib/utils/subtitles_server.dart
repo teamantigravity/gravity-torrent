@@ -5,15 +5,18 @@ import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/utils/subtitles.dart';
+import 'package:gravity_torrent/utils/secure_token.dart';
 import 'package:path/path.dart' as p;
 
 class SubtitlesServer {
   final Torrent torrent;
+  final String pathToken;
   HttpServer? _server;
   final Completer<void> _serverReadyCompleter = Completer<void>();
   bool _stopped = false;
 
-  SubtitlesServer({required this.torrent});
+  SubtitlesServer({required this.torrent})
+      : pathToken = generateSecureRandomToken(length: 16);
 
   Future<void> start() async {
     try {
@@ -69,21 +72,35 @@ class SubtitlesServer {
     if (server == null) {
       throw StateError('Subtitles server is not running');
     }
-    return 'http://${server.address.host}:${server.port}';
+    return 'http://${server.address.host}:${server.port}/$pathToken';
   }
 
   Future<void> handleRequest(HttpRequest request) async {
     try {
       final path = request.uri.path;
-      // /subtitle.vtt
-      if (path.isNotEmpty &&
-          path != '/' &&
-          isSubtitleFileName(path.substring(1))) {
-        await serveFile(request.response, path.substring(1));
-      } else {
+      // Require token in path: /token/subtitle.vtt
+      if (path.isEmpty || path == '/') {
         request.response.statusCode = HttpStatus.notFound;
         request.response.write('404: Not Found');
+        return;
       }
+
+      final parts = path.split('/');
+      if (parts.length < 2 || parts[1] != pathToken) {
+        request.response.statusCode = HttpStatus.forbidden;
+        request.response.write('403: Forbidden');
+        return;
+      }
+
+      // Extract subtitle filename after token
+      final fileName = parts.length > 2 ? parts.sublist(2).join('/') : '';
+      if (fileName.isEmpty || !isSubtitleFileName(fileName)) {
+        request.response.statusCode = HttpStatus.notFound;
+        request.response.write('404: Not Found');
+        return;
+      }
+
+      await serveFile(request.response, fileName);
     } catch (e) {
       try {
         request.response.statusCode = HttpStatus.internalServerError;

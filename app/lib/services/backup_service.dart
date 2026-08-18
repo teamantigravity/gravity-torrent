@@ -8,8 +8,9 @@ import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:gravity_torrent/utils/ip_address.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class BackupMetadata {
@@ -393,10 +394,26 @@ class BackupService {
           final magnetLink = map['magnetLink'] as String?;
           if (magnetLink != null && magnetLink.isNotEmpty) {
             try {
+              if (!await IpAddressScope.isPubliclyRoutableLink(magnetLink)) {
+                debugPrint(
+                  'BackupService: skipped torrent with private/internal link: $magnetLink',
+                );
+                continue;
+              }
+              final downloadDir = map['downloadDir'] as String?;
+              if (downloadDir != null && downloadDir.isNotEmpty) {
+                final dir = Directory(downloadDir);
+                if (!dir.existsSync()) {
+                  debugPrint(
+                    'BackupService: skipped torrent with non-existent downloadDir: $downloadDir',
+                  );
+                  continue;
+                }
+              }
               await engine.addTorrent(
                 magnetLink,
                 null,
-                map['downloadDir'] as String?,
+                downloadDir,
               );
             } catch (e) {
               debugPrint('BackupService: could not re-add torrent — $e');
@@ -424,33 +441,47 @@ class BackupService {
   // ── Encryption helpers ──────────────────────────────────────────────────
 
   static Uint8List _encrypt(String plaintext, String passphrase) {
-    final keyBytes = sha256.convert(utf8.encode(passphrase)).bytes;
+    final salt = encrypt_lib.IV.fromSecureRandom(16);
+    final keyBytes = _pbkdf2HmacSha256(
+      password: utf8.encode(passphrase),
+      salt: salt.bytes,
+      iterations: 100000,
+      keyLength: 32,
+    );
     final key = encrypt_lib.Key(Uint8List.fromList(keyBytes));
     final iv = encrypt_lib.IV.fromSecureRandom(16);
     final encrypter = encrypt_lib.Encrypter(
-      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc),
+      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.gcm),
     );
     final encrypted = encrypter.encryptBytes(utf8.encode(plaintext), iv: iv);
 
-    // Prepend IV to ciphertext
+    // Prepend salt and IV to ciphertext (GCM includes auth tag in encrypted.bytes)
     final result = BytesBuilder();
+    result.add(salt.bytes);
     result.add(iv.bytes);
     result.add(encrypted.bytes);
     return result.toBytes();
   }
 
   static String _decrypt(Uint8List cipherBytes, String passphrase) {
-    if (cipherBytes.length < 17) {
+    if (cipherBytes.length < 33) {
       throw const FormatException('Ciphertext too short');
     }
 
-    final keyBytes = sha256.convert(utf8.encode(passphrase)).bytes;
+    final salt = Uint8List.sublistView(cipherBytes, 0, 16);
+    final iv = encrypt_lib.IV(Uint8List.sublistView(cipherBytes, 16, 32));
+    final ciphertext = Uint8List.sublistView(cipherBytes, 32);
+
+    final keyBytes = _pbkdf2HmacSha256(
+      password: utf8.encode(passphrase),
+      salt: salt,
+      iterations: 100000,
+      keyLength: 32,
+    );
     final key = encrypt_lib.Key(Uint8List.fromList(keyBytes));
-    final iv = encrypt_lib.IV(Uint8List.sublistView(cipherBytes, 0, 16));
-    final ciphertext = Uint8List.sublistView(cipherBytes, 16);
 
     final encrypter = encrypt_lib.Encrypter(
-      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc),
+      encrypt_lib.AES(key, mode: encrypt_lib.AESMode.gcm),
     );
     final decrypted = encrypter.decryptBytes(
       encrypt_lib.Encrypted(ciphertext),
@@ -458,6 +489,52 @@ class BackupService {
     );
 
     return utf8.decode(decrypted);
+  }
+
+  static List<int> _pbkdf2HmacSha256({
+    required List<int> password,
+    required List<int> salt,
+    required int iterations,
+    required int keyLength,
+  }) {
+    const blockSize = 32; // SHA-256 output size
+    final blocks = (keyLength + blockSize - 1) ~/ blockSize;
+    final derivedKey = <int>[];
+
+    for (var i = 1; i <= blocks; i++) {
+      final block = _pbkdf2Block(password, salt, i, iterations);
+      derivedKey.addAll(block);
+    }
+
+    return derivedKey.sublist(0, keyLength);
+  }
+
+  static List<int> _pbkdf2Block(
+    List<int> password,
+    List<int> salt,
+    int blockIndex,
+    int iterations,
+  ) {
+    final hmac = Hmac(sha256, password);
+    final blockIndexBytes = [
+      (blockIndex >> 24) & 0xff,
+      (blockIndex >> 16) & 0xff,
+      (blockIndex >> 8) & 0xff,
+      blockIndex & 0xff,
+    ];
+    final saltWithIndex = [...salt, ...blockIndexBytes];
+
+    var u = hmac.convert(saltWithIndex).bytes;
+    final result = List<int>.from(u);
+
+    for (var i = 1; i < iterations; i++) {
+      u = hmac.convert(u).bytes;
+      for (var j = 0; j < result.length; j++) {
+        result[j] ^= u[j];
+      }
+    }
+
+    return result;
   }
 
   static bool _isFloatKey(String key) {

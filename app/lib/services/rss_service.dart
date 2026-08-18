@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/services/remote_config/remote_config_service.dart';
+import 'package:gravity_torrent/services/rss_episode_parser.dart';
+import 'package:gravity_torrent/services/rss_rule.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
+import 'package:gravity_torrent/utils/ip_address.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
@@ -42,20 +46,25 @@ class RssService {
   static final RssService instance = RssService._();
 
   static const _feedsKey = 'gravity_torrent_rss_feeds';
+  static const _rulesKey = 'gravity_torrent_rss_rules';
   static const _seenKey = 'gravity_torrent_rss_seen';
+  static const _episodeHistoryKey = 'gravity_torrent_rss_episode_history';
   static const _pollMinutes = 30;
   static const _maxSeenLinks = 1000;
 
   List<RssFeed> _feeds = [];
+  List<RssRule> _rules = [];
   // Dart's default Set is a LinkedHashSet, so skip() keeps the [_maxSeenLinks]
   // most recently inserted links. Explicit type to make the assumption visible.
   Set<String> _seenLinks = <String>{};
+  Set<String> _episodeHistory = <String>{};
   bool _loaded = false;
   bool _isPolling = false;
   bool _disposed = false;
   Timer? _timer;
 
   List<RssFeed> get feeds => List.unmodifiable(_feeds);
+  List<RssRule> get rules => List.unmodifiable(_rules);
 
   Future<void> load() async {
     if (_disposed || _loaded) return;
@@ -74,6 +83,23 @@ class RssService {
         _feeds = [];
       }
     }
+    final rawRules = await SharedPrefsStorage.getString(_rulesKey);
+    if (rawRules != null && rawRules.isNotEmpty) {
+      try {
+        final list = jsonDecode(rawRules) as List<dynamic>;
+        _rules = list
+            .whereType<Map<String, dynamic>>()
+            .map((e) => RssRule.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+        // Sort by priority (higher priority first)
+        _rules.sort((a, b) => b.priority.compareTo(a.priority));
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('Failed to load RSS rules: $e\n$s');
+        }
+        _rules = [];
+      }
+    }
     final rawSeen = await SharedPrefsStorage.getString(_seenKey);
     if (rawSeen != null && rawSeen.isNotEmpty) {
       try {
@@ -88,6 +114,20 @@ class RssService {
         _seenLinks = {};
       }
     }
+    final rawEpisodeHistory = await SharedPrefsStorage.getString(_episodeHistoryKey);
+    if (rawEpisodeHistory != null && rawEpisodeHistory.isNotEmpty) {
+      try {
+        final list = jsonDecode(rawEpisodeHistory) as List<dynamic>;
+        _episodeHistory = LinkedHashSet<String>.from(
+          list.map((e) => e.toString()),
+        );
+      } catch (e, s) {
+        if (kDebugMode) {
+          debugPrint('Failed to load episode history: $e\n$s');
+        }
+        _episodeHistory = {};
+      }
+    }
     if (_disposed) return;
     _trimSeenLinks();
     _loaded = true;
@@ -97,6 +137,13 @@ class RssService {
     await SharedPrefsStorage.setString(
       _feedsKey,
       jsonEncode(_feeds.map((f) => f.toJson()).toList()),
+    );
+  }
+
+  Future<void> _saveRules() async {
+    await SharedPrefsStorage.setString(
+      _rulesKey,
+      jsonEncode(_rules.map((r) => r.toJson()).toList()),
     );
   }
 
@@ -111,6 +158,13 @@ class RssService {
     await SharedPrefsStorage.setString(
       _seenKey,
       jsonEncode(_seenLinks.toList()),
+    );
+  }
+
+  Future<void> _saveEpisodeHistory() async {
+    await SharedPrefsStorage.setString(
+      _episodeHistoryKey,
+      jsonEncode(_episodeHistory.toList()),
     );
   }
 
@@ -139,6 +193,36 @@ class RssService {
     if (index >= 0 && index < _feeds.length) {
       _feeds[index] = feed;
       await _saveFeeds();
+    }
+  }
+
+  Future<void> addRule(RssRule rule) async {
+    await load();
+    _rules.add(rule);
+    _rules.sort((a, b) => b.priority.compareTo(a.priority));
+    await _saveRules();
+  }
+
+  Future<void> removeRuleAt(int index) async {
+    await load();
+    if (index >= 0 && index < _rules.length) {
+      _rules.removeAt(index);
+      await _saveRules();
+    }
+  }
+
+  Future<void> removeRule(RssRule rule) async {
+    await load();
+    _rules.removeWhere((r) => r.name == rule.name);
+    await _saveRules();
+  }
+
+  Future<void> updateRuleAt(int index, RssRule rule) async {
+    await load();
+    if (index >= 0 && index < _rules.length) {
+      _rules[index] = rule;
+      _rules.sort((a, b) => b.priority.compareTo(a.priority));
+      await _saveRules();
     }
   }
 
@@ -185,15 +269,31 @@ class RssService {
         stopPolling();
         return;
       }
-      for (final feed in List.of(_feeds)) {
+
+      // Collect all unique feed URLs from rules
+      final feedUrls = <String>{};
+      for (final rule in _rules) {
+        if (rule.enabled) {
+          feedUrls.addAll(rule.feedUrls);
+        }
+      }
+
+      // Also include legacy feeds
+      for (final feed in _feeds) {
+        if (feed.enabled) {
+          feedUrls.add(feed.url);
+        }
+      }
+
+      // Poll each unique feed URL
+      for (final feedUrl in feedUrls) {
         if (_disposed) return;
-        if (!feed.enabled) continue;
-        if (!_isValidFeedUrl(feed.url)) continue;
+        if (!await _isValidFeedUrl(feedUrl)) continue;
         try {
-          await _pollFeed(feed);
+          await _pollFeed(feedUrl);
         } catch (e) {
           if (kDebugMode) {
-            debugPrint('RssService poll error for ${feed.url}: $e');
+            debugPrint('RssService poll error for $feedUrl: $e');
           }
         }
       }
@@ -202,20 +302,20 @@ class RssService {
     }
   }
 
-  bool _isValidFeedUrl(String url) {
+  Future<bool> _isValidFeedUrl(String url) async {
     try {
       final uri = Uri.parse(url);
-      return uri.isScheme('http') || uri.isScheme('https');
+      if (!(uri.isScheme('http') || uri.isScheme('https'))) return false;
+      if (uri.host.isEmpty) return false;
+      return IpAddressScope.isPubliclyRoutableHost(uri.host);
     } catch (_) {
       return false;
     }
   }
 
-  Future<void> _pollFeed(RssFeed feed) async {
-    final response = await http
-        .get(Uri.parse(feed.url))
-        .timeout(const Duration(seconds: 15));
-    if (_disposed || response.statusCode != 200) return;
+  Future<void> _pollFeed(String feedUrl) async {
+    final response = await _safeGet(feedUrl);
+    if (_disposed || response == null || response.statusCode != 200) return;
 
     final body = response.body;
 
@@ -223,53 +323,136 @@ class RssService {
       final document = XmlDocument.parse(body);
       final items = document.findAllElements('item').toList();
       if (items.isEmpty) {
-        await _processSection(feed, body);
+        await _processSection(feedUrl, body);
       } else {
         for (final item in items) {
-          await _processItem(feed, item);
+          await _processItem(feedUrl, item);
         }
       }
     } on XmlParserException catch (e) {
       if (kDebugMode) {
-        debugPrint('RssService: XML parse failed for ${feed.url}: $e');
+        debugPrint('RssService: XML parse failed for $feedUrl: $e');
       }
       // Fallback to regex on raw body for non-XML feeds.
-      await _processSection(feed, body);
+      await _processSection(feedUrl, body);
     }
 
     _trimSeenLinks();
 
     await _saveSeen();
+    await _saveEpisodeHistory();
   }
 
-  Future<void> _processItem(RssFeed feed, XmlElement item) async {
+  /// Fetches a URL without blindly following redirects. Each redirect target
+  /// is validated so a public feed cannot redirect to an internal host.
+  Future<http.Response?> _safeGet(
+    String url, {
+    int redirectCount = 0,
+  }) async {
+    const maxRedirects = 5;
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) return null;
+    if (!(uri.isScheme('http') || uri.isScheme('https'))) return null;
+    if (!await IpAddressScope.isPubliclyRoutableHost(uri.host)) return null;
+
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', uri)
+        ..followRedirects = false
+        ..maxRedirects = 0;
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        if (redirectCount >= maxRedirects) return null;
+        final location = response.headers['location'];
+        if (location == null || location.isEmpty) return null;
+        final resolved = uri.resolve(location);
+        return _safeGet(resolved.toString(), redirectCount: redirectCount + 1);
+      }
+
+      return response;
+    } on TimeoutException {
+      if (kDebugMode) debugPrint('RssService: timeout fetching $url');
+      return null;
+    } on SocketException {
+      if (kDebugMode) debugPrint('RssService: cannot reach $url');
+      return null;
+    } on FormatException {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<void> _processItem(String feedUrl, XmlElement item) async {
     final text = item.innerText;
     final candidates = candidateLinks(item, text);
-    await _processCandidates(feed, candidates, text);
+    await _processCandidates(feedUrl, candidates, text);
   }
 
-  Future<void> _processSection(RssFeed feed, String section) async {
+  Future<void> _processSection(String feedUrl, String section) async {
     final candidates = candidateLinks(null, section);
-    await _processCandidates(feed, candidates, section);
+    await _processCandidates(feedUrl, candidates, section);
   }
 
   Future<void> _processCandidates(
-    RssFeed feed,
+    String feedUrl,
     List<String> candidates,
     String contextText,
   ) async {
     for (final link in candidates) {
       if (_seenLinks.contains(link)) continue;
 
-      // Apply keyword filter per item/section
-      if (feed.keyword.isNotEmpty &&
-          !contextText.toLowerCase().contains(feed.keyword.toLowerCase())) {
-        continue;
+      // Apply rules to determine if this link should be added
+      bool shouldAdd = false;
+      RssRule? matchingRule;
+
+      for (final rule in _rules) {
+        if (!rule.enabled) continue;
+        if (!rule.feedUrls.contains(feedUrl)) continue;
+
+        if (_matchesRule(rule, contextText, link)) {
+          shouldAdd = true;
+          matchingRule = rule;
+          break; // First matching rule wins (sorted by priority)
+        }
       }
+
+      // Fallback to legacy feed-based filtering
+      if (!shouldAdd) {
+        try {
+          final feed = _feeds.firstWhere((f) => f.url == feedUrl);
+          if (feed.enabled) {
+            if (feed.keyword.isEmpty ||
+                contextText.toLowerCase().contains(feed.keyword.toLowerCase())) {
+              shouldAdd = true;
+            }
+          }
+        } catch (_) {
+          // Feed not found, skip
+        }
+      }
+
+      if (!shouldAdd) continue;
 
       _seenLinks.add(link);
 
+      // Track episode if present
+      final episodeInfo = RssEpisodeParser.parse(contextText);
+      if (episodeInfo != null) {
+        _episodeHistory.add(episodeInfo.key);
+      }
+
       try {
+        if (!await IpAddressScope.isPubliclyRoutableLink(link)) {
+          if (kDebugMode) {
+            debugPrint('RssService: rejected private/internal link $link');
+          }
+          continue;
+        }
         if (!(await QuotaService.instance.canAddTorrent())) {
           if (kDebugMode) {
             debugPrint('RssService: quota exceeded, skipping $link');
@@ -286,11 +469,83 @@ class RssService {
         // filename argument.
         await engine.addTorrent(link, null, null);
         if (kDebugMode) debugPrint('RssService: auto-added $link');
+
+        // Update last match time for the matching rule
+        if (matchingRule != null) {
+          final ruleName = matchingRule.name;
+          final ruleIndex = _rules.indexWhere((r) => r.name == ruleName);
+          if (ruleIndex >= 0) {
+            _rules[ruleIndex] = _rules[ruleIndex].copyWith(lastMatch: DateTime.now());
+            await _saveRules();
+          }
+        }
       } catch (e) {
         if (kDebugMode) debugPrint('RssService: failed to add $link: $e');
         // Retain link in _seenLinks so broken items do not loop infinitely
       }
     }
+  }
+
+  bool _matchesRule(RssRule rule, String contextText, String link) {
+    final lowerText = contextText.toLowerCase();
+
+    // Must contain filters
+    if (rule.mustContain.isNotEmpty) {
+      final mustContainTerms = rule.mustContain.split(RegExp(r'\s+'));
+      for (final term in mustContainTerms) {
+        if (term.isEmpty) continue;
+        if (rule.useRegex) {
+          try {
+            if (!RegExp(term, caseSensitive: false).hasMatch(contextText)) {
+              return false;
+            }
+          } catch (e) {
+            // Invalid regex, treat as literal
+            if (!lowerText.contains(term.toLowerCase())) {
+              return false;
+            }
+          }
+        } else {
+          if (!lowerText.contains(term.toLowerCase())) {
+            return false;
+          }
+        }
+      }
+    }
+
+    // Must not contain filters
+    if (rule.mustNotContain.isNotEmpty) {
+      final mustNotContainTerms = rule.mustNotContain.split(RegExp(r'\s+'));
+      for (final term in mustNotContainTerms) {
+        if (term.isEmpty) continue;
+        if (rule.useRegex) {
+          try {
+            if (RegExp(term, caseSensitive: false).hasMatch(contextText)) {
+              return false;
+            }
+          } catch (e) {
+            // Invalid regex, treat as literal
+            if (lowerText.contains(term.toLowerCase())) {
+              return false;
+            }
+          }
+        } else {
+          if (lowerText.contains(term.toLowerCase())) {
+            return false;
+          }
+        }
+      }
+    }
+
+    // Episode history check
+    final episodeInfo = RssEpisodeParser.parse(contextText);
+    if (episodeInfo != null) {
+      if (_episodeHistory.contains(episodeInfo.key)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /// Extracts magnet links and .torrent URLs from the given [text] and from
@@ -343,9 +598,11 @@ class RssService {
     if (trimmed.toLowerCase().startsWith('magnet:')) return true;
     try {
       final uri = Uri.parse(trimmed);
+      if (uri.host.isEmpty) return false;
+      if (!(uri.isScheme('http') || uri.isScheme('https'))) return false;
       return uri.path.toLowerCase().endsWith('.torrent');
     } catch (_) {
-      return trimmed.toLowerCase().endsWith('.torrent');
+      return false;
     }
   }
 }

@@ -19,6 +19,8 @@ class SessionGetResponseArguments {
   final String? downloadDir;
   final bool? downloadQueueEnabled;
   final int? downloadQueueSize;
+  final bool? uploadQueueEnabled;
+  final int? uploadQueueSize;
   final int? peerPort;
   final bool? speedLimitDownEnabled;
   final bool? speedLimitUpEnabled;
@@ -50,10 +52,16 @@ class SessionGetResponseArguments {
   final int? altSpeedTimeEnd;
   final int? altSpeedTimeDay;
 
+  // Bandwidth options
+  final bool? sessionSpeedLimitLan;
+  final bool? sessionSpeedLimitOverhead;
+
   SessionGetResponseArguments.fromJson(Map<String, dynamic> json)
       : downloadDir = _cast<String>(json['download-dir']),
         downloadQueueEnabled = _cast<bool>(json['download-queue-enabled']),
         downloadQueueSize = _cast<num>(json['download-queue-size'])?.toInt(),
+        uploadQueueEnabled = _cast<bool>(json['upload-queue-enabled']),
+        uploadQueueSize = _cast<num>(json['upload-queue-size'])?.toInt(),
         peerPort = _cast<num>(json['peer-port'])?.toInt(),
         speedLimitDownEnabled = _cast<bool>(json['speed-limit-down-enabled']),
         speedLimitUpEnabled = _cast<bool>(json['speed-limit-up-enabled']),
@@ -78,5 +86,7 @@ class SessionGetResponseArguments {
         altSpeedTimeEnabled = _cast<bool>(json['alt-speed-time-enabled']),
         altSpeedTimeBegin = _cast<num>(json['alt-speed-time-begin'])?.toInt(),
         altSpeedTimeEnd = _cast<num>(json['alt-speed-time-end'])?.toInt(),
-        altSpeedTimeDay = _cast<num>(json['alt-speed-time-day'])?.toInt();
+        altSpeedTimeDay = _cast<num>(json['alt-speed-time-day'])?.toInt(),
+        sessionSpeedLimitLan = _cast<bool>(json['session-speed-limit-lan']),
+        sessionSpeedLimitOverhead = _cast<bool>(json['session-speed-limit-overhead']);
 }
