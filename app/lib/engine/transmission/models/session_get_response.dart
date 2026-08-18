@@ -88,5 +88,6 @@ class SessionGetResponseArguments {
         altSpeedTimeEnd = _cast<num>(json['alt-speed-time-end'])?.toInt(),
         altSpeedTimeDay = _cast<num>(json['alt-speed-time-day'])?.toInt(),
         sessionSpeedLimitLan = _cast<bool>(json['session-speed-limit-lan']),
-        sessionSpeedLimitOverhead = _cast<bool>(json['session-speed-limit-overhead']);
+        sessionSpeedLimitOverhead =
+            _cast<bool>(json['session-speed-limit-overhead']);
 }

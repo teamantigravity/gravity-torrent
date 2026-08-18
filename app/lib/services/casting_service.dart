@@ -62,9 +62,8 @@ class CastingService extends ChangeNotifier {
   bool get isPaused => _isPaused;
   bool get isDiscovering => _isDiscovering;
   bool get autoDiscoveryEnabled => _autoDiscoveryEnabled;
-  List<CastDevice> get favoriteDevices => _devices
-      .where((d) => _favoriteDeviceIds.contains(d.id))
-      .toList();
+  List<CastDevice> get favoriteDevices =>
+      _devices.where((d) => _favoriteDeviceIds.contains(d.id)).toList();
 
   /// Human-readable reason the last cast attempt failed, or `null` on success.
   String? get lastError => _lastError;
@@ -403,7 +402,8 @@ class CastingService extends ChangeNotifier {
 
   Future<void> _loadSettings() async {
     try {
-      final raw = await SharedPrefsStorage.getString('gravity_torrent_casting_settings');
+      final raw = await SharedPrefsStorage.getString(
+          'gravity_torrent_casting_settings');
       if (raw != null && raw.isNotEmpty) {
         final decoded = jsonDecode(raw) as Map<String, dynamic>;
         _autoDiscoveryEnabled = decoded['autoDiscovery'] as bool? ?? true;
@@ -430,7 +430,8 @@ class CastingService extends ChangeNotifier {
 
   Future<void> _loadFavorites() async {
     try {
-      final raw = await SharedPrefsStorage.getString('gravity_torrent_casting_favorites');
+      final raw = await SharedPrefsStorage.getString(
+          'gravity_torrent_casting_favorites');
       if (raw != null && raw.isNotEmpty) {
         final list = jsonDecode(raw) as List<dynamic>;
         _favoriteDeviceIds.addAll(list.map((e) => e.toString()));

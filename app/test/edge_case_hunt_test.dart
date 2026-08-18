@@ -43,12 +43,14 @@ void main() {
         isFalse,
       );
       expect(
-        await BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
+        await BlocklistService.isValidBlocklistUrl(
+            'http://localhost./list.txt'),
         isFalse,
         reason: 'localhost with trailing dot is still localhost',
       );
       expect(
-        await BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
+        await BlocklistService.isValidBlocklistUrl(
+            'http://169.254.1.1/list.txt'),
         isFalse,
       );
       expect(

@@ -141,7 +141,8 @@ class StreamingServer {
       await torrent.setSequentialDownloadFromPiece(-1);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('streaming_server: failed to disable sequential download: $e');
+        debugPrint(
+            'streaming_server: failed to disable sequential download: $e');
       }
     }
   }
@@ -524,7 +525,8 @@ class StreamingServer {
     priorityPieces.sort();
 
     if (kDebugMode) {
-      debugPrint('streaming_server: enabling preview mode with priority pieces: $priorityPieces');
+      debugPrint(
+          'streaming_server: enabling preview mode with priority pieces: $priorityPieces');
     }
 
     try {

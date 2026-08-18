@@ -247,8 +247,8 @@ class SearchService {
         engine.searchPath.replaceAll('{query}', Uri.encodeComponent(query));
 
     final response = await http.get(Uri.parse(url)).timeout(
-      const Duration(seconds: 15),
-    );
+          const Duration(seconds: 15),
+        );
 
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}');

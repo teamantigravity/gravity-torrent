@@ -114,7 +114,8 @@ class RssService {
         _seenLinks = {};
       }
     }
-    final rawEpisodeHistory = await SharedPrefsStorage.getString(_episodeHistoryKey);
+    final rawEpisodeHistory =
+        await SharedPrefsStorage.getString(_episodeHistoryKey);
     if (rawEpisodeHistory != null && rawEpisodeHistory.isNotEmpty) {
       try {
         final list = jsonDecode(rawEpisodeHistory) as List<dynamic>;
@@ -360,9 +361,8 @@ class RssService {
       final request = http.Request('GET', uri)
         ..followRedirects = false
         ..maxRedirects = 0;
-      final streamed = await client
-          .send(request)
-          .timeout(const Duration(seconds: 15));
+      final streamed =
+          await client.send(request).timeout(const Duration(seconds: 15));
       final response = await http.Response.fromStream(streamed);
 
       if (response.statusCode >= 300 && response.statusCode < 400) {
@@ -427,7 +427,9 @@ class RssService {
           final feed = _feeds.firstWhere((f) => f.url == feedUrl);
           if (feed.enabled) {
             if (feed.keyword.isEmpty ||
-                contextText.toLowerCase().contains(feed.keyword.toLowerCase())) {
+                contextText
+                    .toLowerCase()
+                    .contains(feed.keyword.toLowerCase())) {
               shouldAdd = true;
             }
           }
@@ -475,7 +477,8 @@ class RssService {
           final ruleName = matchingRule.name;
           final ruleIndex = _rules.indexWhere((r) => r.name == ruleName);
           if (ruleIndex >= 0) {
-            _rules[ruleIndex] = _rules[ruleIndex].copyWith(lastMatch: DateTime.now());
+            _rules[ruleIndex] =
+                _rules[ruleIndex].copyWith(lastMatch: DateTime.now());
             await _saveRules();
           }
         }

@@ -83,7 +83,8 @@ class SessionGetRequestArguments {
           SessionField.idleSeedingLimitEnabled => 'idle-seeding-limit-enabled',
           SessionField.idleSeedingLimit => 'idle-seeding-limit',
           SessionField.ignoreLimitsOnLAN => 'session-speed-limit-lan',
-          SessionField.includeOverheadInLimits => 'session-speed-limit-overhead',
+          SessionField.includeOverheadInLimits =>
+            'session-speed-limit-overhead',
         };
       }).toList(),
     };

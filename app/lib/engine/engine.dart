@@ -100,7 +100,8 @@ abstract class Engine {
   Future<void> setTorrentQueuePosition(int id, int position);
 
   // Set priority for specific pieces (for preview mode)
-  Future<void> setTorrentPriorityPieces(int id, List<int> pieceIndices, int priority);
+  Future<void> setTorrentPriorityPieces(
+      int id, List<int> pieceIndices, int priority);
 
   // Update peer blocklist from session URL
   Future<int> updateBlocklist();

@@ -116,7 +116,8 @@ class RssEpisodeParser {
     if (seasonEpMatch != null) {
       final rangeSeason = int.tryParse(seasonEpMatch.group(1)!);
       final rangeStart = int.tryParse(seasonEpMatch.group(2)!);
-      final rangeEnd = int.tryParse(seasonEpMatch.group(3) ?? rangeStart.toString());
+      final rangeEnd =
+          int.tryParse(seasonEpMatch.group(3) ?? rangeStart.toString());
 
       if (info.season == rangeSeason &&
           info.episode != null &&
@@ -144,7 +145,8 @@ class RssEpisodeParser {
 
         if (season != null && start != null && end != null) {
           for (var ep = start; ep <= end; ep++) {
-            episodes.add('S${season.toString().padLeft(2, '0')}E${ep.toString().padLeft(2, '0')}');
+            episodes.add(
+                'S${season.toString().padLeft(2, '0')}E${ep.toString().padLeft(2, '0')}');
           }
         }
       }

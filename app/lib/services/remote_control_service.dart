@@ -119,7 +119,8 @@ class RemoteControlSettings {
       requireAuth: requireAuth ?? this.requireAuth,
       allowLocalNetwork: allowLocalNetwork ?? this.allowLocalNetwork,
       useApiKeys: useApiKeys ?? this.useApiKeys,
-      sessionTimeoutMinutes: sessionTimeoutMinutes ?? this.sessionTimeoutMinutes,
+      sessionTimeoutMinutes:
+          sessionTimeoutMinutes ?? this.sessionTimeoutMinutes,
     );
   }
 }
@@ -316,7 +317,8 @@ class RemoteControlService {
   /// IPv6 unique-local (fc00::/7), link-local (fe80::/10), CGNAT
   /// (100.64.0.0/10), and loopback.
   @visibleForTesting
-  bool isPrivateIp(InternetAddress address) => IpAddressScope.isPrivate(address);
+  bool isPrivateIp(InternetAddress address) =>
+      IpAddressScope.isPrivate(address);
 
   Future<String> _localIp() async {
     try {
@@ -562,7 +564,8 @@ class RemoteControlService {
   /// The path component is checked so that private-tracker query parameters
   /// such as `?passkey=...` are preserved and accepted. Hosts are validated
   /// against the same public-address rules used for blocklists and RSS feeds.
-  Future<bool> _isValidTorrentLink(String link) => IpAddressScope.isPubliclyRoutableLink(link);
+  Future<bool> _isValidTorrentLink(String link) =>
+      IpAddressScope.isPubliclyRoutableLink(link);
 
   Response _jsonResponse(Map<String, dynamic> body) {
     return Response.ok(
