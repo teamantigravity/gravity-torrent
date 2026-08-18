@@ -537,17 +537,6 @@ class BackupService {
     return result;
   }
 
-  static bool _isFloatKey(String key) {
-    final lower = key.toLowerCase();
-    return lower.contains('ratio') ||
-        lower.contains('speed') ||
-        lower.contains('percent') ||
-        lower.contains('float') ||
-        lower.contains('double') ||
-        lower.contains('multiplier') ||
-        lower.contains('threshold');
-  }
-
   static String _currentPlatform() {
     if (kIsWeb) return 'web';
     if (!kIsWeb && Platform.isAndroid) return 'android';

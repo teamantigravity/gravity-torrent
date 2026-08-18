@@ -40,22 +40,22 @@ void main() {
 
     test(
       'isValidBlocklistUrl rejects localhost variants and private ranges',
-      () {
+      () async {
         expect(
-          BlocklistService.isValidBlocklistUrl('http://127.0.0.1/list.txt'),
+          await BlocklistService.isValidBlocklistUrl('http://127.0.0.1/list.txt'),
           isFalse,
         );
         expect(
-          BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
+          await BlocklistService.isValidBlocklistUrl('http://localhost./list.txt'),
           isFalse,
           reason: 'localhost with trailing dot is still localhost',
         );
         expect(
-          BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
+          await BlocklistService.isValidBlocklistUrl('http://169.254.1.1/list.txt'),
           isFalse,
         );
         expect(
-          BlocklistService.isValidBlocklistUrl(
+          await BlocklistService.isValidBlocklistUrl(
             'http://[::ffff:127.0.0.1]/list.txt',
           ),
           isFalse,
