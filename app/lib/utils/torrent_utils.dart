@@ -88,26 +88,22 @@ Future<void> waitForPiecesList({
   try {
     if (onCancelled != null && onCancelled()) {
       completer.completeError(CancellationException());
-      return completer.future;
-    }
-    final t = await engine.fetchTorrent(torrent.id);
-    if (onCancelled != null && onCancelled()) {
-      completer.completeError(CancellationException());
-      return completer.future;
-    }
-    if (t.hasLoadedPieces(neededPieces)) {
-      completer.complete();
-      return completer.future;
+    } else {
+      final t = await engine.fetchTorrent(torrent.id);
+      if (onCancelled != null && onCancelled()) {
+        completer.completeError(CancellationException());
+      } else if (t.hasLoadedPieces(neededPieces)) {
+        completer.complete();
+      } else {
+        _waiters.add(
+          _TorrentPieceWaiter(torrent.id, neededPieces, completer, onCancelled),
+        );
+        _startSharedTimer();
+      }
     }
   } catch (e) {
     completer.completeError(e);
-    return completer.future;
   }
-
-  _waiters.add(
-    _TorrentPieceWaiter(torrent.id, neededPieces, completer, onCancelled),
-  );
-  _startSharedTimer();
 
   return completer.future;
 }

@@ -306,7 +306,7 @@ class RssService {
       final uri = Uri.parse(url);
       if (!(uri.isScheme('http') || uri.isScheme('https'))) return false;
       if (uri.host.isEmpty) return false;
-      return IpAddressScope.isPubliclyRoutableHost(uri.host);
+      return await IpAddressScope.isPubliclyRoutableHost(uri.host);
     } catch (_) {
       return false;
     }
@@ -368,7 +368,10 @@ class RssService {
         final location = response.headers['location'];
         if (location == null || location.isEmpty) return null;
         final resolved = uri.resolve(location);
-        return _safeGet(resolved.toString(), redirectCount: redirectCount + 1);
+        return await _safeGet(
+          resolved.toString(),
+          redirectCount: redirectCount + 1,
+        );
       }
 
       return response;
