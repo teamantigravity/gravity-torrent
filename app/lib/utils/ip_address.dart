@@ -85,8 +85,8 @@ class IpAddressScope {
     if (lower.endsWith('.local')) return false;
     try {
       final resolver = lookup ?? InternetAddress.lookup;
-      final addresses = await resolver(_stripTrailingDot(host))
-          .timeout(timeout);
+      final addresses =
+          await resolver(_stripTrailingDot(host)).timeout(timeout);
       if (addresses.isEmpty) return false;
       return addresses.every(isPubliclyRoutable);
     } on TimeoutException {
@@ -124,8 +124,8 @@ class IpAddressScope {
     if (isPrivateHostSync(host)) return true;
     try {
       final resolver = lookup ?? InternetAddress.lookup;
-      final addresses = await resolver(_stripTrailingDot(host))
-          .timeout(timeout);
+      final addresses =
+          await resolver(_stripTrailingDot(host)).timeout(timeout);
       if (addresses.isEmpty) return false;
       return addresses.any(isPrivate) && !addresses.any(isPubliclyRoutable);
     } on TimeoutException {

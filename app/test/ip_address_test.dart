@@ -84,10 +84,7 @@ void main() {
         IpAddressScope.isPubliclyRoutable(InternetAddress('203.0.113.1')),
         isFalse,
       );
-      expect(
-        IpAddressScope.isPubliclyRoutable(InternetAddress('::')),
-        isFalse,
-      );
+      expect(IpAddressScope.isPubliclyRoutable(InternetAddress('::')), isFalse);
       expect(
         IpAddressScope.isPubliclyRoutable(InternetAddress('2001:db8::1')),
         isFalse,
@@ -101,14 +98,8 @@ void main() {
 
   group('IpAddressScope.isPubliclyRoutableHost', () {
     test('rejects literal private and malformed IPv4 addresses', () async {
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('127.0.0.1'),
-        isFalse,
-      );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('10.0.0.1'),
-        isFalse,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('127.0.0.1'), isFalse);
+      expect(await IpAddressScope.isPubliclyRoutableHost('10.0.0.1'), isFalse);
       expect(
         await IpAddressScope.isPubliclyRoutableHost('192.168.1.1'),
         isFalse,
@@ -125,10 +116,7 @@ void main() {
         await IpAddressScope.isPubliclyRoutableHost('169.254.1.1'),
         isFalse,
       );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('0.0.0.0'),
-        isFalse,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('0.0.0.0'), isFalse);
       expect(
         await IpAddressScope.isPubliclyRoutableHost('255.255.255.255'),
         isFalse,
@@ -138,10 +126,7 @@ void main() {
     test('rejects malformed IPv4 shorthand and encodings', () async {
       // These forms are understood by gethostbyname/inet_aton but rejected by
       // Dart's strict parser; we must not let them through either.
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('127.1'),
-        isFalse,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('127.1'), isFalse);
       expect(
         await IpAddressScope.isPubliclyRoutableHost('0x7f.0.0.1'),
         isFalse,
@@ -150,17 +135,11 @@ void main() {
         await IpAddressScope.isPubliclyRoutableHost('0127.0.0.1'),
         isFalse,
       );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('256.0.0.1'),
-        isFalse,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('256.0.0.1'), isFalse);
     });
 
     test('rejects localhost and .local names', () async {
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('localhost'),
-        isFalse,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('localhost'), isFalse);
       expect(
         await IpAddressScope.isPubliclyRoutableHost('localhost.'),
         isFalse,
@@ -176,26 +155,11 @@ void main() {
     });
 
     test('rejects IPv6 private/reserved literals', () async {
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('::1'),
-        isFalse,
-      );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('::'),
-        isFalse,
-      );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('fe80::1'),
-        isFalse,
-      );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('fc00::1'),
-        isFalse,
-      );
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('ff02::1'),
-        isFalse,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('::1'), isFalse);
+      expect(await IpAddressScope.isPubliclyRoutableHost('::'), isFalse);
+      expect(await IpAddressScope.isPubliclyRoutableHost('fe80::1'), isFalse);
+      expect(await IpAddressScope.isPubliclyRoutableHost('fc00::1'), isFalse);
+      expect(await IpAddressScope.isPubliclyRoutableHost('ff02::1'), isFalse);
       expect(
         await IpAddressScope.isPubliclyRoutableHost('2001:db8::1'),
         isFalse,
@@ -223,10 +187,7 @@ void main() {
         isFalse,
       );
       expect(
-        await IpAddressScope.isPubliclyRoutableHost(
-          '127.1',
-          lookup: _resolve,
-        ),
+        await IpAddressScope.isPubliclyRoutableHost('127.1', lookup: _resolve),
         isFalse,
       );
     });
@@ -242,10 +203,7 @@ void main() {
     });
 
     test('accepts public IP literals', () async {
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost('8.8.8.8'),
-        isTrue,
-      );
+      expect(await IpAddressScope.isPubliclyRoutableHost('8.8.8.8'), isTrue);
       expect(
         await IpAddressScope.isPubliclyRoutableHost('2001:4860:4860::8888'),
         isTrue,
@@ -255,7 +213,6 @@ void main() {
         isTrue,
       );
     });
-
 
     test('rejects hostnames with no verified DNS addresses', () async {
       expect(
@@ -274,28 +231,34 @@ void main() {
       );
     });
 
-    test('rejects a hostname that resolves to both public and private IPs', () async {
-      expect(
-        await IpAddressScope.isPubliclyRoutableHost(
-          'mixed.example',
-          lookup: (_) async => [
-            InternetAddress('8.8.8.8'),
-            InternetAddress('127.0.0.1'),
-          ],
-        ),
-        isFalse,
-      );
-    });
+    test(
+      'rejects a hostname that resolves to both public and private IPs',
+      () async {
+        expect(
+          await IpAddressScope.isPubliclyRoutableHost(
+            'mixed.example',
+            lookup: (_) async => [
+              InternetAddress('8.8.8.8'),
+              InternetAddress('127.0.0.1'),
+            ],
+          ),
+          isFalse,
+        );
+      },
+    );
 
-    test('rejects oversized torrent links before parsing or resolving', () async {
-      final longHash = List.filled(5000, 'a').join();
-      expect(
-        await IpAddressScope.isPubliclyRoutableLink(
-          'magnet:?xt=urn:btih:$longHash',
-        ),
-        isFalse,
-      );
-    });
+    test(
+      'rejects oversized torrent links before parsing or resolving',
+      () async {
+        final longHash = List.filled(5000, 'a').join();
+        expect(
+          await IpAddressScope.isPubliclyRoutableLink(
+            'magnet:?xt=urn:btih:$longHash',
+          ),
+          isFalse,
+        );
+      },
+    );
   });
 
   group('IpAddressScope.isPubliclyRoutableLink', () {

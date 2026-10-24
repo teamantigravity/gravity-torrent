@@ -25,16 +25,16 @@ class RssFeed {
   const RssFeed({required this.url, this.keyword = '', this.enabled = true});
 
   Map<String, dynamic> toJson() => {
-    'url': url,
-    'keyword': keyword,
-    'enabled': enabled,
-  };
+        'url': url,
+        'keyword': keyword,
+        'enabled': enabled,
+      };
 
   factory RssFeed.fromJson(Map<String, dynamic> json) => RssFeed(
-    url: (json['url'] as String?) ?? '',
-    keyword: (json['keyword'] as String?) ?? '',
-    enabled: (json['enabled'] as bool?) ?? true,
-  );
+        url: (json['url'] as String?) ?? '',
+        keyword: (json['keyword'] as String?) ?? '',
+        enabled: (json['enabled'] as bool?) ?? true,
+      );
 }
 
 /// RSS auto-download service.
@@ -378,9 +378,8 @@ class RssService {
       final request = http.Request('GET', uri)
         ..followRedirects = false
         ..maxRedirects = 0;
-      final streamed = await client
-          .send(request)
-          .timeout(const Duration(seconds: 15));
+      final streamed =
+          await client.send(request).timeout(const Duration(seconds: 15));
       final body = BytesBuilder(copy: false);
       final deadline = DateTime.now().add(const Duration(seconds: 15));
       await for (final chunk in streamed.stream.timeout(
@@ -480,8 +479,8 @@ class RssService {
           if (feed.enabled) {
             if (feed.keyword.isEmpty ||
                 contextText.toLowerCase().contains(
-                  feed.keyword.toLowerCase(),
-                )) {
+                      feed.keyword.toLowerCase(),
+                    )) {
               shouldAdd = true;
             }
           }

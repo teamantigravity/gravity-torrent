@@ -248,8 +248,7 @@ class RemoteControlService {
   Future<void> updateSettings(RemoteControlSettings newSettings) async {
     if (_disposed) return;
     final previousSettings = _settings;
-    final restartServer =
-        _server != null &&
+    final restartServer = _server != null &&
         previousSettings.allowLocalNetwork != newSettings.allowLocalNetwork;
     _settings = newSettings;
     try {
