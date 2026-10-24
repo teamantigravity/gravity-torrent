@@ -30,6 +30,8 @@ enum AddressScope {
 class IpAddressScope {
   IpAddressScope._();
 
+  static const _maxTorrentLinkLength = 4096;
+
   /// Returns the scope of [address].
   static AddressScope classify(InternetAddress address) {
     final bytes = address.rawAddress;
@@ -68,8 +70,8 @@ class IpAddressScope {
     return true;
   }
 
-  /// Validates [host] by resolving it and ensuring every returned address is
-  /// publicly routable.
+  /// Validates [host] by resolving it and requiring at least one result, with
+  /// every returned address publicly routable.
   static Future<bool> isPubliclyRoutableHost(
     String host, {
     Future<List<InternetAddress>> Function(String)? lookup,
@@ -83,16 +85,16 @@ class IpAddressScope {
     if (lower.endsWith('.local')) return false;
     try {
       final resolver = lookup ?? InternetAddress.lookup;
-      final addresses =
-          await resolver(_stripTrailingDot(host)).timeout(timeout);
-      if (addresses.isEmpty) return true;
+      final addresses = await resolver(_stripTrailingDot(host))
+          .timeout(timeout);
+      if (addresses.isEmpty) return false;
       return addresses.every(isPubliclyRoutable);
     } on TimeoutException {
       return false;
     } on SocketException {
-      // Offline or unresolvable. Defer to fetch time rather than blocking a
-      // legitimate URL when DNS is unavailable.
-      return true;
+      // Without a DNS result there is no safe address to authorize. The caller
+      // can retry after connectivity is restored.
+      return false;
     }
   }
 
@@ -122,8 +124,8 @@ class IpAddressScope {
     if (isPrivateHostSync(host)) return true;
     try {
       final resolver = lookup ?? InternetAddress.lookup;
-      final addresses =
-          await resolver(_stripTrailingDot(host)).timeout(timeout);
+      final addresses = await resolver(_stripTrailingDot(host))
+          .timeout(timeout);
       if (addresses.isEmpty) return false;
       return addresses.any(isPrivate) && !addresses.any(isPubliclyRoutable);
     } on TimeoutException {
@@ -141,7 +143,7 @@ class IpAddressScope {
     Duration timeout = const Duration(seconds: 3),
   }) async {
     final trimmed = link.trim();
-    if (trimmed.isEmpty) return false;
+    if (trimmed.isEmpty || trimmed.length > _maxTorrentLinkLength) return false;
     final lower = trimmed.toLowerCase();
 
     if (lower.startsWith('magnet:')) {

@@ -255,6 +255,47 @@ void main() {
         isTrue,
       );
     });
+
+
+    test('rejects hostnames with no verified DNS addresses', () async {
+      expect(
+        await IpAddressScope.isPubliclyRoutableHost(
+          'unresolved.example',
+          lookup: (_) async => [],
+        ),
+        isFalse,
+      );
+      expect(
+        await IpAddressScope.isPubliclyRoutableHost(
+          'offline.example',
+          lookup: (_) async => throw const SocketException('offline'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects a hostname that resolves to both public and private IPs', () async {
+      expect(
+        await IpAddressScope.isPubliclyRoutableHost(
+          'mixed.example',
+          lookup: (_) async => [
+            InternetAddress('8.8.8.8'),
+            InternetAddress('127.0.0.1'),
+          ],
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects oversized torrent links before parsing or resolving', () async {
+      final longHash = List.filled(5000, 'a').join();
+      expect(
+        await IpAddressScope.isPubliclyRoutableLink(
+          'magnet:?xt=urn:btih:$longHash',
+        ),
+        isFalse,
+      );
+    });
   });
 
   group('IpAddressScope.isPubliclyRoutableLink', () {

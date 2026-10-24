@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:gravity_torrent/services/ads/ad_frequency_gate.dart';
 import 'package:gravity_torrent/services/ads/ad_ids.dart';
 import 'package:gravity_torrent/services/ads/ad_service.dart';
 import 'package:gravity_torrent/services/remote_config/remote_config_service.dart';
@@ -24,6 +25,13 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
   Timer? _interstitialRetryTimer;
 
   static const _adFreeKey = 'gravity_torrent_ad_free';
+  static const _lastFullScreenAdKey = 'gravity_torrent_last_full_screen_ad_at';
+  static const _minimumFullScreenAdInterval = Duration(hours: 4);
+
+  final _fullScreenAdGate = FullScreenAdFrequencyGate(
+    minimumInterval: _minimumFullScreenAdInterval,
+  );
+  SharedPreferences? _preferences;
 
   bool get _platformSupported =>
       defaultTargetPlatform == TargetPlatform.android ||
@@ -64,6 +72,17 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
       if (_disposed) return;
       final prefs = await SharedPreferences.getInstance();
       if (_disposed) return;
+      _preferences = prefs;
+      final lastFullScreenAdAt = prefs.getInt(_lastFullScreenAdKey);
+      if (lastFullScreenAdAt != null) {
+        try {
+          _fullScreenAdGate.restore(
+            DateTime.fromMillisecondsSinceEpoch(lastFullScreenAdAt),
+          );
+        } on RangeError {
+          // Ignore a corrupt timestamp and start with the normal ad policy.
+        }
+      }
       _adFreeNotifier.value = prefs.getBool(_adFreeKey) ?? false;
       if (_adFreeNotifier.value) {
         _initialized = true;
@@ -116,9 +135,16 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   void showInterstitialIfReady() {
-    if (!canShowAds || _interstitial == null) return;
+    if (!canShowAds ||
+        _interstitial == null ||
+        _isShowingAd ||
+        !_fullScreenAdGate.canShow) {
+      return;
+    }
+    _isShowingAd = true;
     unawaited(
       _interstitial!.show().catchError((Object e) {
+        _isShowingAd = false;
         if (kDebugMode) {
           debugPrint('AdServiceMobile interstitial show error: $e');
         }
@@ -128,7 +154,12 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
 
   @override
   void showAppOpenAdIfReady() {
-    if (!canShowAds || _appOpenAd == null || _isShowingAd) return;
+    if (!canShowAds ||
+        _appOpenAd == null ||
+        _isShowingAd ||
+        !_fullScreenAdGate.canShow) {
+      return;
+    }
     _firstAppOpenShown = true;
     _isShowingAd = true;
     unawaited(
@@ -162,6 +193,7 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdShowedFullScreenContent: (ad) {
               _isShowingAd = true;
+              _recordFullScreenAdShown();
             },
             onAdDismissedFullScreenContent: (ad) {
               _isShowingAd = false;
@@ -214,12 +246,18 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
           _interstitial = ad;
           _interstitialRetries = 0;
           ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (ad) {
+              _isShowingAd = true;
+              _recordFullScreenAdShown();
+            },
             onAdDismissedFullScreenContent: (ad) {
+              _isShowingAd = false;
               ad.dispose();
               _interstitial = null;
               _preloadInterstitial();
             },
             onAdFailedToShowFullScreenContent: (ad, _) {
+              _isShowingAd = false;
               ad.dispose();
               _interstitial = null;
               _preloadInterstitial();
@@ -239,6 +277,24 @@ class AdServiceMobile with WidgetsBindingObserver implements AdService {
         },
       ),
     );
+  }
+
+  void _recordFullScreenAdShown() {
+    final shownAt = _fullScreenAdGate.markShown();
+    unawaited(_persistFullScreenAdTime(shownAt));
+  }
+
+  Future<void> _persistFullScreenAdTime(DateTime shownAt) async {
+    try {
+      await _preferences?.setInt(
+        _lastFullScreenAdKey,
+        shownAt.millisecondsSinceEpoch,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AdServiceMobile failed to persist ad frequency: $e');
+      }
+    }
   }
 
   @override

@@ -1,5 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gravity_torrent/services/blocklist_service.dart';
+
+Future<List<InternetAddress>> _publicLookup(String _) async => [
+  InternetAddress('8.8.8.8'),
+];
 
 void main() {
   group('BlocklistService.isValidBlocklistUrl', () {
@@ -11,6 +17,7 @@ void main() {
       expect(
         await BlocklistService.isValidBlocklistUrl(
           'https://example.com/blocklist.txt',
+          lookup: _publicLookup,
         ),
         isTrue,
       );

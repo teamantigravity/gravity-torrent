@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/services/quota_service.dart';
 import 'package:gravity_torrent/services/service_locator.dart';
+import 'package:gravity_torrent/storage/secure_storage.dart';
 import 'package:gravity_torrent/storage/shared_preferences.dart';
 import 'package:gravity_torrent/utils/ip_address.dart';
 import 'package:gravity_torrent/utils/secure_token.dart';
@@ -21,7 +23,6 @@ class ApiKey {
   final String name;
   final String key;
   final DateTime createdAt;
-  final DateTime? lastUsed;
   final bool enabled;
 
   ApiKey({
@@ -29,7 +30,6 @@ class ApiKey {
     required this.name,
     required this.key,
     required this.createdAt,
-    this.lastUsed,
     this.enabled = true,
   });
 
@@ -38,12 +38,7 @@ class ApiKey {
       id: json['id'] as String,
       name: json['name'] as String,
       key: json['key'] as String,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(
-        json['createdAt'] as int,
-      ),
-      lastUsed: json['lastUsed'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(json['lastUsed'] as int)
-          : null,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int),
       enabled: json['enabled'] as bool? ?? true,
     );
   }
@@ -54,7 +49,6 @@ class ApiKey {
       'name': name,
       'key': key,
       'createdAt': createdAt.millisecondsSinceEpoch,
-      'lastUsed': lastUsed?.millisecondsSinceEpoch,
       'enabled': enabled,
     };
   }
@@ -64,7 +58,6 @@ class ApiKey {
     String? name,
     String? key,
     DateTime? createdAt,
-    DateTime? lastUsed,
     bool? enabled,
   }) {
     return ApiKey(
@@ -72,55 +65,35 @@ class ApiKey {
       name: name ?? this.name,
       key: key ?? this.key,
       createdAt: createdAt ?? this.createdAt,
-      lastUsed: lastUsed ?? this.lastUsed,
       enabled: enabled ?? this.enabled,
     );
   }
 }
 
 class RemoteControlSettings {
-  final bool requireAuth;
   final bool allowLocalNetwork;
   final bool useApiKeys;
-  final int sessionTimeoutMinutes;
 
   const RemoteControlSettings({
-    this.requireAuth = true,
     this.allowLocalNetwork = true,
     this.useApiKeys = false,
-    this.sessionTimeoutMinutes = 60,
   });
 
   factory RemoteControlSettings.fromJson(Map<String, dynamic> json) {
     return RemoteControlSettings(
-      requireAuth: json['requireAuth'] as bool? ?? true,
       allowLocalNetwork: json['allowLocalNetwork'] as bool? ?? true,
       useApiKeys: json['useApiKeys'] as bool? ?? false,
-      sessionTimeoutMinutes: json['sessionTimeoutMinutes'] as int? ?? 60,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'requireAuth': requireAuth,
-      'allowLocalNetwork': allowLocalNetwork,
-      'useApiKeys': useApiKeys,
-      'sessionTimeoutMinutes': sessionTimeoutMinutes,
-    };
+    return {'allowLocalNetwork': allowLocalNetwork, 'useApiKeys': useApiKeys};
   }
 
-  RemoteControlSettings copyWith({
-    bool? requireAuth,
-    bool? allowLocalNetwork,
-    bool? useApiKeys,
-    int? sessionTimeoutMinutes,
-  }) {
+  RemoteControlSettings copyWith({bool? allowLocalNetwork, bool? useApiKeys}) {
     return RemoteControlSettings(
-      requireAuth: requireAuth ?? this.requireAuth,
       allowLocalNetwork: allowLocalNetwork ?? this.allowLocalNetwork,
       useApiKeys: useApiKeys ?? this.useApiKeys,
-      sessionTimeoutMinutes:
-          sessionTimeoutMinutes ?? this.sessionTimeoutMinutes,
     );
   }
 }
@@ -131,9 +104,11 @@ class RemoteControlService {
 
   static const _apiKeyStorageKey = 'gravity_torrent_api_keys';
   static const _settingsKey = 'gravity_torrent_remote_settings';
+  static const _maxRequestBodyBytes = 64 * 1024;
 
   HttpServer? _server;
   bool _starting = false;
+  int _startGeneration = 0;
   bool _disposed = false;
   String _token = '';
   String _localAddress = '';
@@ -152,24 +127,35 @@ class RemoteControlService {
   RemoteControlSettings get settings => _settings;
 
   Future<void> start({int port = 0}) async {
-    if (kIsWeb || _server != null || _starting) return;
-    await loadSettings();
-    await loadApiKeys();
+    if (kIsWeb || _server != null || _starting || _disposed) return;
     _starting = true;
+    final generation = ++_startGeneration;
     try {
+      await loadSettings();
+      await loadApiKeys();
+      if (_disposed || generation != _startGeneration) return;
+
       _token = _generateToken();
-      final ip = await _localIp();
-      if (_disposed || !_starting) return;
-      // Bind to the private/local address. If no private address is available,
-      // fall back to loopback so we never bind to a public interface.
-      final bindAddress =
-          InternetAddress.tryParse(ip) ?? InternetAddress.loopbackIPv4;
-      _server = await shelf_io.serve(_handler, bindAddress, port, shared: true);
-      _port = _server!.port;
+      final ip = _settings.allowLocalNetwork
+          ? await _localIp()
+          : InternetAddress.loopbackIPv4.address;
+      if (_disposed || generation != _startGeneration) return;
+      final candidate = await shelf_io.serve(
+        _handler,
+        bindAddressFor(ip, allowLocalNetwork: _settings.allowLocalNetwork),
+        port,
+        shared: true,
+      );
+      if (_disposed || generation != _startGeneration) {
+        await candidate.close(force: true);
+        return;
+      }
+      _server = candidate;
+      _port = candidate.port;
       _localAddress = 'http://${formatHostForUrl(ip)}:$_port';
       _qrPayload = jsonEncode({'url': _localAddress, 'token': _token});
     } finally {
-      _starting = false;
+      if (generation == _startGeneration) _starting = false;
     }
   }
 
@@ -186,8 +172,24 @@ class RemoteControlService {
     return sanitized;
   }
 
+  /// Restricts the listener to loopback when LAN access is disabled and
+  /// rejects non-private addresses even if the interface lookup is wrong.
+  @visibleForTesting
+  InternetAddress bindAddressFor(
+    String address, {
+    required bool allowLocalNetwork,
+  }) {
+    if (!allowLocalNetwork) return InternetAddress.loopbackIPv4;
+    final parsed = InternetAddress.tryParse(address);
+    if (parsed == null || !isPrivateIp(parsed)) {
+      return InternetAddress.loopbackIPv4;
+    }
+    return parsed;
+  }
+
   Future<void> stop() async {
     if (_disposed) return;
+    _startGeneration++;
     _starting = false;
     await _server?.close();
     _server = null;
@@ -239,17 +241,32 @@ class RemoteControlService {
       if (kDebugMode) {
         debugPrint('Failed to save remote control settings: $e\n$s');
       }
+      rethrow;
     }
   }
 
   Future<void> updateSettings(RemoteControlSettings newSettings) async {
+    if (_disposed) return;
+    final previousSettings = _settings;
+    final restartServer =
+        _server != null &&
+        previousSettings.allowLocalNetwork != newSettings.allowLocalNetwork;
     _settings = newSettings;
-    await saveSettings();
+    try {
+      await saveSettings();
+    } catch (_) {
+      _settings = previousSettings;
+      rethrow;
+    }
+    if (restartServer) {
+      await stop();
+      await start();
+    }
   }
 
   Future<void> loadApiKeys() async {
     try {
-      final raw = await SharedPrefsStorage.getString(_apiKeyStorageKey);
+      final raw = await SecureStorage.getString(_apiKeyStorageKey);
       if (raw != null && raw.isNotEmpty) {
         final list = jsonDecode(raw) as List<dynamic>;
         _apiKeys = list
@@ -266,20 +283,14 @@ class RemoteControlService {
   }
 
   Future<void> saveApiKeys() async {
-    try {
-      await SharedPrefsStorage.setString(
-        _apiKeyStorageKey,
-        jsonEncode(_apiKeys.map((k) => k.toJson()).toList()),
-      );
-    } catch (e, s) {
-      if (kDebugMode) {
-        debugPrint('Failed to save API keys: $e\n$s');
-      }
-    }
+    await SecureStorage.setString(
+      _apiKeyStorageKey,
+      jsonEncode(_apiKeys.map((k) => k.toJson()).toList()),
+    );
   }
 
   Future<ApiKey> createApiKey(String name) async {
-    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    final id = generateSecureRandomToken(length: 16);
     final key = generateSecureRandomToken();
     final apiKey = ApiKey(
       id: id,
@@ -288,28 +299,37 @@ class RemoteControlService {
       createdAt: DateTime.now(),
     );
     _apiKeys.add(apiKey);
-    await saveApiKeys();
+    try {
+      await saveApiKeys();
+    } catch (_) {
+      _apiKeys.remove(apiKey);
+      rethrow;
+    }
     return apiKey;
   }
 
   Future<void> deleteApiKey(String id) async {
+    final previousKeys = List<ApiKey>.of(_apiKeys);
     _apiKeys.removeWhere((k) => k.id == id);
-    await saveApiKeys();
+    try {
+      await saveApiKeys();
+    } catch (_) {
+      _apiKeys = previousKeys;
+      rethrow;
+    }
   }
 
   Future<void> enableApiKey(String id, bool enabled) async {
     final index = _apiKeys.indexWhere((k) => k.id == id);
     if (index >= 0) {
+      final previousKey = _apiKeys[index];
       _apiKeys[index] = _apiKeys[index].copyWith(enabled: enabled);
-      await saveApiKeys();
-    }
-  }
-
-  Future<void> updateApiKeyLastUsed(String id) async {
-    final index = _apiKeys.indexWhere((k) => k.id == id);
-    if (index >= 0) {
-      _apiKeys[index] = _apiKeys[index].copyWith(lastUsed: DateTime.now());
-      await saveApiKeys();
+      try {
+        await saveApiKeys();
+      } catch (_) {
+        _apiKeys[index] = previousKey;
+        rethrow;
+      }
     }
   }
 
@@ -443,23 +463,41 @@ class RemoteControlService {
           'error': 'monthly bandwidth quota exceeded',
         });
       }
-      final body = await request.readAsString();
+      late final String body;
+      try {
+        body = await _readRequestBody(request);
+      } on _RequestBodyTooLarge {
+        return Response(
+          HttpStatus.requestEntityTooLarge,
+          body: jsonEncode({'ok': false, 'error': 'request body too large'}),
+          headers: {'content-type': 'application/json'},
+        );
+      } on FormatException {
+        return Response.badRequest(
+          body: jsonEncode({'ok': false, 'error': 'invalid request body'}),
+          headers: {'content-type': 'application/json'},
+        );
+      }
       String? magnet;
       try {
         final json = jsonDecode(body);
         if (json is Map) magnet = json['magnet']?.toString();
-      } catch (_) {
-        final params = Uri.splitQueryString(body);
-        magnet = params['magnet'];
+      } on FormatException {
+        try {
+          final params = Uri.splitQueryString(body);
+          magnet = params['magnet'];
+        } on FormatException {
+          return Response.badRequest(
+            body: jsonEncode({'ok': false, 'error': 'invalid request body'}),
+            headers: {'content-type': 'application/json'},
+          );
+        }
       }
       if (magnet == null || magnet.isEmpty) {
         return _jsonResponse({'ok': false, 'error': 'missing magnet'});
       }
       if (!await _isValidTorrentLink(magnet)) {
-        return _jsonResponse({
-          'ok': false,
-          'error': 'invalid torrent link',
-        });
+        return _jsonResponse({'ok': false, 'error': 'invalid torrent link'});
       }
       final engine = getIt<Engine>();
       final response = await engine.addTorrent(magnet, null, null);
@@ -475,25 +513,19 @@ class RemoteControlService {
   Middleware get _tokenAuthMiddleware {
     return (Handler innerHandler) {
       return (Request request) async {
-        // Skip auth if not required (for local development/testing)
-        if (!_settings.requireAuth) {
-          return innerHandler(request);
-        }
-
         // Check API key first if enabled
         if (_settings.useApiKeys) {
           final apiKey = _extractApiKey(request);
           if (apiKey != null) {
             ApiKey? keyRecord;
-            try {
-              keyRecord = _apiKeys.firstWhere(
-                (k) => k.key == apiKey && k.enabled,
-              );
-            } catch (_) {
-              keyRecord = null;
+            for (final candidate in _apiKeys) {
+              if (candidate.enabled &&
+                  _constantTimeCompare(candidate.key, apiKey)) {
+                keyRecord = candidate;
+                break;
+              }
             }
             if (keyRecord != null) {
-              await updateApiKeyLastUsed(keyRecord.id);
               return innerHandler(request);
             }
           }
@@ -549,12 +581,35 @@ class RemoteControlService {
   /// Iterates over the full length so that an attacker cannot learn the
   /// secret token's length from a short-circuiting comparison.
   bool _constantTimeCompare(String a, String b) {
-    if (a.length != b.length) return false;
-    var result = 0;
-    for (var i = 0; i < a.length; i++) {
-      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    final left = utf8.encode(a);
+    final right = utf8.encode(b);
+    const comparisonLength = 256;
+    if (left.length > comparisonLength || right.length > comparisonLength) {
+      return false;
+    }
+    var result = left.length ^ right.length;
+    for (var i = 0; i < comparisonLength; i++) {
+      final leftByte = i < left.length ? left[i] : 0;
+      final rightByte = i < right.length ? right[i] : 0;
+      result |= leftByte ^ rightByte;
     }
     return result == 0;
+  }
+
+  Future<String> _readRequestBody(Request request) async {
+    final contentLength = request.contentLength;
+    if (contentLength != null && contentLength > _maxRequestBodyBytes) {
+      throw _RequestBodyTooLarge();
+    }
+
+    final body = BytesBuilder(copy: false);
+    await for (final chunk in request.read()) {
+      if (body.length + chunk.length > _maxRequestBodyBytes) {
+        throw _RequestBodyTooLarge();
+      }
+      body.add(chunk);
+    }
+    return utf8.decode(body.takeBytes());
   }
 
   /// Rejects anything other than a magnet URI or a public .torrent URL.
@@ -572,3 +627,5 @@ class RemoteControlService {
     );
   }
 }
+
+class _RequestBodyTooLarge implements Exception {}
