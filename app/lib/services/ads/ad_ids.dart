@@ -49,16 +49,4 @@ class AdIds {
     }
     return 'ca-app-pub-4989086156410627/4927235067';
   }
-
-  static String get appOpen {
-    if (_useTestIds) {
-      return Platform.isIOS
-          ? 'ca-app-pub-3940256099942544/5575463023'
-          : 'ca-app-pub-3940256099942544/9257395921';
-    }
-    if (Platform.isIOS) {
-      return 'ca-app-pub-4989086156410627/3365051003';
-    }
-    return 'ca-app-pub-4989086156410627/5347226833';
-  }
 }

@@ -14,11 +14,13 @@ abstract class AdService {
   /// Optional banner widget; returns null when ads are disabled or unavailable.
   Widget? buildBanner({Key? key});
 
-  /// Non-blocking interstitial after a natural break (never during critical flows).
-  void showInterstitialIfReady();
+  /// Notify only after a user-initiated addition succeeds and its dialog closes.
+  /// The service decides whether this completed task is an eligible ad break.
+  void onTorrentAdded();
 
-  /// Non-blocking app open ad.
-  void showAppOpenAdIfReady();
+  /// Suppress full-screen ads during playback or another critical flow.
+  /// The returned release callback is idempotent; overlapping scopes compose.
+  VoidCallback suppressFullScreenAds();
 
   void dispose();
 }

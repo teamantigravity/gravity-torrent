@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gravity_torrent/dialogs/add_torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
-import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/haptic_service.dart';
 import 'package:gravity_torrent/ui/adaptive/breakpoints.dart';
 import 'package:gravity_torrent/utils/permissions.dart';
@@ -16,7 +15,6 @@ class AddTorrentButton extends StatelessWidget {
     if (!await checkAndRequestStoragePermissions(context)) return;
 
     if (context.mounted) {
-      AdServiceProvider.instance.showInterstitialIfReady();
       unawaited(
         showDialog(
           context: context,

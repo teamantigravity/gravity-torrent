@@ -7,6 +7,6 @@ void main() {
     await ads.init();
     expect(ads.canShowAds, isFalse);
     expect(ads.buildBanner(), isNull);
-    ads.showInterstitialIfReady();
+    ads.onTorrentAdded();
   });
 }

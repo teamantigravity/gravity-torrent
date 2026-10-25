@@ -230,10 +230,11 @@ class _AddTorrentDialogState extends State<AddTorrentDialog> {
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
-        // Show an interstitial ad occasionally when a torrent is added successfully
-        AdServiceProvider.instance.showInterstitialIfReady();
       }
       Navigator.of(context).pop();
+      if (status == TorrentAddedResponse.added) {
+        AdServiceProvider.instance.onTorrentAdded();
+      }
     } catch (e) {
       if (!mounted) return;
       final localizations = AppLocalizations.of(context);

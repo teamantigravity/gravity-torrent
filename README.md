@@ -159,7 +159,7 @@ Gravity Torrent does not run a separate analytics service. Google Mobile Ads (Ad
 
 ### Monetization & Distribution
 
-- Google Mobile Ads banners, with at least four hours between full-screen app-open and interstitial impressions.
+- Google Mobile Ads banners and a conservative, task-based interstitial policy: first launch is full-screen-ad free; later launches allow at most one ready interstitial after two successful torrent additions. No launch, resume, navigation, playback, pause, or deletion ads. See [ad policy and sources](docs/ad-policy.md).
 - Preview builds use Google's test ad units; release builds use the production units.
 - Remove Ads in-app purchase.
 - Remote config for dynamic ad and feature toggling.

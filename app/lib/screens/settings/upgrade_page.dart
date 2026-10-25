@@ -19,16 +19,19 @@ class _UpgradePageState extends State<UpgradePage> {
   bool _purchasing = false;
   String? _error;
   bool _alreadyOwned = false;
+  VoidCallback? _releaseAdSuppression;
 
   @override
   void initState() {
     super.initState();
+    _releaseAdSuppression = AdServiceProvider.instance.suppressFullScreenAds();
     AdServiceProvider.instance.adFreeNotifier.addListener(_onAdFreeChanged);
     _load();
   }
 
   @override
   void dispose() {
+    _releaseAdSuppression?.call();
     AdServiceProvider.instance.adFreeNotifier.removeListener(_onAdFreeChanged);
     super.dispose();
   }

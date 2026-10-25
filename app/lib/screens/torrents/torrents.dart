@@ -8,7 +8,6 @@ import 'package:gravity_torrent/dialogs/add_torrent.dart';
 import 'package:gravity_torrent/dialogs/create_torrent_dialog.dart';
 import 'package:gravity_torrent/dialogs/remove_torrent.dart';
 import 'package:gravity_torrent/dialogs/remove_torrents.dart';
-import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/file_type_filter_service.dart';
 import 'package:gravity_torrent/widgets/file_type_filter_chips.dart';
 import 'package:gravity_torrent/utils/permissions.dart';
@@ -151,7 +150,6 @@ class _TorrentScreen extends State<TorrentsScreen> {
     if (!await checkAndRequestStoragePermissions(context)) return;
     if (!mounted) return;
 
-    AdServiceProvider.instance.showInterstitialIfReady();
     await showDialog(
       context: context,
       builder: (BuildContext context) => const AddTorrentDialog(),
