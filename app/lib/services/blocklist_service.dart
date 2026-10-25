@@ -43,36 +43,38 @@ class BlocklistService {
   }) async {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return true;
+    if (trimmed.length > 4096) return false;
     final uri = Uri.tryParse(trimmed);
     if (uri == null) return false;
     if (uri.scheme != 'http' && uri.scheme != 'https') return false;
     if (uri.host.isEmpty) return false;
     if (uri.userInfo.isNotEmpty) return false;
     // Block private/local network URLs to mitigate SSRF.
-    return IpAddressScope.isPubliclyRoutableHost(
-      uri.host,
-      lookup: lookup,
-    );
+    return IpAddressScope.isPubliclyRoutableHost(uri.host, lookup: lookup);
   }
 
   Future<void> load() async {
     if (_loaded) return;
     _enabled = await SharedPrefsStorage.getBool(_enabledKey) ?? false;
     final storedUrl = await SharedPrefsStorage.getString(_urlKey) ?? defaultUrl;
-    _url = (await isValidBlocklistUrl(storedUrl)) ? storedUrl : defaultUrl;
+    // Keep an offline user's saved URL. It is validated again immediately
+    // before it is applied to Transmission or fetched.
+    _url = storedUrl.trim().isEmpty ? defaultUrl : storedUrl;
     final lastUpdatedStr = await SharedPrefsStorage.getString(_lastUpdatedKey);
     if (lastUpdatedStr != null) {
       _lastUpdated = DateTime.tryParse(lastUpdatedStr);
     }
-    _rulesCount = (await SharedPrefsStorage.getString(
-          _rulesCountKey,
-        ).then((s) => s != null ? int.tryParse(s) : null)) ??
+    _rulesCount = (await SharedPrefsStorage.getString(_rulesCountKey)
+            .then((s) => s != null ? int.tryParse(s) : null)) ??
         0;
     _loaded = true;
   }
 
   Future<void> setEnabled(bool enabled) async {
     await load();
+    if (enabled && (_url.trim().isEmpty || !await isValidBlocklistUrl(_url))) {
+      throw ArgumentError('Invalid or unsafe blocklist URL: $_url');
+    }
     _enabled = enabled;
     await SharedPrefsStorage.setBool(_enabledKey, enabled);
     try {
@@ -95,6 +97,10 @@ class BlocklistService {
     }
     _url = trimmed;
     await SharedPrefsStorage.setString(_urlKey, trimmed);
+    if (trimmed.isEmpty) {
+      if (_enabled) await setEnabled(false);
+      return;
+    }
     if (_enabled) {
       await setEnabled(true);
     }
@@ -111,8 +117,12 @@ class BlocklistService {
 
     _updateCompleter = Completer<int>();
     _updating = true;
+    unawaited(_updateCompleter!.future.catchError((Object _) => _rulesCount));
 
     try {
+      if (_url.trim().isEmpty || !await isValidBlocklistUrl(_url)) {
+        throw ArgumentError('Invalid or unsafe blocklist URL: $_url');
+      }
       final engine = getIt<Engine>();
       // Apply URL to session first
       final session = await engine.fetchSession();

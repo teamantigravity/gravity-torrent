@@ -90,6 +90,17 @@ void main() {
       expect(links, contains('magnet:?xt=urn:btih:cdata'));
     });
 
+    test('caps the number of links accepted from one feed item', () {
+      final feedText = List.generate(
+        100,
+        (index) => 'magnet:?xt=urn:btih:$index',
+      ).join(' ');
+
+      final links = RssService.instance.candidateLinks(null, feedText);
+
+      expect(links, hasLength(25));
+    });
+
     test('isTorrentLink recognizes magnets and torrent files', () {
       expect(
         RssService.instance.isTorrentLink('magnet:?xt=urn:btih:abc'),

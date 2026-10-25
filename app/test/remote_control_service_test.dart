@@ -29,6 +29,24 @@ void main() {
       expect(service.formatHostForUrl('fe80::1%eth0'), '[fe80::1]');
     });
 
+    test('bindAddressFor respects the LAN access setting', () {
+      final service = RemoteControlService.instance;
+      expect(
+        service
+            .bindAddressFor('192.168.1.10', allowLocalNetwork: false)
+            .address,
+        InternetAddress.loopbackIPv4.address,
+      );
+      expect(
+        service.bindAddressFor('192.168.1.10', allowLocalNetwork: true).address,
+        '192.168.1.10',
+      );
+      expect(
+        service.bindAddressFor('8.8.8.8', allowLocalNetwork: true).address,
+        InternetAddress.loopbackIPv4.address,
+      );
+    });
+
     test('isPrivateIp recognizes IPv4 private ranges', () {
       final service = RemoteControlService.instance;
       expect(service.isPrivateIp(InternetAddress('10.0.0.1')), isTrue);

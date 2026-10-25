@@ -18,9 +18,10 @@ class SecureStorageException implements Exception {
 /// Uses [FlutterSecureStorage] on non-web platforms. On web it falls back to
 /// [SharedPrefsStorage] because browsers do not provide a secure keychain.
 ///
-/// By default a failure on a non-web platform throws [SecureStorageException]
-/// rather than silently writing sensitive data to plain [SharedPreferences].
-/// Tests can call [enableTestMode] to use [SharedPrefsStorage] instead.
+/// On non-web platforms, legacy values in [SharedPreferences] are moved into
+/// secure storage before they are returned. A keychain failure never falls
+/// back to leaving a secret in plain preferences. Tests can call
+/// [enableTestMode] to use [SharedPrefsStorage] instead.
 class SecureStorage {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(),
@@ -43,22 +44,24 @@ class SecureStorage {
     if (_useSharedPrefs) return SharedPrefsStorage.getString(key);
 
     try {
-      return await _storage.read(key: key);
+      final value = await _storage.read(key: key);
+      if (value != null) {
+        await SharedPrefsStorage.remove(key);
+        return value;
+      }
+      final legacyValue = await SharedPrefsStorage.getString(key);
+      if (legacyValue == null) return null;
+
+      // Migrate values written by older versions that fell back to plaintext
+      // preferences. Do not return them unless the secure write succeeds.
+      await _storage.write(key: key, value: legacyValue);
+      await SharedPrefsStorage.remove(key);
+      return legacyValue;
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('SecureStorage.getString failed for $key: $e\n$st');
       }
-      // Attempt to clear invalidated hardware key entry
-      try {
-        await _storage.delete(key: key);
-      } catch (_) {}
-
-      // Fallback read from SharedPreferences
-      try {
-        return await SharedPrefsStorage.getString(key);
-      } catch (_) {
-        return null;
-      }
+      throw SecureStorageException('Unable to read secure storage value: $e');
     }
   }
 
@@ -70,23 +73,12 @@ class SecureStorage {
 
     try {
       await _storage.write(key: key, value: value);
+      await SharedPrefsStorage.remove(key);
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('SecureStorage.setString failed for $key: $e\n$st');
       }
-      // Attempt cleanup and retry write
-      try {
-        await _storage.delete(key: key);
-        await _storage.write(key: key, value: value);
-        return;
-      } catch (_) {}
-
-      // Fallback write to SharedPreferences
-      try {
-        await SharedPrefsStorage.setString(key, value);
-      } catch (_) {
-        throw SecureStorageException('Unable to write to secure storage: $e');
-      }
+      throw SecureStorageException('Unable to write secure storage value: $e');
     }
   }
 
@@ -96,18 +88,35 @@ class SecureStorage {
       return;
     }
 
+    Object? secureStorageError;
     try {
       await _storage.delete(key: key);
-      try {
-        await SharedPrefsStorage.remove(key);
-      } catch (_) {}
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('SecureStorage.remove failed for $key: $e\n$st');
       }
-      try {
-        await SharedPrefsStorage.remove(key);
-      } catch (_) {}
+      secureStorageError = e;
+    }
+
+    Object? legacyStorageError;
+    try {
+      await SharedPrefsStorage.remove(key);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('SecureStorage legacy cleanup failed for $key: $e\n$st');
+      }
+      legacyStorageError = e;
+    }
+
+    if (secureStorageError != null) {
+      throw SecureStorageException(
+        'Unable to remove secure storage value: $secureStorageError',
+      );
+    }
+    if (legacyStorageError != null) {
+      throw SecureStorageException(
+        'Unable to remove legacy storage value: $legacyStorageError',
+      );
     }
   }
 }

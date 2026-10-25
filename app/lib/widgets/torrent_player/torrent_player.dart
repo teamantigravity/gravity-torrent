@@ -74,6 +74,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
   BuildContext? _videoLoadingDialogContext;
   BuildContext? _subsLoadingDialogContext;
   bool _disposed = false;
+  VoidCallback? _releaseAdSuppression;
   final GlobalKey _videoComponentKey = GlobalKey();
   PlayerEnhancementsService? _enhancements;
   CancelableCompleter<void>? _loadingCompleter;
@@ -121,6 +122,7 @@ class TorrentPlayerState extends State<TorrentPlayer> {
 
   @override
   void initState() {
+    _releaseAdSuppression = AdServiceProvider.instance.suppressFullScreenAds();
     // Enter immersive mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
     super.initState();
@@ -174,6 +176,8 @@ class TorrentPlayerState extends State<TorrentPlayer> {
     } catch (e) {
       if (kDebugMode) debugPrint('Error disposing player: $e');
     }
+    _releaseAdSuppression?.call();
+    _releaseAdSuppression = null;
   }
 
   Future<void> initPlayer() async {
@@ -594,7 +598,6 @@ class TorrentPlayerState extends State<TorrentPlayer> {
       onPressed: () {
         HapticService.light();
         Navigator.pop(context);
-        AdServiceProvider.instance.showInterstitialIfReady();
       },
     );
   }

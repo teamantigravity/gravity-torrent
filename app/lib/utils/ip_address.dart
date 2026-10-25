@@ -30,6 +30,8 @@ enum AddressScope {
 class IpAddressScope {
   IpAddressScope._();
 
+  static const _maxTorrentLinkLength = 4096;
+
   /// Returns the scope of [address].
   static AddressScope classify(InternetAddress address) {
     final bytes = address.rawAddress;
@@ -68,8 +70,8 @@ class IpAddressScope {
     return true;
   }
 
-  /// Validates [host] by resolving it and ensuring every returned address is
-  /// publicly routable.
+  /// Validates [host] by resolving it and requiring at least one result, with
+  /// every returned address publicly routable.
   static Future<bool> isPubliclyRoutableHost(
     String host, {
     Future<List<InternetAddress>> Function(String)? lookup,
@@ -85,47 +87,34 @@ class IpAddressScope {
       final resolver = lookup ?? InternetAddress.lookup;
       final addresses =
           await resolver(_stripTrailingDot(host)).timeout(timeout);
-      if (addresses.isEmpty) return true;
+      if (addresses.isEmpty) return false;
       return addresses.every(isPubliclyRoutable);
     } on TimeoutException {
       return false;
     } on SocketException {
-      // Offline or unresolvable. Defer to fetch time rather than blocking a
-      // legitimate URL when DNS is unavailable.
-      return true;
+      // Without a DNS result there is no safe address to authorize. The caller
+      // can retry after connectivity is restored.
+      return false;
     }
   }
 
-  /// Synchronous, conservative check for a private/local host.
-  ///
-  /// Returns `true` for `localhost`, `.local`, link-local/private IP literals,
-  /// and `false` for public hostnames that cannot be classified without DNS.
-  /// Use [isPrivateHost] for full hostname resolution.
-  static bool isPrivateHostSync(String host) {
-    final normalized = _stripTrailingDot(host).toLowerCase();
-    if (normalized.isEmpty) return false;
-    if (normalized == 'localhost') return true;
-    if (normalized.endsWith('.localhost')) return true;
-    if (normalized.endsWith('.local')) return true;
-    final address = InternetAddress.tryParse(normalized);
-    if (address != null) return isPrivate(address);
-    return false;
-  }
-
-  /// Validates [host] by resolving it and accepting it only when at least one
-  /// address is private/local and none are publicly routable.
+  /// Accepts IP literals only when private/local. All hostnames, including
+  /// `.local` names, must resolve to at least one address and every result
+  /// must be private/local; a suffix alone does not authorize a destination.
   static Future<bool> isPrivateHost(
     String host, {
     Future<List<InternetAddress>> Function(String)? lookup,
     Duration timeout = const Duration(seconds: 3),
   }) async {
-    if (isPrivateHostSync(host)) return true;
+    final normalized = _stripTrailingDot(host).toLowerCase();
+    if (normalized.isEmpty) return false;
+    final literal = InternetAddress.tryParse(normalized);
+    if (literal != null) return isPrivate(literal);
     try {
       final resolver = lookup ?? InternetAddress.lookup;
-      final addresses =
-          await resolver(_stripTrailingDot(host)).timeout(timeout);
+      final addresses = await resolver(normalized).timeout(timeout);
       if (addresses.isEmpty) return false;
-      return addresses.any(isPrivate) && !addresses.any(isPubliclyRoutable);
+      return addresses.every(isPrivate);
     } on TimeoutException {
       return false;
     } on SocketException {
@@ -134,14 +123,16 @@ class IpAddressScope {
   }
 
   /// Returns `true` when [link] is a magnet URI or an HTTP(S) .torrent URL
-  /// whose host (and any tracker hosts in a magnet URI) are publicly routable.
+  /// whose host (and any tracker/web-seed hosts in a magnet URI) are public.
+  /// Magnet endpoints share one DNS time budget and repeated hosts are cached
+  /// for this validation only.
   static Future<bool> isPubliclyRoutableLink(
     String link, {
     Future<List<InternetAddress>> Function(String)? lookup,
     Duration timeout = const Duration(seconds: 3),
   }) async {
     final trimmed = link.trim();
-    if (trimmed.isEmpty) return false;
+    if (trimmed.isEmpty || trimmed.length > _maxTorrentLinkLength) return false;
     final lower = trimmed.toLowerCase();
 
     if (lower.startsWith('magnet:')) {
@@ -178,7 +169,12 @@ class IpAddressScope {
     if (a >= 224 && a <= 239) return AddressScope.multicast; // 224/4
     if (a >= 240) return AddressScope.reserved; // 240/4 + broadcast
 
-    if (a == 192 && b == 0) return AddressScope.reserved; // 192.0.0/24
+    if (a == 192 && b == 0 && c == 0) {
+      return AddressScope.reserved; // 192.0.0/24
+    }
+    if (a == 192 && b == 0 && c == 2) {
+      return AddressScope.documentation; // 192.0.2.0/24 (TEST-NET-1)
+    }
     if (a == 192 && b == 88 && c == 99) {
       return AddressScope.reserved; // 192.88.99.0/24 (deprecated 6to4 anycast)
     }
@@ -296,34 +292,45 @@ class IpAddressScope {
     Future<List<InternetAddress>> Function(String)? lookup,
     required Duration timeout,
   }) async {
-    Uri uri;
+    Map<String, List<String>> parameters;
     try {
-      uri = Uri.parse(trimmed);
+      final uri = Uri.parse(trimmed);
+      if (uri.scheme != 'magnet') return false;
+      parameters = uri.queryParametersAll;
     } on FormatException {
       return false;
     }
-    if (uri.scheme != 'magnet') return false;
 
-    final trackers = uri.queryParametersAll['tr'] ?? const [];
-    if (trackers.isEmpty) return true;
-
-    for (final tr in trackers) {
-      final trUri = Uri.tryParse(tr.trim());
-      if (trUri == null || trUri.host.isEmpty) continue;
-      final scheme = trUri.scheme.toLowerCase();
-      if (scheme != 'http' &&
-          scheme != 'https' &&
-          scheme != 'udp' &&
-          scheme != 'wss' &&
-          scheme != 'ws') {
-        return false;
-      }
-      if (!await isPubliclyRoutableHost(
-        trUri.host,
-        lookup: lookup,
-        timeout: timeout,
-      )) {
-        return false;
+    final elapsed = Stopwatch()..start();
+    final checkedHosts = <String>{};
+    for (final entry in parameters.entries) {
+      // Transmission also accepts numbered/qualified trackers and web seeds.
+      final isTracker = entry.key == 'tr' || entry.key.startsWith('tr.');
+      if (!isTracker && entry.key != 'ws') continue;
+      for (final endpoint in entry.value) {
+        final uri = Uri.tryParse(endpoint.trim());
+        if (uri == null || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+          return false;
+        }
+        final scheme = uri.scheme.toLowerCase();
+        if (scheme != 'http' &&
+            scheme != 'https' &&
+            !(isTracker &&
+                (scheme == 'udp' || scheme == 'wss' || scheme == 'ws'))) {
+          return false;
+        }
+        final host = _stripTrailingDot(uri.host).toLowerCase();
+        if (checkedHosts.contains(host)) continue;
+        final remaining = timeout - elapsed.elapsed;
+        if (remaining <= Duration.zero) return false;
+        if (!await isPubliclyRoutableHost(
+          host,
+          lookup: lookup,
+          timeout: remaining,
+        )) {
+          return false;
+        }
+        checkedHosts.add(host);
       }
     }
     return true;

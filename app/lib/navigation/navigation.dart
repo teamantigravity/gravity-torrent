@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gravity_torrent/navigation/add_torrent_button.dart';
-import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/services/haptic_service.dart';
 import 'package:gravity_torrent/ui/adaptive/breakpoints.dart';
 import 'package:gravity_torrent/utils/device.dart';
@@ -44,10 +43,8 @@ class _Navigation extends State<Navigation> {
     HapticService.selection();
     if (selectedIndex == 0) {
       context.go('/torrents');
-      AdServiceProvider.instance.showInterstitialIfReady();
     } else if (selectedIndex == 1) {
       context.go('/settings');
-      AdServiceProvider.instance.showInterstitialIfReady();
     }
   }
 
@@ -55,12 +52,10 @@ class _Navigation extends State<Navigation> {
     HapticService.selection();
     if (selectedIndex == 0) {
       context.go('/torrents');
-      AdServiceProvider.instance.showInterstitialIfReady();
     }
 
     if (selectedIndex == 1) {
       context.go('/settings');
-      AdServiceProvider.instance.showInterstitialIfReady();
     }
   }
 

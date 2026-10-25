@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:gravity_torrent/engine/torrent.dart';
 import 'package:gravity_torrent/l10n/app_localizations.dart';
 import 'package:gravity_torrent/models/torrents.dart';
-import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:provider/provider.dart';
 
 class RemoveTorrentDialog extends StatelessWidget {
@@ -19,7 +18,6 @@ class RemoveTorrentDialog extends StatelessWidget {
     // captured before popping the dialog so the refresh still runs even though
     // this widget's context is no longer mounted.
     await torrentsModel.fetchTorrents();
-    AdServiceProvider.instance.showInterstitialIfReady();
   }
 
   @override

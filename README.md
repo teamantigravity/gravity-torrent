@@ -59,7 +59,7 @@ A detailed changelog is available in [CHANGELOG.md](CHANGELOG.md).
 
 ## Privacy & data safety
 
-Gravity Torrent does **not** collect or transmit any user data. The only third-party services used are Google Mobile Ads (AdMob) for serving ads and the optional in-app update check for non-store builds. All torrent state, search history, favorites, and settings remain on the device.
+Gravity Torrent does not run a separate analytics service. Google Mobile Ads (AdMob) may collect device and advertising data as described in [Google's privacy disclosures](https://policies.google.com/privacy). Non-store builds also check GitHub for updates. Torrent state, search history, favorites, and settings remain on the device.
 
 ---
 
@@ -159,7 +159,8 @@ Gravity Torrent does **not** collect or transmit any user data. The only third-p
 
 ### Monetization & Distribution
 
-- Google Mobile Ads (banner and interstitial).
+- Google Mobile Ads banners and a conservative, task-based interstitial policy: first launch is full-screen-ad free; later launches allow at most one ready interstitial after two successful torrent additions. No launch, resume, navigation, playback, pause, or deletion ads. See [ad policy and sources](docs/ad-policy.md).
+- Preview builds use Google's test ad units; release builds use the production units.
 - Remove Ads in-app purchase.
 - Remote config for dynamic ad and feature toggling.
 
@@ -168,11 +169,12 @@ Gravity Torrent does **not** collect or transmit any user data. The only third-p
 
 ## Security & hardening
 
-- **PINs are never stored in plain text.** The privacy vault hashes the PIN with a per-PIN random salt using SHA-256, verifies with a constant-time comparison, and enforces a 5-attempt / 5-minute rate limit stored in secure keychain/keystore via `flutter_secure_storage`.
+- **PINs are never stored in plain text.** The privacy vault derives a PIN hash with PBKDF2-HMAC-SHA256 and a per-PIN random salt, verifies with a constant-time comparison, and enforces a 5-attempt / 5-minute rate limit stored through `flutter_secure_storage`.
 - **Peer blocklist URLs are validated** before being saved or applied. Only `http`/`https` URLs with a public host are accepted, mitigating SSRF and accidental local-network probing.
 - **In-app update checks are hardened** with a 15-second HTTP timeout, explicit status-code checks, safe JSON parsing, and defensive semver tag handling so a malformed GitHub release can never crash the app.
 - **LAN streaming is opt-in and capability-gated.** Binding the media stream server beyond loopback requires the `enableLanStreaming` setting (off by default). Every request must present an unguessable per-session path token; unauthorised paths return `404` rather than `403` so a stream cannot be located by scanning the network.
-- **The remote-control API authenticates every method.** Tokens are accepted only from the `Authorization` header (never the query string, so they cannot leak via history or logs) and are compared in constant time. No CORS headers are emitted, so a web page a user visits cannot reach the local API.
+- **The remote-control API always requires authentication.** Tokens are accepted only from the `Authorization` header (never the query string, so they cannot leak via history or logs) and are compared in constant time. The listener uses loopback when LAN access is disabled, and torrent-add request bodies are capped. No CORS headers are emitted, so browser scripts cannot authenticate to the local API.
+- **Sensitive credentials stay in secure storage.** Remote-control API keys use the platform keychain/keystore; legacy preference values migrate to secure storage before being returned.
 - **DLNA/SOAP payloads are XML-escaped**, including the DIDL-Lite metadata that is nested as escaped XML inside the SOAP body, so torrent file names cannot corrupt or inject into a cast request.
 - **Static analysis is enforced** through `analysis_options.yaml` (`unawaited_futures`, `use_build_context_synchronously`, `close_sinks`, `cancel_subscriptions`, `avoid_dynamic_calls`, etc.) and runs in CI.
 

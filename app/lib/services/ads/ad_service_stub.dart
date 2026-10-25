@@ -29,10 +29,10 @@ class AdServiceStub implements AdService {
   Widget? buildBanner({Key? key}) => null;
 
   @override
-  void showInterstitialIfReady() {}
+  void onTorrentAdded() {}
 
   @override
-  void showAppOpenAdIfReady() {}
+  VoidCallback suppressFullScreenAds() => () {};
 
   @override
   void dispose() {

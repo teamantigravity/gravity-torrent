@@ -37,6 +37,7 @@ class RemoteConfigService {
   );
 
   static const _lastFetchKey = 'gravity_torrent_remote_config_last_fetch';
+  static const _cachedConfigKey = 'gravity_torrent_remote_config_cache';
 
   bool _showAds = true;
   bool get showAds => _showAds;
@@ -48,6 +49,13 @@ class RemoteConfigService {
 
   bool isFeatureEnabled(String key, {bool defaultValue = true}) =>
       _featureFlags[key] ?? defaultValue;
+
+  @visibleForTesting
+  void resetForTest() {
+    _showAds = true;
+    _featureFlags.clear();
+    _lastFetch = null;
+  }
 
   Future<void> _loadLastFetch() async {
     try {
@@ -77,13 +85,54 @@ class RemoteConfigService {
     }
   }
 
+  Future<void> _loadCachedConfig() async {
+    try {
+      final raw = await SharedPrefsStorage.getString(_cachedConfigKey);
+      if (raw == null || raw.isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        _applyConfig(Map<String, dynamic>.from(decoded));
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[RemoteConfig] failed to load cached config: $e');
+      }
+    }
+  }
+
+  Future<void> _saveCachedConfig(String raw) async {
+    try {
+      await SharedPrefsStorage.setString(_cachedConfigKey, raw);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[RemoteConfig] failed to save cached config: $e');
+      }
+    }
+  }
+
+  void _applyConfig(Map<String, dynamic> json) {
+    if (json.containsKey('show_ads') && json['show_ads'] is bool) {
+      _showAds = json['show_ads'] as bool;
+    }
+    if (json.containsKey('sota_features') && json['sota_features'] is Map) {
+      final features = Map<String, dynamic>.from(json['sota_features'] as Map);
+      _featureFlags.clear();
+      for (final entry in features.entries) {
+        if (entry.value is bool) {
+          _featureFlags[entry.key] = entry.value as bool;
+        }
+      }
+    }
+  }
+
   Future<void> refresh({bool force = false}) async {
     if (_lastFetch == null) await _loadLastFetch();
+    await _loadCachedConfig();
 
-    if (!force &&
-        _lastFetch != null &&
-        DateTime.now().difference(_lastFetch!) < const Duration(hours: 6)) {
-      return;
+    final lastFetch = _lastFetch;
+    if (!force && lastFetch != null) {
+      final age = DateTime.now().difference(lastFetch);
+      if (!age.isNegative && age < const Duration(hours: 6)) return;
     }
     try {
       final response = await http
@@ -101,23 +150,11 @@ class RemoteConfigService {
       final dynamic decoded = jsonDecode(response.body);
       if (decoded is! Map) return;
       final json = Map<String, dynamic>.from(decoded);
-      if (json.containsKey('show_ads') && json['show_ads'] is bool) {
-        _showAds = json['show_ads'] as bool;
-      }
-      if (json.containsKey('sota_features') && json['sota_features'] is Map) {
-        final features = Map<String, dynamic>.from(
-          json['sota_features'] as Map,
-        );
-        _featureFlags.clear();
-        for (final entry in features.entries) {
-          if (entry.value is bool) {
-            _featureFlags[entry.key] = entry.value as bool;
-          }
-        }
-      }
+      _applyConfig(json);
 
       // Throttle future requests only after a successful update.
       _lastFetch = DateTime.now();
+      await _saveCachedConfig(response.body);
       await _saveLastFetch();
     } on TimeoutException {
       if (kDebugMode) {

@@ -7,7 +7,6 @@ import 'package:gravity_torrent/models/app.dart';
 import 'package:gravity_torrent/models/torrents.dart';
 import 'package:gravity_torrent/screens/torrents/sheets/torrent_details/torrent_details.dart';
 import 'package:gravity_torrent/screens/torrents/torrent_list_tile/torrent_status.dart';
-import 'package:gravity_torrent/services/ads/ad_service_provider.dart';
 import 'package:gravity_torrent/widgets/torrent_health_badge.dart';
 import 'package:gravity_torrent/utils/app_links.dart';
 import 'package:gravity_torrent/utils/device.dart';
@@ -54,7 +53,6 @@ class TorrentListTile extends StatelessWidget {
             if (isSelectionMode) {
               onSelectionChanged?.call();
             } else {
-              AdServiceProvider.instance.showInterstitialIfReady();
               showDeviceSheet(
                 context,
                 torrent.name,
@@ -142,7 +140,6 @@ class TorrentListTile extends StatelessWidget {
                     IconButton(
                       tooltip: localizations.play,
                       onPressed: () {
-                        AdServiceProvider.instance.showInterstitialIfReady();
                         showDeviceSheet(
                           context,
                           torrent.name,

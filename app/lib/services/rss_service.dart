@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:gravity_torrent/engine/engine.dart';
@@ -51,6 +52,11 @@ class RssService {
   static const _episodeHistoryKey = 'gravity_torrent_rss_episode_history';
   static const _pollMinutes = 30;
   static const _maxSeenLinks = 1000;
+  static const _maxEpisodeHistory = 2000;
+  static const _maxFeedBytes = 2 * 1024 * 1024;
+  static const _maxItemsPerFeed = 500;
+  static const _maxLinksPerFeed = 100;
+  static const _maxLinksPerItem = 25;
 
   List<RssFeed> _feeds = [];
   List<RssRule> _rules = [];
@@ -112,8 +118,9 @@ class RssService {
         _seenLinks = {};
       }
     }
-    final rawEpisodeHistory =
-        await SharedPrefsStorage.getString(_episodeHistoryKey);
+    final rawEpisodeHistory = await SharedPrefsStorage.getString(
+      _episodeHistoryKey,
+    );
     if (rawEpisodeHistory != null && rawEpisodeHistory.isNotEmpty) {
       try {
         final list = jsonDecode(rawEpisodeHistory) as List<dynamic>;
@@ -150,6 +157,13 @@ class RssService {
     if (_seenLinks.length <= _maxSeenLinks) return;
     _seenLinks = LinkedHashSet<String>.from(
       _seenLinks.skip(_seenLinks.length - _maxSeenLinks),
+    );
+  }
+
+  void _trimEpisodeHistory() {
+    if (_episodeHistory.length <= _maxEpisodeHistory) return;
+    _episodeHistory = LinkedHashSet<String>.from(
+      _episodeHistory.skip(_episodeHistory.length - _maxEpisodeHistory),
     );
   }
 
@@ -303,9 +317,10 @@ class RssService {
 
   Future<bool> _isValidFeedUrl(String url) async {
     try {
+      if (url.length > 4096) return false;
       final uri = Uri.parse(url);
       if (!(uri.isScheme('http') || uri.isScheme('https'))) return false;
-      if (uri.host.isEmpty) return false;
+      if (uri.host.isEmpty || uri.userInfo.isNotEmpty) return false;
       return await IpAddressScope.isPubliclyRoutableHost(uri.host);
     } catch (_) {
       return false;
@@ -322,10 +337,16 @@ class RssService {
       final document = XmlDocument.parse(body);
       final items = document.findAllElements('item').toList();
       if (items.isEmpty) {
-        await _processSection(feedUrl, body);
+        await _processSection(feedUrl, body, maxCandidates: _maxLinksPerFeed);
       } else {
-        for (final item in items) {
-          await _processItem(feedUrl, item);
+        var remainingLinks = _maxLinksPerFeed;
+        for (final item in items.take(_maxItemsPerFeed)) {
+          if (remainingLinks == 0) break;
+          remainingLinks -= await _processItem(
+            feedUrl,
+            item,
+            maxCandidates: remainingLinks,
+          );
         }
       }
     } on XmlParserException catch (e) {
@@ -333,10 +354,11 @@ class RssService {
         debugPrint('RssService: XML parse failed for $feedUrl: $e');
       }
       // Fallback to regex on raw body for non-XML feeds.
-      await _processSection(feedUrl, body);
+      await _processSection(feedUrl, body, maxCandidates: _maxLinksPerFeed);
     }
 
     _trimSeenLinks();
+    _trimEpisodeHistory();
 
     await _saveSeen();
     await _saveEpisodeHistory();
@@ -344,13 +366,10 @@ class RssService {
 
   /// Fetches a URL without blindly following redirects. Each redirect target
   /// is validated so a public feed cannot redirect to an internal host.
-  Future<http.Response?> _safeGet(
-    String url, {
-    int redirectCount = 0,
-  }) async {
+  Future<http.Response?> _safeGet(String url, {int redirectCount = 0}) async {
     const maxRedirects = 5;
     final uri = Uri.tryParse(url);
-    if (uri == null || uri.host.isEmpty) return null;
+    if (uri == null || uri.host.isEmpty || uri.userInfo.isNotEmpty) return null;
     if (!(uri.isScheme('http') || uri.isScheme('https'))) return null;
     if (!await IpAddressScope.isPubliclyRoutableHost(uri.host)) return null;
 
@@ -361,7 +380,26 @@ class RssService {
         ..maxRedirects = 0;
       final streamed =
           await client.send(request).timeout(const Duration(seconds: 15));
-      final response = await http.Response.fromStream(streamed);
+      final body = BytesBuilder(copy: false);
+      final deadline = DateTime.now().add(const Duration(seconds: 15));
+      await for (final chunk in streamed.stream.timeout(
+        const Duration(seconds: 15),
+      )) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw TimeoutException('RSS response body timed out');
+        }
+        if (body.length + chunk.length > _maxFeedBytes) return null;
+        body.add(chunk);
+      }
+      final response = http.Response.bytes(
+        body.takeBytes(),
+        streamed.statusCode,
+        request: streamed.request,
+        headers: streamed.headers,
+        isRedirect: streamed.isRedirect,
+        persistentConnection: streamed.persistentConnection,
+        reasonPhrase: streamed.reasonPhrase,
+      );
 
       if (response.statusCode >= 300 && response.statusCode < 400) {
         if (redirectCount >= maxRedirects) return null;
@@ -388,14 +426,26 @@ class RssService {
     }
   }
 
-  Future<void> _processItem(String feedUrl, XmlElement item) async {
+  Future<int> _processItem(
+    String feedUrl,
+    XmlElement item, {
+    required int maxCandidates,
+  }) async {
     final text = item.innerText;
-    final candidates = candidateLinks(item, text);
+    final candidates = candidateLinks(item, text).take(maxCandidates).toList();
     await _processCandidates(feedUrl, candidates, text);
+    return candidates.length;
   }
 
-  Future<void> _processSection(String feedUrl, String section) async {
-    final candidates = candidateLinks(null, section);
+  Future<void> _processSection(
+    String feedUrl,
+    String section, {
+    required int maxCandidates,
+  }) async {
+    final candidates = candidateLinks(
+      null,
+      section,
+    ).take(maxCandidates).toList();
     await _processCandidates(feedUrl, candidates, section);
   }
 
@@ -428,9 +478,9 @@ class RssService {
           final feed = _feeds.firstWhere((f) => f.url == feedUrl);
           if (feed.enabled) {
             if (feed.keyword.isEmpty ||
-                contextText
-                    .toLowerCase()
-                    .contains(feed.keyword.toLowerCase())) {
+                contextText.toLowerCase().contains(
+                      feed.keyword.toLowerCase(),
+                    )) {
               shouldAdd = true;
             }
           }
@@ -443,17 +493,14 @@ class RssService {
 
       _seenLinks.add(link);
 
-      // Track episode if present
-      final episodeInfo = RssEpisodeParser.parse(contextText);
-      if (episodeInfo != null) {
-        _episodeHistory.add(episodeInfo.key);
-      }
-
       try {
         if (!await IpAddressScope.isPubliclyRoutableLink(link)) {
           if (kDebugMode) {
             debugPrint('RssService: rejected private/internal link $link');
           }
+          // DNS can be temporarily unavailable. Retry on the next poll rather
+          // than permanently marking a valid feed item as seen.
+          _seenLinks.remove(link);
           continue;
         }
         if (!(await QuotaService.instance.canAddTorrent())) {
@@ -473,13 +520,21 @@ class RssService {
         await engine.addTorrent(link, null, null);
         if (kDebugMode) debugPrint('RssService: auto-added $link');
 
+        // Record an episode only after the torrent add succeeds. Failed or
+        // quota-blocked attempts must remain eligible for a later poll.
+        final episodeInfo = RssEpisodeParser.parse(contextText);
+        if (episodeInfo != null) {
+          _episodeHistory.add(episodeInfo.key);
+        }
+
         // Update last match time for the matching rule
         if (matchingRule != null) {
           final ruleName = matchingRule.name;
           final ruleIndex = _rules.indexWhere((r) => r.name == ruleName);
           if (ruleIndex >= 0) {
-            _rules[ruleIndex] =
-                _rules[ruleIndex].copyWith(lastMatch: DateTime.now());
+            _rules[ruleIndex] = _rules[ruleIndex].copyWith(
+              lastMatch: DateTime.now(),
+            );
             await _saveRules();
           }
         }
@@ -566,14 +621,26 @@ class RssService {
       r'https?://[^\s"<>]+\.torrent(?:\?[^\s"<>]*)?',
       caseSensitive: false,
     );
-    raw.addAll(magnetPattern.allMatches(text).map((m) => m.group(0)!));
-    raw.addAll(torrentPattern.allMatches(text).map((m) => m.group(0)!));
+    raw.addAll(
+      magnetPattern
+          .allMatches(text)
+          .take(_maxLinksPerItem)
+          .map((m) => m.group(0)!),
+    );
+    raw.addAll(
+      torrentPattern
+          .allMatches(text)
+          .take(_maxLinksPerItem)
+          .map((m) => m.group(0)!),
+    );
 
     if (item != null) {
       for (final element in item.findElements('link')) {
+        if (raw.length + verified.length >= _maxLinksPerItem) break;
         raw.add(element.innerText.trim());
       }
       for (final enclosure in item.findElements('enclosure')) {
+        if (raw.length + verified.length >= _maxLinksPerItem) break;
         final url = enclosure.getAttribute('url');
         final type = enclosure.getAttribute('type');
         if (url != null && url.isNotEmpty) {
@@ -586,6 +653,7 @@ class RssService {
         }
       }
       for (final magnetUri in item.findAllElements('magnetURI')) {
+        if (raw.length + verified.length >= _maxLinksPerItem) break;
         final uri = magnetUri.innerText.trim();
         if (uri.isNotEmpty) raw.add(uri);
       }
@@ -593,7 +661,7 @@ class RssService {
 
     final result = raw.where(isTorrentLink).toSet();
     result.addAll(verified);
-    return result.toList();
+    return result.take(_maxLinksPerItem).toList();
   }
 
   @visibleForTesting
