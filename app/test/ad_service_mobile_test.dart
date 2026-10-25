@@ -96,6 +96,20 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  test('purchase racing initialization stays authoritative', () async {
+    final service = AdServiceMobile();
+    services.add(service);
+    final initialization = service.init();
+    final purchase = service.setAdFree(true);
+    await Future.wait([initialization, purchase]);
+    service.onTorrentAdded();
+    service.onTorrentAdded();
+    expect(service.isAdFree, isTrue);
+    expect(service.canShowAds, isFalse);
+    expect(count('loadInterstitialAd'), 0);
+    expect(count('showAdWithoutView'), 0);
+  });
+
   test('first launch skips full-screen inventory and persists first-use state',
       () async {
     await preferences(seenSession: false);

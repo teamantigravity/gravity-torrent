@@ -14,6 +14,7 @@ class AdServiceMobile implements AdService {
   bool _initialized = false;
   bool _disposed = false;
   bool _sdkReady = false;
+  bool _adFreeOverridden = false;
   Future<void>? _initialization;
   Future<void>? _sdkInitialization;
   final ValueNotifier<bool> _adFreeNotifier = ValueNotifier<bool>(false);
@@ -72,7 +73,10 @@ class AdServiceMobile implements AdService {
       _policy = InterstitialAdPolicy(
         isFirstSession: !hasStartedSession || !saved,
       );
-      _adFreeNotifier.value = prefs.getBool(_adFreeKey) ?? false;
+      // A live purchase/restore result outranks the startup preference snapshot.
+      if (!_adFreeOverridden) {
+        _adFreeNotifier.value = prefs.getBool(_adFreeKey) ?? false;
+      }
       if (!_adFreeNotifier.value) await _initializeSdk();
       if (_disposed) return;
       _initialized = true;
@@ -91,6 +95,7 @@ class AdServiceMobile implements AdService {
   @override
   Future<void> setAdFree(bool value) async {
     if (_disposed) return;
+    _adFreeOverridden = true;
     _adFreeNotifier.value = value;
     if (value) {
       _interstitialRetryTimer?.cancel();
